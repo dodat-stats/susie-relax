@@ -1,0 +1,405 @@
+---
+title: "SuSiE-relax Demonstration"
+author: "Dat Do"
+date: "`r Sys.Date()`"
+output:
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 7,
+  fig.height = 4.5
+)
+
+library(susieR)
+
+source("code/SuSiE-relax.R")
+source("code/sim_2pop.R")
+source("code/plot.R")
+```
+
+# From SER-relax to SuSiE-relax
+
+SER-relax models one active effect while allowing the active LD column to relax around the reference LD matrix. SuSiE-relax extends this idea to \(L\) possible single effects:
+\[
+x \mid \{\beta_\ell,\gamma_\ell,z_{\ell,\gamma_\ell}\}_{\ell=1}^L
+\sim
+N_J\left(
+\sum_{\ell=1}^L
+\beta_\ell u_{\gamma_\ell}(z_{\ell,\gamma_\ell}),
+\frac{\bar R}{N}
+\right).
+\]
+For each effect,
+\[
+\gamma_\ell \sim \operatorname{Unif}\{1,\ldots,J\},
+\qquad
+\beta_\ell \sim N(0,\sigma_\ell^2),
+\]
+and, conditional on \(\gamma_\ell=j\),
+\[
+z_{\ell j}\mid \nu_0
+\sim
+N_{J-1}\left(\mu_j,\frac{S_j}{\nu_0+3}\right).
+\]
+Here
+\[
+\mu_j=\bar R_{-j,j},
+\qquad
+S_j=\bar R_{-j,-j}-\bar R_{-j,j}\bar R_{j,-j}.
+\]
+
+The variational approximation factorizes over effects:
+\[
+q =
+\prod_{\ell=1}^L
+q_\ell(\gamma_\ell)
+\prod_{j=1}^J
+q_{\ell j}(\beta_\ell)q_{\ell j}(z_{\ell j}).
+\]
+The inference algorithm is IBSS-like. When updating effect \(\ell\), we form the residual
+\[
+r_\ell = x-\sum_{k\ne\ell}\bar\theta_k,
+\]
+where
+\[
+\bar\theta_\ell =
+\sum_{j=1}^J
+\pi_{\ell j}E\{\beta_\ell u_j(z_{\ell j})\}.
+\]
+Then we apply the SER-relax update to this residual. After each full sweep over effects, the shared \(\nu_0\) is updated by the closed-form empirical-Bayes update
+\[
+\hat\tau^2 =
+\frac{
+\sum_{\ell=1}^L\sum_{j=1}^J\pi_{\ell j}Q_{\ell j}
+}{L(J-1)},
+\qquad
+\hat\nu_0 = \frac{1}{\hat\tau^2}-3,
+\]
+with lower and upper bounds in implementation.
+
+The main empirical behavior we want to demonstrate is:
+
+- When the reference LD mismatch is low, ordinary SuSiE and SuSiE-relax both recover the two true signals.
+
+- When the reference LD mismatch is high, ordinary SuSiE with out-of-sample LD can overfit and select all \(L=5\) effects, while SuSiE-relax responds by learning a small \(\nu_0\), using stronger LD relaxation, and selecting fewer effects.
+
+```{r helper-functions}
+standardize_sim <- function(res) {
+  d <- 1 / sqrt(diag(res$R))
+  res$v <- d * res$v
+  res$R <- cov2cor(res$R)
+  res$R0 <- cov2cor(res$R0)
+  res
+}
+
+make_rbar <- function(R0, lambda = 0.01) {
+  Rbar <- (1 - lambda) * R0 + lambda * diag(1, ncol(R0))
+  cov2cor(Rbar)
+}
+
+make_cs_from_alpha <- function(alpha, R, coverage = 0.95,
+                               min_abs_corr = 0.5,
+                               min_top_alpha = 1e-4) {
+  alpha <- as.matrix(alpha)
+  cs <- list()
+  purity <- numeric()
+
+  for (ell in seq_len(nrow(alpha))) {
+    a <- as.numeric(alpha[ell, ])
+    if (max(a) < min_top_alpha) {
+      next
+    }
+
+    ord <- order(a, decreasing = TRUE)
+    k <- which(cumsum(a[ord]) >= coverage)[1]
+    vars <- ord[seq_len(k)]
+    p <- if (length(vars) == 1) {
+      1
+    } else {
+      R_sub <- abs(R[vars, vars, drop = FALSE])
+      min(R_sub[upper.tri(R_sub)])
+    }
+
+    if (is.finite(p) && p >= min_abs_corr) {
+      nm <- paste0("L", ell)
+      cs[[nm]] <- vars
+      purity[nm] <- p
+    }
+  }
+
+  list(cs = cs, purity = purity)
+}
+
+count_selected_cs <- function(alpha, R, coverage = 0.95,
+                              min_abs_corr = 0.5,
+                              min_top_alpha = 1e-4) {
+  length(make_cs_from_alpha(
+    alpha = alpha,
+    R = R,
+    coverage = coverage,
+    min_abs_corr = min_abs_corr,
+    min_top_alpha = min_top_alpha
+  )$cs)
+}
+
+summarize_fit <- function(label, alpha, pip, R_for_cs, beta_true,
+                          nu0 = NA_real_) {
+  alpha <- as.matrix(alpha)
+  top <- apply(alpha, 1, which.max)
+  top_alpha <- apply(alpha, 1, max)
+  cs_info <- make_cs_from_alpha(alpha, R = R_for_cs)
+
+  data.frame(
+    method = label,
+    selected_L = length(cs_info$cs),
+    nu0 = nu0,
+    gamma_hat = paste(top, collapse = ", "),
+    top_alpha = paste(sprintf("%.3f", top_alpha), collapse = ", "),
+    causal_pip = paste(sprintf("%.3f", pip[beta_true != 0]), collapse = ", ")
+  )
+}
+
+plot_pip <- function(fit, R_for_cs, beta_true, main) {
+  susie_plot_alpha(
+    fit,
+    R = R_for_cs,
+    b = beta_true,
+    main = main,
+    coverage = 0.95,
+    min_abs_corr = 0.5
+  )
+  grid()
+}
+
+plot_convergence <- function(fit, main_prefix) {
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par), add = TRUE)
+
+  par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+  plot(seq_along(fit$elbo), fit$elbo, type = "l", lwd = 2,
+       xlab = "Iteration", ylab = "ELBO",
+       main = paste(main_prefix, "ELBO"))
+  grid()
+  plot(seq_along(fit$nu0_trace), fit$nu0_trace, type = "l", lwd = 2,
+       xlab = "Iteration", ylab = expression(hat(nu)[0]),
+       main = paste(main_prefix, expression(nu[0])))
+  grid()
+}
+
+plot_tau2_convergence <- function(fit, main_prefix) {
+  tau2_trace <- 1 / (fit$nu0_trace + 3)
+  plot(
+    seq_along(tau2_trace), tau2_trace,
+    type = "l",
+    lwd = 2,
+    xlab = "Iteration",
+    ylab = expression(1 / (hat(nu)[0] + 3)),
+    main = paste(main_prefix, expression(1 / (nu[0] + 3)))
+  )
+  grid()
+}
+
+run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
+                     lambda = 0.01, L = 5,
+                     relax_max_iter = 3000,
+                     relax_nu0_init = 2000,
+                     relax_nu0_bounds = c(10, 10000)) {
+  res <- sim_2pop(
+    chrom = "chr22",
+    start = 20e6,
+    end = 21e6,
+    T_split = 20,
+    n_gwas = N,
+    n_ref = N0,
+    J = J,
+    h2 = 0.01,
+    seed = seed
+  )
+  res <- standardize_sim(res)
+
+  v <- res$v
+  R <- res$R
+  R0 <- res$R0
+  Rbar <- make_rbar(R0, lambda = lambda)
+  beta_true <- res$beta_true
+
+  fit_susie_out <- susie_suff_stat(
+    XtX = N * R0,
+    Xty = N * v,
+    n = N,
+    yty = N,
+    L = L
+  )
+
+  relax_fit_time <- system.time({
+    fit_relax <- fit_susie_relax(
+      x = v,
+      Rbar = Rbar,
+      N = N,
+      L = L,
+      sigma2 = rep(0.3^2, L),
+      nu0_init = relax_nu0_init,
+      estimate_nu0 = TRUE,
+      warmup_iter = 5,
+      max_iter = relax_max_iter,
+      tol = 1e-7,
+      verbose = FALSE,
+      nu0_bounds = relax_nu0_bounds,
+      nu0_update_interval = 1,
+      nu0_tol = 1e-4
+    )
+  })
+
+  summary <- rbind(
+    summarize_fit(
+      label = "susieR with R0",
+      alpha = fit_susie_out$alpha,
+      pip = fit_susie_out$pip,
+      R_for_cs = R0,
+      beta_true = beta_true
+    ),
+    summarize_fit(
+      label = "SuSiE-relax",
+      alpha = fit_relax$alpha,
+      pip = fit_relax$pip,
+      R_for_cs = Rbar,
+      beta_true = beta_true,
+      nu0 = fit_relax$nu0
+    )
+  )
+
+  list(
+    case_label = case_label,
+    N = N,
+    N0 = N0,
+    seed = seed,
+    lambda = lambda,
+    L = L,
+    v = v,
+    R = R,
+    R0 = R0,
+    Rbar = Rbar,
+    beta_true = beta_true,
+    causal = which(beta_true != 0),
+    fit_susie_out = fit_susie_out,
+    fit_relax = fit_relax,
+    relax_fit_time = relax_fit_time,
+    summary = summary
+  )
+}
+```
+
+# Low-mismatch Case
+
+Here the reference panel size is \(N_0=1000\), so the out-of-sample LD is close enough to the GWAS LD. We expect both ordinary SuSiE and SuSiE-relax to select two effects.
+
+```{r low-mismatch-fit}
+low_case <- run_case(
+  case_label = "low mismatch",
+  N0 = 2000L,
+  seed = 6,
+  N = 20000L,
+  J = 1000L,
+  lambda = 0.01,
+  L = 5,
+  relax_max_iter = 1000,
+  relax_nu0_init = 2000,
+  relax_nu0_bounds = c(10, 10000)
+)
+
+low_case$relax_fit_time
+low_case$causal
+low_case$summary
+```
+
+```{r low-mismatch-plots}
+old_par <- par(no.readonly = TRUE)
+par(mfrow = c(1, 2))
+plot_pip(
+  low_case$fit_susie_out,
+  low_case$R0,
+  low_case$beta_true,
+  main = "Low mismatch: susieR with R0"
+)
+plot_pip(
+  low_case$fit_relax,
+  low_case$Rbar,
+  low_case$beta_true,
+  main = "Low mismatch: SuSiE-relax"
+)
+par(old_par)
+
+plot_convergence(low_case$fit_relax, "Low mismatch SuSiE-relax")
+```
+
+It might make more sense to look at \(1/(\nu_0+3)\) instead of \(\nu_0\), because this is the relaxed-column variance scale used by the model. Large changes in \(\nu_0\) at high values may correspond to very small changes in the actual relaxation variance.
+
+```{r low-mismatch-tau2-convergence}
+plot_tau2_convergence(low_case$fit_relax, "Low mismatch SuSiE-relax")
+```
+
+# High-mismatch Case
+
+Here the reference panel size is \(N_0=100\). The out-of-sample LD is much noisier. We fit ordinary SuSiE with upper bound \(L=5\) using the out-of-sample LD \(R_0\), and fit SuSiE-relax with the stabilized matrix
+\[
+\bar R = 0.99R_0 + 0.01I.
+\]
+The expected behavior is that ordinary SuSiE overfits and selects all five effects, while SuSiE-relax learns a small \(\nu_0\), relaxes the LD column, and selects only one effect.
+
+```{r high-mismatch-fit}
+high_case <- run_case(
+  case_label = "high mismatch",
+  N0 = 100L,
+  seed = 9,
+  N = 20000L,
+  J = 1000L,
+  lambda = 0.01,
+  L = 5,
+  relax_max_iter = 3000,
+  relax_nu0_init = 2000,
+  relax_nu0_bounds = c(10, 10000)
+)
+
+high_case$relax_fit_time
+high_case$causal
+high_case$summary
+```
+
+```{r high-mismatch-plots}
+old_par <- par(no.readonly = TRUE)
+par(mfrow = c(1, 2))
+plot_pip(
+  high_case$fit_susie_out,
+  high_case$R0,
+  high_case$beta_true,
+  main = "High mismatch: susieR with R0"
+)
+plot_pip(
+  high_case$fit_relax,
+  high_case$Rbar,
+  high_case$beta_true,
+  main = "High mismatch: SuSiE-relax"
+)
+par(old_par)
+
+plot_convergence(high_case$fit_relax, "High mismatch SuSiE-relax")
+```
+
+```{r high-mismatch-effect-details}
+data.frame(
+  effect = seq_len(nrow(high_case$fit_relax$alpha)),
+  top = apply(high_case$fit_relax$alpha, 1, which.max),
+  top_alpha = apply(high_case$fit_relax$alpha, 1, max)
+)
+```

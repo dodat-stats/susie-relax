@@ -1,0 +1,353 @@
+---
+title: "SER-relax Demonstration"
+author: "Dat Do"
+date: "`r Sys.Date()`"
+output:
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+editor_options:
+  markdown:
+    wrap: 72
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6.5,
+  fig.height = 4.5
+)
+
+source("code/SER-relax.R")
+source("code/sim_2pop.R")
+```
+
+# SER-relax Model
+
+SER-relax is the simplified single-effect version of
+`SER-relax-prototype`. It is derived from SER-relax-prototype by making
+two additional approximations: $$
+d_j = 1,
+\qquad
+\omega_j = \nu_0 + 3.
+$$
+
+These approximations are useful for two reasons.
+
+-   First, $\bar R$ is a correlation matrix, so the diagonal of the
+    target LD matrix is naturally close to one. The prototype variable
+    $d_j$ mainly models diagonal scaling, but our scientific target is
+    the uncertainty in the LD column shape, not the diagonal. Fixing
+    $d_j=1$ removes the non-standard $q(d_j)$ quadrature step.
+    Furthermore, we know that the in-sample $R$ is also a correlation
+    matrix with diagonal 1. So this makes so much sense.
+
+-   Second, the prototype writes the $t$-like prior on $z_j$ through a
+    latent precision $\omega_j$. Replacing $\omega_j$ by its prior mean,
+    $$
+    E(\omega_j)=\nu_0+3,
+    $$ keeps the main interpretation of $\nu_0$: larger $\nu_0$ shrinks
+    the active LD column more strongly toward $\bar R_{\cdot j}$, while
+    smaller $\nu_0$ allows more relaxation. On the other hand, we know
+    that $\omega_j \sim \chi^2_{\nu_0 + 3}$ is well concentrated in
+    $\nu_0 + 3 \pm \sqrt{\nu_0}$ anyway.
+
+The SER-relax observation model is $$
+x \mid \beta,\gamma=j,z_j
+\sim
+N_J\left(\beta u_j(z_j),\frac{\bar R}{N}\right),
+$$ with $$
+\beta \sim N(0,\sigma_0^2),
+\qquad
+\gamma \sim \operatorname{Unif}\{1,\ldots,J\}.
+$$ $u_j(z_j)$ is the vector with entry $j$ equal to $1$, and entries
+$-j$ equal to $z_j$, and
+$$z_j \sim N_{J-1} \left(\mu_j, \dfrac{S_j}{\nu_0 + 3}\right) = N_{J-1}(\mu_j,\tau^2S_j). $$
+where $$
+\mu_j = \bar R_{-j,j},
+\qquad
+S_j = \bar R_{-j,-j} - \bar R_{-j,j}\bar R_{j,-j}.
+$$
+
+# Inference Overview
+
+The variational approximation is $$
+q(\gamma=j,\beta,z_j)
+=
+\pi_j q_j(\beta)q_j(z_j),
+$$ where $$
+q_j(\beta)=N(m_{\beta j},v_{\beta j}),
+\qquad
+q_j(z_j)=N_{J-1}(m_{zj},V_{zj}).
+$$
+
+Let $$
+\bar\beta_j=m_{\beta j},
+\qquad
+\overline{\beta^2}_j=v_{\beta j}+m_{\beta j}^2.
+$$ Define $$
+A_j =
+1 + \operatorname{tr}(S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)'S_j^{-1}(m_{zj}-\mu_j),
+$$ $$
+B_j =
+x_j+(m_{zj}-\mu_j)'S_j^{-1}(x_{-j}-\mu_jx_j),
+$$ and $$
+Q_j =
+\operatorname{tr}(S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)'S_j^{-1}(m_{zj}-\mu_j).
+$$
+
+## Closed-form Updates and Interpretations
+
+The effect-size update is $$
+v_{\beta j}
+=
+\left(\sigma_0^{-2}+NA_j\right)^{-1},
+\qquad
+m_{\beta j}
+=
+v_{\beta j}NB_j.
+$$ The relaxed-column update is $$
+V_{zj}
+=
+\frac{S_j}{N\overline{\beta^2}_j+\tau^{-2}},
+$$ $$
+m_{zj}
+=
+\mu_j+
+\frac{N\bar\beta_j}
+{N\overline{\beta^2}_j+\tau^{-2}}
+(x_{-j}-\mu_jx_j).
+$$ Thus the relaxed column mean is the reference column plus a residual
+correction. The correction is larger when the effect is strong and the
+data support moving away from the reference LD, and smaller when $\nu_0$
+is large.
+
+The coordinate probability is $$
+\pi_j =
+\frac{\exp(\mathcal L_j^{\mathrm{SER}})}
+{\sum_{k=1}^J \exp(\mathcal L_k^{\mathrm{SER}})}.
+$$
+
+## Learning $\nu_0$
+
+Holding $q$ fixed, the $\nu_0$-dependent part of the ELBO is $$
+M(\nu_0)
+=
+\sum_{j=1}^J
+\pi_j
+\left\{
+\frac{J-1}{2}\log(\nu_0+3)
+-\frac{\nu_0+3}{2}Q_j
+\right\}.
+$$ Equivalently, in the $\tau^2$ parameterization, $$
+\hat\tau^2
+=
+\frac{\sum_{j=1}^J\pi_jQ_j}{J-1},
+\qquad
+\hat\nu_0 = \frac{1}{\hat\tau^2}-3.
+$$ The implementation applies lower and upper bounds to $\nu_0$. This
+closed-form empirical-Bayes update is the main computational advantage
+over the prototype.
+
+## Implementation Algebra
+
+Because $\bar R$ is a correlation matrix and $\Omega=\bar R^{-1}$, $$
+(r_{-j}-\mu_jr_j)'S_j^{-1}(r_{-j}-\mu_jr_j)
+=
+r'\Omega r-r_j^2.
+$$ Also, $$
+|S_j|=|\bar R|.
+$$ Thus the implementation avoids explicitly forming all $S_j^{-1}$
+matrices. With $$
+z_{\mathrm{denom},j}=N\overline{\beta^2}_j+\tau^{-2},
+\qquad
+z_{\mathrm{scale},j}=\frac{N\bar\beta_j}{z_{\mathrm{denom},j}},
+$$ the required scalar quantities are $$
+Q_j=\frac{J-1}{z_{\mathrm{denom},j}}+z_{\mathrm{scale},j}^2C_j,
+\qquad
+A_j=1+Q_j,
+\qquad
+B_j=x_j+z_{\mathrm{scale},j}C_j,
+$$ where $C_j=x'\Omega x-x_j^2$.
+
+# Grid Experiment: Recovering $\nu_0$
+
+This experiment mirrors the SER-relax-prototype demonstration. The goal
+is to show that SER-relax can still recover $\nu_0$, while running
+faster because it avoids both $q(d_j)$ quadrature and the latent
+$\omega_j$ update.
+
+The design is:
+
+1.  Generate a realistic reference LD matrix $R_0$ using `sim_2pop()`.
+2.  Set $$
+    \bar R = 0.99R_0 + 0.01I.
+    $$
+3.  For each true $\nu_0$, generate data exactly as in the prototype
+    demonstration: $$
+    R^{\mathrm{true}} \sim IW_J(\nu_0\bar R,\nu_0+J+1),
+    \qquad
+    x \sim N_J(\beta R^{\mathrm{true}}_{\cdot j}, \bar R/N).
+    $$
+4.  Estimate $\nu_0$ using `fit_ser_relax()`.
+5.  Keep `fit_seconds` so the runtime can be compared directly with the
+    prototype.
+
+```{r experiment-helper}
+sample_inverse_wishart <- function(df, scale) {
+  W <- stats::rWishart(1, df = df, Sigma = solve(scale))[, , 1]
+  solve(W)
+}
+```
+
+```{r generate-rbar}
+N = 20000L # sample size in the model
+N01 <- 1L # for simulation of R only
+N0 <- 2000L # for simulation of R only
+J <- 500L
+
+rbar_time <- system.time({
+  coalescent <- sim_2pop(
+    chrom = "chr22",
+    start = 20e6,
+    end = 21e6,
+    T_split = 20,
+    n_gwas = N01,
+    n_ref = N0,
+    J = J,
+    h2 = 0.01,
+    seed = 1
+  )
+
+  R0 <- cov2cor(coalescent$R0)
+  Rbar <- 0.99 * R0 + 0.01 * diag(1, J)
+  Rbar <- cov2cor(Rbar)
+})
+
+range(eigen(Rbar, symmetric = TRUE, only.values = TRUE)$values)
+rbar_time
+```
+
+Here we generate $x$ exactly as in the prototype file to show that the
+approximation inference is very benign, while being much faster. We
+should look at the `fit_second` and compare it with the
+`SER-relax-prototype` file.
+
+```{r run-grid}
+nu0_grid <- c(25, 50, 100, 200, 400, 800, 1600)
+n_rep <- 3
+sigma0 <- 0.2
+beta <- 0.2
+gamma <- ceiling(J / 2)
+nu0_init <- 500
+nu0_bounds <- c(5, 5000)
+max_iter <- 300
+tol <- 1e-5
+seed <- 100
+
+out <- vector("list", length(nu0_grid) * n_rep)
+i <- 0
+
+for (nu0_true in nu0_grid) {
+  for (rep_id in seq_len(n_rep)) {
+    i <- i + 1
+    sim_seed <- seed + i
+    set.seed(sim_seed)
+
+    iw_time <- system.time({
+      R_true <- sample_inverse_wishart(
+        df = nu0_true + J + 1,
+        scale = nu0_true * Rbar
+      )
+    })
+
+    mean_x <- beta * R_true[, gamma]
+
+    x_time <- system.time({
+      x <- as.numeric(MASS::mvrnorm(1, mu = mean_x, Sigma = Rbar / N))
+    })
+
+    fit_time <- system.time({
+      fit <- fit_ser_relax(
+        x = x,
+        Rbar = Rbar,
+        N = N,
+        sigma0 = sigma0,
+        nu0_init = nu0_init,
+        estimate_nu0 = TRUE,
+        max_iter = max_iter,
+        tol = tol,
+        nu0_bounds = nu0_bounds,
+        verbose = FALSE
+      )
+    })
+
+    out[[i]] <- data.frame(
+      nu0_true = nu0_true,
+      nu0_hat = fit$nu0,
+      rep = rep_id,
+      gamma_true = gamma,
+      gamma_hat = fit$gamma_hat,
+      top_pi = max(fit$pi),
+      beta = beta,
+      converged_iter = length(fit$elbo),
+      iw_seconds = unname(iw_time["elapsed"]),
+      x_seconds = unname(x_time["elapsed"]),
+      fit_seconds = unname(fit_time["elapsed"])
+    )
+  }
+}
+
+nu0_results <- do.call(rbind, out)
+
+nu0_results
+```
+
+```{r summarize-grid}
+nu0_summary <- aggregate(
+  cbind(nu0_hat, top_pi, converged_iter, iw_seconds, x_seconds, fit_seconds) ~ nu0_true,
+  data = nu0_results,
+  FUN = mean
+)
+nu0_summary
+
+colSums(nu0_results[, c("iw_seconds", "x_seconds", "fit_seconds")])
+```
+
+```{r plot-raw}
+plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  pch = 19,
+  col = "steelblue",
+  xlab = expression("true " * nu[0]),
+  ylab = expression("estimated " * nu[0]),
+  main = expression("SER-relax " * nu[0] * " recovery")
+)
+abline(0, 1, lty = 2, col = "gray40")
+lines(nu0_summary$nu0_true, nu0_summary$nu0_hat, type = "b", pch = 17, lwd = 2)
+grid()
+```
+
+```{r plot-loglog}
+plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  log = "xy",
+  pch = 19,
+  col = "steelblue",
+  xlab = expression("true " * nu[0] * " (log scale)"),
+  ylab = expression("estimated " * nu[0] * " (log scale)"),
+  main = expression("SER-relax " * nu[0] * " recovery, log-log")
+)
+abline(0, 1, lty = 2, col = "gray40")
+lines(nu0_summary$nu0_true, nu0_summary$nu0_hat, type = "b", pch = 17, lwd = 2)
+grid()
+```

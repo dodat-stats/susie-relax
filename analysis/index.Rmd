@@ -9,3 +9,17 @@ editor_options:
 ---
 
 Welcome to my research website.
+
+This site develops **SuSiE-relax**, a fine-mapping method that lets the active
+LD column relax around a reference LD matrix via an inverse-Wishart prior,
+learning the relaxation level $\nu_0$. The analyses below follow the
+progression of the method:
+
+1. [SER-relax-prototype Demonstration](SER-relax-prototype-demonstrate.html) —
+   the original single-effect model with full inference (quadrature for
+   $q(d_j)$ and a latent precision $\omega_j$).
+2. [SER-relax Demonstration](SER-relax-demonstrate.html) — the lite
+   single-effect model with closed-form updates, much faster while staying
+   accurate.
+3. [SuSiE-relax Demonstration](susie-relax-demonstrate.html) — the multi-effect
+   extension that stays robust under LD mismatch.
