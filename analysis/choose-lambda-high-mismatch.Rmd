@@ -1,0 +1,304 @@
+---
+title: "Choosing lambda (high-mismatch case)"
+author: "Dat Do"
+date: "`r Sys.Date()`"
+output:
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 7,
+  fig.height = 4.5
+)
+
+library(susieR)
+
+source("code/SuSiE-relax.R")
+source("code/sim_2pop.R")
+source("code/plot.R")
+```
+
+# Goal
+
+SuSiE-relax does not use the out-of-sample LD matrix \(R_0\) directly. It uses a
+stabilized reference
+\[
+\bar R = (1-\lambda) R_0 + \lambda I,
+\]
+re-scaled to a correlation matrix. The ridge parameter \(\lambda\) controls how
+much \(R_0\) is pulled toward the identity before fitting. This note
+investigates whether the choice of \(\lambda\) affects the fine-mapping result
+in the **high-mismatch** case, where the reference panel is small
+(\(N_0 = 100\)) so that \(R_0\) is a noisy estimate of the in-sample LD. In this
+regime ordinary susieR fit on \(R_0\) tends to overfit and select all
+\(L = 5\) effects, while SuSiE-relax learns a small \(\nu_0\) and selects only
+one effect.
+
+The plan is:
+
+1. Simulate one high-mismatch data set (the same settings as the high-mismatch
+   case in the SuSiE-relax demonstration).
+2. Build \(\bar R\) for a grid of \(\lambda\) values and fit SuSiE-relax to each.
+3. Plot the final ELBO of each fit against \(\lambda\).
+4. Report the PIP result of the best \(\lambda\) (largest final ELBO) and
+   compare it to ordinary susieR fit on \(R_0\).
+
+Because the ELBO is a variational lower bound on \(\log p(x \mid \bar R)\) and
+\(x\) is held fixed, comparing the final ELBO across the \(\lambda\) grid is a
+reasonable model-selection criterion for \(\lambda\).
+
+```{r helper-functions}
+standardize_sim <- function(res) {
+  d <- 1 / sqrt(diag(res$R))
+  res$v <- d * res$v
+  res$R <- cov2cor(res$R)
+  res$R0 <- cov2cor(res$R0)
+  res
+}
+
+make_rbar <- function(R0, lambda = 0.01) {
+  Rbar <- (1 - lambda) * R0 + lambda * diag(1, ncol(R0))
+  cov2cor(Rbar)
+}
+
+make_cs_from_alpha <- function(alpha, R, coverage = 0.95,
+                               min_abs_corr = 0.5,
+                               min_top_alpha = 1e-4) {
+  alpha <- as.matrix(alpha)
+  cs <- list()
+  purity <- numeric()
+
+  for (ell in seq_len(nrow(alpha))) {
+    a <- as.numeric(alpha[ell, ])
+    if (max(a) < min_top_alpha) {
+      next
+    }
+
+    ord <- order(a, decreasing = TRUE)
+    k <- which(cumsum(a[ord]) >= coverage)[1]
+    vars <- ord[seq_len(k)]
+    p <- if (length(vars) == 1) {
+      1
+    } else {
+      R_sub <- abs(R[vars, vars, drop = FALSE])
+      min(R_sub[upper.tri(R_sub)])
+    }
+
+    if (is.finite(p) && p >= min_abs_corr) {
+      nm <- paste0("L", ell)
+      cs[[nm]] <- vars
+      purity[nm] <- p
+    }
+  }
+
+  list(cs = cs, purity = purity)
+}
+
+count_selected_cs <- function(alpha, R, coverage = 0.95,
+                              min_abs_corr = 0.5,
+                              min_top_alpha = 1e-4) {
+  length(make_cs_from_alpha(
+    alpha = alpha,
+    R = R,
+    coverage = coverage,
+    min_abs_corr = min_abs_corr,
+    min_top_alpha = min_top_alpha
+  )$cs)
+}
+
+summarize_fit <- function(label, alpha, pip, R_for_cs, beta_true,
+                          nu0 = NA_real_) {
+  alpha <- as.matrix(alpha)
+  top <- apply(alpha, 1, which.max)
+  top_alpha <- apply(alpha, 1, max)
+  cs_info <- make_cs_from_alpha(alpha, R = R_for_cs)
+
+  data.frame(
+    method = label,
+    selected_L = length(cs_info$cs),
+    nu0 = nu0,
+    gamma_hat = paste(top, collapse = ", "),
+    top_alpha = paste(sprintf("%.3f", top_alpha), collapse = ", "),
+    causal_pip = paste(sprintf("%.3f", pip[beta_true != 0]), collapse = ", ")
+  )
+}
+
+plot_pip <- function(fit, R_for_cs, beta_true, main) {
+  susie_plot_alpha(
+    fit,
+    R = R_for_cs,
+    b = beta_true,
+    main = main,
+    coverage = 0.95,
+    min_abs_corr = 0.5
+  )
+  grid()
+}
+```
+
+# Simulate the high-mismatch data
+
+We use the same simulation settings as the high-mismatch case in the SuSiE-relax
+demonstration: a small reference panel (\(N_0 = 100\)) so that the
+out-of-sample LD is a noisy estimate of the GWAS LD. The data set is simulated
+once and shared across all \(\lambda\) values.
+
+```{r simulate}
+N  <- 20000L
+J  <- 1000L
+L  <- 5L
+
+res <- sim_2pop(
+  chrom = "chr22",
+  start = 20e6,
+  end = 21e6,
+  T_split = 20,
+  n_gwas = N,
+  n_ref = 100L,
+  J = J,
+  h2 = 0.01,
+  seed = 9
+)
+res <- standardize_sim(res)
+
+v         <- res$v
+R         <- res$R
+R0        <- res$R0
+beta_true <- res$beta_true
+causal    <- which(beta_true != 0)
+
+causal
+```
+
+For reference, we also fit ordinary susieR directly on the out-of-sample LD
+\(R_0\). This fit does not depend on \(\lambda\).
+
+```{r fit-susieR}
+fit_susie_out <- susie_suff_stat(
+  XtX = N * R0,
+  Xty = N * v,
+  n = N,
+  yty = N,
+  L = L
+)
+```
+
+# Fit SuSiE-relax over a grid of lambda
+
+```{r lambda-grid-fit}
+lambda_grid <- c(1e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1)
+
+relax_fits <- lapply(lambda_grid, function(lambda) {
+  Rbar <- make_rbar(R0, lambda = lambda)
+  fit_susie_relax(
+    x = v,
+    Rbar = Rbar,
+    N = N,
+    L = L,
+    sigma2 = rep(0.3^2, L),
+    nu0_init = 2000,
+    estimate_nu0 = TRUE,
+    warmup_iter = 5,
+    max_iter = 3000,
+    tol = 1e-7,
+    verbose = FALSE,
+    nu0_bounds = c(10, 10000),
+    nu0_update_interval = 1,
+    nu0_tol = 1e-4
+  )
+})
+names(relax_fits) <- sprintf("lambda=%g", lambda_grid)
+
+lambda_summary <- do.call(rbind, lapply(seq_along(lambda_grid), function(i) {
+  fit <- relax_fits[[i]]
+  data.frame(
+    lambda      = lambda_grid[i],
+    final_elbo  = fit$elbo[length(fit$elbo)],
+    n_iter      = length(fit$elbo),
+    nu0         = fit$nu0,
+    tau2        = fit$tau2,
+    selected_L  = count_selected_cs(fit$alpha, R = make_rbar(R0, lambda_grid[i])),
+    causal_pip  = paste(sprintf("%.3f", fit$pip[beta_true != 0]), collapse = ", ")
+  )
+}))
+
+lambda_summary
+```
+
+# Final ELBO against lambda
+
+```{r elbo-vs-lambda}
+best_idx    <- which.max(lambda_summary$final_elbo)
+best_lambda <- lambda_summary$lambda[best_idx]
+
+plot(
+  lambda_summary$lambda, lambda_summary$final_elbo,
+  type = "b", lwd = 2, pch = 16, log = "x",
+  xlab = expression(lambda), ylab = "Final ELBO",
+  main = "High mismatch: final ELBO vs lambda"
+)
+points(
+  best_lambda, lambda_summary$final_elbo[best_idx],
+  col = "red", pch = 1, cex = 2.5, lwd = 2
+)
+grid()
+
+best_lambda
+```
+
+The red circle marks the \(\lambda\) with the largest final ELBO.
+
+# PIP of the best lambda vs susieR on R0
+
+```{r best-summary}
+best_fit  <- relax_fits[[best_idx]]
+best_Rbar <- make_rbar(R0, lambda = best_lambda)
+
+summary <- rbind(
+  summarize_fit(
+    label = "susieR with R0",
+    alpha = fit_susie_out$alpha,
+    pip = fit_susie_out$pip,
+    R_for_cs = R0,
+    beta_true = beta_true
+  ),
+  summarize_fit(
+    label = sprintf("SuSiE-relax (best lambda = %g)", best_lambda),
+    alpha = best_fit$alpha,
+    pip = best_fit$pip,
+    R_for_cs = best_Rbar,
+    beta_true = beta_true,
+    nu0 = best_fit$nu0
+  )
+)
+
+summary
+```
+
+```{r best-pip-plots}
+old_par <- par(no.readonly = TRUE)
+par(mfrow = c(1, 2))
+plot_pip(
+  fit_susie_out,
+  R0,
+  beta_true,
+  main = "High mismatch: susieR with R0"
+)
+plot_pip(
+  best_fit,
+  best_Rbar,
+  beta_true,
+  main = sprintf("SuSiE-relax (lambda = %g)", best_lambda)
+)
+par(old_par)
+```
