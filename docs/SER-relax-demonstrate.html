@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Dat Do" />
+
+<meta name="date" content="2026-06-21" />
+
+<title>SER-relax Demonstration</title>
+
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">susie-relax</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/dodat-stats/susie-relax">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">SER-relax Demonstration</h1>
+<h4 class="author">Dat Do</h4>
+<h4 class="date">2026-06-21</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2026-06-21
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>susie-relax/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.2). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20260621code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20260621)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20260621code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20260621)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree33faf9a52baa8af6f8157fc71aaf91ba7d8c8f89targetblank33faf9aa">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/dodat-stats/susie-relax/tree/33faf9a52baa8af6f8157fc71aaf91ba7d8c8f89" target="_blank">33faf9a</a>
+</a>
+</p>
+</div>
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree33faf9a52baa8af6f8157fc71aaf91ba7d8c8f89targetblank33faf9aa"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version
+<a href="https://github.com/dodat-stats/susie-relax/tree/33faf9a52baa8af6f8157fc71aaf91ba7d8c8f89" target="_blank">33faf9a</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
+
+Untracked files:
+    Untracked:  code/SER-relax-prototype.R
+    Untracked:  code/SER-relax.R
+    Untracked:  code/SuSiE-relax.R
+    Untracked:  code/plot.R
+    Untracked:  code/sim_2pop.R
+    Untracked:  tex/
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/SER-relax-demonstrate.Rmd</code>)
+and HTML (<code>docs/SER-relax-demonstrate.html</code>) files. If you’ve
+configured a remote Git repository (see <code>?wflow_git_remote</code>),
+click on the hyperlinks in the table below to view the files as they
+were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/dodat-stats/susie-relax/blob/33faf9a52baa8af6f8157fc71aaf91ba7d8c8f89/analysis/SER-relax-demonstrate.Rmd" target="_blank">33faf9a</a>
+</td>
+<td>
+dodat-stats
+</td>
+<td>
+2026-06-21
+</td>
+<td>
+Publish SuSiE-relax demonstrations in workflowr style
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<pre class="r"><code>knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6.5,
+  fig.height = 4.5
+)
+
+source(&quot;code/SER-relax.R&quot;)
+source(&quot;code/sim_2pop.R&quot;)</code></pre>
+<div id="ser-relax-model" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> SER-relax Model</h1>
+<p>SER-relax is the simplified single-effect version of
+<code>SER-relax-prototype</code>. It is derived from SER-relax-prototype
+by making two additional approximations: <span class="math display">\[
+d_j = 1,
+\qquad
+\omega_j = \nu_0 + 3.
+\]</span></p>
+<p>These approximations are useful for two reasons.</p>
+<ul>
+<li><p>First, <span class="math inline">\(\bar R\)</span> is a
+correlation matrix, so the diagonal of the target LD matrix is naturally
+close to one. The prototype variable <span
+class="math inline">\(d_j\)</span> mainly models diagonal scaling, but
+our scientific target is the uncertainty in the LD column shape, not the
+diagonal. Fixing <span class="math inline">\(d_j=1\)</span> removes the
+non-standard <span class="math inline">\(q(d_j)\)</span> quadrature
+step. Furthermore, we know that the in-sample <span
+class="math inline">\(R\)</span> is also a correlation matrix with
+diagonal 1. So this makes so much sense.</p></li>
+<li><p>Second, the prototype writes the <span
+class="math inline">\(t\)</span>-like prior on <span
+class="math inline">\(z_j\)</span> through a latent precision <span
+class="math inline">\(\omega_j\)</span>. Replacing <span
+class="math inline">\(\omega_j\)</span> by its prior mean, <span
+class="math display">\[
+E(\omega_j)=\nu_0+3,
+\]</span> keeps the main interpretation of <span
+class="math inline">\(\nu_0\)</span>: larger <span
+class="math inline">\(\nu_0\)</span> shrinks the active LD column more
+strongly toward <span class="math inline">\(\bar R_{\cdot j}\)</span>,
+while smaller <span class="math inline">\(\nu_0\)</span> allows more
+relaxation. On the other hand, we know that <span
+class="math inline">\(\omega_j \sim \chi^2_{\nu_0 + 3}\)</span> is well
+concentrated in <span class="math inline">\(\nu_0 + 3 \pm
+\sqrt{\nu_0}\)</span> anyway.</p></li>
+</ul>
+<p>The SER-relax observation model is <span class="math display">\[
+x \mid \beta,\gamma=j,z_j
+\sim
+N_J\left(\beta u_j(z_j),\frac{\bar R}{N}\right),
+\]</span> with <span class="math display">\[
+\beta \sim N(0,\sigma_0^2),
+\qquad
+\gamma \sim \operatorname{Unif}\{1,\ldots,J\}.
+\]</span> <span class="math inline">\(u_j(z_j)\)</span> is the vector
+with entry <span class="math inline">\(j\)</span> equal to <span
+class="math inline">\(1\)</span>, and entries <span
+class="math inline">\(-j\)</span> equal to <span
+class="math inline">\(z_j\)</span>, and <span class="math display">\[z_j
+\sim N_{J-1} \left(\mu_j, \dfrac{S_j}{\nu_0 + 3}\right) =
+N_{J-1}(\mu_j,\tau^2S_j). \]</span> where <span class="math display">\[
+\mu_j = \bar R_{-j,j},
+\qquad
+S_j = \bar R_{-j,-j} - \bar R_{-j,j}\bar R_{j,-j}.
+\]</span></p>
+</div>
+<div id="inference-overview" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Inference Overview</h1>
+<p>The variational approximation is <span class="math display">\[
+q(\gamma=j,\beta,z_j)
+=
+\pi_j q_j(\beta)q_j(z_j),
+\]</span> where <span class="math display">\[
+q_j(\beta)=N(m_{\beta j},v_{\beta j}),
+\qquad
+q_j(z_j)=N_{J-1}(m_{zj},V_{zj}).
+\]</span></p>
+<p>Let <span class="math display">\[
+\bar\beta_j=m_{\beta j},
+\qquad
+\overline{\beta^2}_j=v_{\beta j}+m_{\beta j}^2.
+\]</span> Define <span class="math display">\[
+A_j =
+1 + \operatorname{tr}(S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)&#39;S_j^{-1}(m_{zj}-\mu_j),
+\]</span> <span class="math display">\[
+B_j =
+x_j+(m_{zj}-\mu_j)&#39;S_j^{-1}(x_{-j}-\mu_jx_j),
+\]</span> and <span class="math display">\[
+Q_j =
+\operatorname{tr}(S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)&#39;S_j^{-1}(m_{zj}-\mu_j).
+\]</span></p>
+<div id="closed-form-updates-and-interpretations" class="section level2"
+number="2.1">
+<h2><span class="header-section-number">2.1</span> Closed-form Updates
+and Interpretations</h2>
+<p>The effect-size update is <span class="math display">\[
+v_{\beta j}
+=
+\left(\sigma_0^{-2}+NA_j\right)^{-1},
+\qquad
+m_{\beta j}
+=
+v_{\beta j}NB_j.
+\]</span> The relaxed-column update is <span class="math display">\[
+V_{zj}
+=
+\frac{S_j}{N\overline{\beta^2}_j+\tau^{-2}},
+\]</span> <span class="math display">\[
+m_{zj}
+=
+\mu_j+
+\frac{N\bar\beta_j}
+{N\overline{\beta^2}_j+\tau^{-2}}
+(x_{-j}-\mu_jx_j).
+\]</span> Thus the relaxed column mean is the reference column plus a
+residual correction. The correction is larger when the effect is strong
+and the data support moving away from the reference LD, and smaller when
+<span class="math inline">\(\nu_0\)</span> is large.</p>
+<p>The coordinate probability is <span class="math display">\[
+\pi_j =
+\frac{\exp(\mathcal L_j^{\mathrm{SER}})}
+{\sum_{k=1}^J \exp(\mathcal L_k^{\mathrm{SER}})}.
+\]</span></p>
+</div>
+<div id="learning-nu_0" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Learning <span
+class="math inline">\(\nu_0\)</span></h2>
+<p>Holding <span class="math inline">\(q\)</span> fixed, the <span
+class="math inline">\(\nu_0\)</span>-dependent part of the ELBO is <span
+class="math display">\[
+M(\nu_0)
+=
+\sum_{j=1}^J
+\pi_j
+\left\{
+\frac{J-1}{2}\log(\nu_0+3)
+-\frac{\nu_0+3}{2}Q_j
+\right\}.
+\]</span> Equivalently, in the <span
+class="math inline">\(\tau^2\)</span> parameterization, <span
+class="math display">\[
+\hat\tau^2
+=
+\frac{\sum_{j=1}^J\pi_jQ_j}{J-1},
+\qquad
+\hat\nu_0 = \frac{1}{\hat\tau^2}-3.
+\]</span> The implementation applies lower and upper bounds to <span
+class="math inline">\(\nu_0\)</span>. This closed-form empirical-Bayes
+update is the main computational advantage over the prototype.</p>
+</div>
+<div id="implementation-algebra" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Implementation
+Algebra</h2>
+<p>Because <span class="math inline">\(\bar R\)</span> is a correlation
+matrix and <span class="math inline">\(\Omega=\bar R^{-1}\)</span>,
+<span class="math display">\[
+(r_{-j}-\mu_jr_j)&#39;S_j^{-1}(r_{-j}-\mu_jr_j)
+=
+r&#39;\Omega r-r_j^2.
+\]</span> Also, <span class="math display">\[
+|S_j|=|\bar R|.
+\]</span> Thus the implementation avoids explicitly forming all <span
+class="math inline">\(S_j^{-1}\)</span> matrices. With <span
+class="math display">\[
+z_{\mathrm{denom},j}=N\overline{\beta^2}_j+\tau^{-2},
+\qquad
+z_{\mathrm{scale},j}=\frac{N\bar\beta_j}{z_{\mathrm{denom},j}},
+\]</span> the required scalar quantities are <span
+class="math display">\[
+Q_j=\frac{J-1}{z_{\mathrm{denom},j}}+z_{\mathrm{scale},j}^2C_j,
+\qquad
+A_j=1+Q_j,
+\qquad
+B_j=x_j+z_{\mathrm{scale},j}C_j,
+\]</span> where <span class="math inline">\(C_j=x&#39;\Omega
+x-x_j^2\)</span>.</p>
+</div>
+</div>
+<div id="grid-experiment-recovering-nu_0" class="section level1"
+number="3">
+<h1><span class="header-section-number">3</span> Grid Experiment:
+Recovering <span class="math inline">\(\nu_0\)</span></h1>
+<p>This experiment mirrors the SER-relax-prototype demonstration. The
+goal is to show that SER-relax can still recover <span
+class="math inline">\(\nu_0\)</span>, while running faster because it
+avoids both <span class="math inline">\(q(d_j)\)</span> quadrature and
+the latent <span class="math inline">\(\omega_j\)</span> update.</p>
+<p>The design is:</p>
+<ol style="list-style-type: decimal">
+<li>Generate a realistic reference LD matrix <span
+class="math inline">\(R_0\)</span> using <code>sim_2pop()</code>.</li>
+<li>Set <span class="math display">\[
+\bar R = 0.99R_0 + 0.01I.
+\]</span></li>
+<li>For each true <span class="math inline">\(\nu_0\)</span>, generate
+data exactly as in the prototype demonstration: <span
+class="math display">\[
+R^{\mathrm{true}} \sim IW_J(\nu_0\bar R,\nu_0+J+1),
+\qquad
+x \sim N_J(\beta R^{\mathrm{true}}_{\cdot j}, \bar R/N).
+\]</span></li>
+<li>Estimate <span class="math inline">\(\nu_0\)</span> using
+<code>fit_ser_relax()</code>.</li>
+<li>Keep <code>fit_seconds</code> so the runtime can be compared
+directly with the prototype.</li>
+</ol>
+<pre class="r"><code>sample_inverse_wishart &lt;- function(df, scale) {
+  W &lt;- stats::rWishart(1, df = df, Sigma = solve(scale))[, , 1]
+  solve(W)
+}</code></pre>
+<pre class="r"><code>N = 20000L # sample size in the model
+N01 &lt;- 1L # for simulation of R only
+N0 &lt;- 2000L # for simulation of R only
+J &lt;- 500L
+
+rbar_time &lt;- system.time({
+  coalescent &lt;- sim_2pop(
+    chrom = &quot;chr22&quot;,
+    start = 20e6,
+    end = 21e6,
+    T_split = 20,
+    n_gwas = N01,
+    n_ref = N0,
+    J = J,
+    h2 = 0.01,
+    seed = 1
+  )
+
+  R0 &lt;- cov2cor(coalescent$R0)
+  Rbar &lt;- 0.99 * R0 + 0.01 * diag(1, J)
+  Rbar &lt;- cov2cor(Rbar)
+})
+
+range(eigen(Rbar, symmetric = TRUE, only.values = TRUE)$values)</code></pre>
+<pre><code>[1]  0.01000 30.77302</code></pre>
+<pre class="r"><code>rbar_time</code></pre>
+<pre><code>   user  system elapsed 
+  2.131   0.398   2.675 </code></pre>
+<p>Here we generate <span class="math inline">\(x\)</span> exactly as in
+the prototype file to show that the approximation inference is very
+benign, while being much faster. We should look at the
+<code>fit_second</code> and compare it with the
+<code>SER-relax-prototype</code> file.</p>
+<pre class="r"><code>nu0_grid &lt;- c(25, 50, 100, 200, 400, 800, 1600)
+n_rep &lt;- 3
+sigma0 &lt;- 0.2
+beta &lt;- 0.2
+gamma &lt;- ceiling(J / 2)
+nu0_init &lt;- 500
+nu0_bounds &lt;- c(5, 5000)
+max_iter &lt;- 300
+tol &lt;- 1e-5
+seed &lt;- 100
+
+out &lt;- vector(&quot;list&quot;, length(nu0_grid) * n_rep)
+i &lt;- 0
+
+for (nu0_true in nu0_grid) {
+  for (rep_id in seq_len(n_rep)) {
+    i &lt;- i + 1
+    sim_seed &lt;- seed + i
+    set.seed(sim_seed)
+
+    iw_time &lt;- system.time({
+      R_true &lt;- sample_inverse_wishart(
+        df = nu0_true + J + 1,
+        scale = nu0_true * Rbar
+      )
+    })
+
+    mean_x &lt;- beta * R_true[, gamma]
+
+    x_time &lt;- system.time({
+      x &lt;- as.numeric(MASS::mvrnorm(1, mu = mean_x, Sigma = Rbar / N))
+    })
+
+    fit_time &lt;- system.time({
+      fit &lt;- fit_ser_relax(
+        x = x,
+        Rbar = Rbar,
+        N = N,
+        sigma0 = sigma0,
+        nu0_init = nu0_init,
+        estimate_nu0 = TRUE,
+        max_iter = max_iter,
+        tol = tol,
+        nu0_bounds = nu0_bounds,
+        verbose = FALSE
+      )
+    })
+
+    out[[i]] &lt;- data.frame(
+      nu0_true = nu0_true,
+      nu0_hat = fit$nu0,
+      rep = rep_id,
+      gamma_true = gamma,
+      gamma_hat = fit$gamma_hat,
+      top_pi = max(fit$pi),
+      beta = beta,
+      converged_iter = length(fit$elbo),
+      iw_seconds = unname(iw_time[&quot;elapsed&quot;]),
+      x_seconds = unname(x_time[&quot;elapsed&quot;]),
+      fit_seconds = unname(fit_time[&quot;elapsed&quot;])
+    )
+  }
+}
+
+nu0_results &lt;- do.call(rbind, out)
+
+nu0_results</code></pre>
+<pre><code>       nu0_true    nu0_hat rep gamma_true gamma_hat    top_pi beta
+j250         25   31.79947   1        250       250 0.9265978  0.2
+j251         25   18.82615   2        250       251 0.6026297  0.2
+j2501        25   15.12056   3        250       250 0.5403626  0.2
+j2502        50   45.34376   1        250       250 0.9997426  0.2
+j2503        50   52.41554   2        250       250 0.9483110  0.2
+j2504        50   45.74260   3        250       250 0.9999988  0.2
+j2505       100   98.57121   1        250       250 0.9999863  0.2
+j2506       100  108.61747   2        250       250 0.9992006  0.2
+j2507       100   94.33468   3        250       250 0.9996956  0.2
+j2508       200  183.80683   1        250       250 0.9497006  0.2
+j2509       200  181.49310   2        250       250 1.0000000  0.2
+j25010      200  199.81689   3        250       250 0.9999992  0.2
+j25011      400  392.18938   1        250       250 1.0000000  0.2
+j25012      400  394.83124   2        250       250 0.9999318  0.2
+j25013      400  338.99428   3        250       250 1.0000000  0.2
+j25014      800  885.41587   1        250       250 1.0000000  0.2
+j25015      800  660.80941   2        250       250 1.0000000  0.2
+j25016      800  869.88299   3        250       250 1.0000000  0.2
+j25017     1600 2086.10234   1        250       250 1.0000000  0.2
+j25018     1600 1329.55978   2        250       250 1.0000000  0.2
+j25019     1600 1686.13276   3        250       250 1.0000000  0.2
+       converged_iter iw_seconds x_seconds fit_seconds
+j250               48      0.009     0.021       0.226
+j251               60      0.010     0.015       0.240
+j2501              77      0.010     0.013       0.318
+j2502              31      0.009     0.014       0.130
+j2503              33      0.009     0.015       0.137
+j2504              34      0.009     0.014       0.141
+j2505              20      0.010     0.015       0.086
+j2506              19      0.009     0.015       0.083
+j2507              22      0.009     0.014       0.094
+j2508              13      0.009     0.014       0.058
+j2509              10      0.008     0.015       0.043
+j25010             13      0.009     0.014       0.056
+j25011              8      0.009     0.014       0.035
+j25012              7      0.010     0.015       0.031
+j25013              5      0.009     0.015       0.023
+j25014             17      0.009     0.014       0.070
+j25015             15      0.009     0.014       0.063
+j25016             18      0.010     0.014       0.074
+j25017             30      0.009     0.015       0.119
+j25018             23      0.009     0.015       0.093
+j25019             26      0.009     0.015       0.104</code></pre>
+<pre class="r"><code>nu0_summary &lt;- aggregate(
+  cbind(nu0_hat, top_pi, converged_iter, iw_seconds, x_seconds, fit_seconds) ~ nu0_true,
+  data = nu0_results,
+  FUN = mean
+)
+nu0_summary</code></pre>
+<pre><code>  nu0_true    nu0_hat    top_pi converged_iter  iw_seconds  x_seconds
+1       25   21.91539 0.6898634      61.666667 0.009666667 0.01633333
+2       50   47.83397 0.9826841      32.666667 0.009000000 0.01433333
+3      100  100.50779 0.9996275      20.333333 0.009333333 0.01466667
+4      200  188.37228 0.9832333      12.000000 0.008666667 0.01433333
+5      400  375.33830 0.9999773       6.666667 0.009333333 0.01466667
+6      800  805.36942 1.0000000      16.666667 0.009333333 0.01400000
+7     1600 1700.59830 1.0000000      26.333333 0.009000000 0.01500000
+  fit_seconds
+1  0.26133333
+2  0.13600000
+3  0.08766667
+4  0.05233333
+5  0.02966667
+6  0.06900000
+7  0.10533333</code></pre>
+<pre class="r"><code>colSums(nu0_results[, c(&quot;iw_seconds&quot;, &quot;x_seconds&quot;, &quot;fit_seconds&quot;)])</code></pre>
+<pre><code> iw_seconds   x_seconds fit_seconds 
+      0.193       0.310       2.224 </code></pre>
+<pre class="r"><code>plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  pch = 19,
+  col = &quot;steelblue&quot;,
+  xlab = expression(&quot;true &quot; * nu[0]),
+  ylab = expression(&quot;estimated &quot; * nu[0]),
+  main = expression(&quot;SER-relax &quot; * nu[0] * &quot; recovery&quot;)
+)
+abline(0, 1, lty = 2, col = &quot;gray40&quot;)
+lines(nu0_summary$nu0_true, nu0_summary$nu0_hat, type = &quot;b&quot;, pch = 17, lwd = 2)
+grid()</code></pre>
+<p><img src="figure/SER-relax-demonstrate.Rmd/plot-raw-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  log = &quot;xy&quot;,
+  pch = 19,
+  col = &quot;steelblue&quot;,
+  xlab = expression(&quot;true &quot; * nu[0] * &quot; (log scale)&quot;),
+  ylab = expression(&quot;estimated &quot; * nu[0] * &quot; (log scale)&quot;),
+  main = expression(&quot;SER-relax &quot; * nu[0] * &quot; recovery, log-log&quot;)
+)
+abline(0, 1, lty = 2, col = &quot;gray40&quot;)
+lines(nu0_summary$nu0_true, nu0_summary$nu0_hat, type = &quot;b&quot;, pch = 17, lwd = 2)
+grid()</code></pre>
+<p><img src="figure/SER-relax-demonstrate.Rmd/plot-loglog-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS Tahoe 26.5.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] workflowr_1.7.2
+
+loaded via a namespace (and not attached):
+ [1] Matrix_1.7-4      jsonlite_2.0.0    compiler_4.5.2    promises_1.5.0   
+ [5] Rcpp_1.1.1        stringr_1.6.0     git2r_0.36.2      callr_3.7.6      
+ [9] later_1.4.8       jquerylib_0.1.4   png_0.1-9         yaml_2.3.12      
+[13] fastmap_1.2.0     lattice_0.22-7    reticulate_1.46.0 R6_2.6.1         
+[17] knitr_1.51        MASS_7.3-65       tibble_3.3.1      rprojroot_2.1.1  
+[21] bslib_0.10.0      pillar_1.11.1     rlang_1.2.0       cachem_1.1.0     
+[25] stringi_1.8.7     httpuv_1.6.17     xfun_0.56         getPass_0.2-4    
+[29] fs_2.1.0          sass_0.4.10       otel_0.2.0        cli_3.6.6        
+[33] withr_3.0.2       magrittr_2.0.4    ps_1.9.1          grid_4.5.2       
+[37] digest_0.6.39     processx_3.8.6    rstudioapi_0.18.0 lifecycle_1.0.5  
+[41] vctrs_0.7.1       evaluate_1.0.5    glue_1.8.0        whisker_0.4.1    
+[45] rmarkdown_2.30    httr_1.4.8        tools_4.5.2       pkgconfig_2.0.3  
+[49] htmltools_0.5.9  </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
