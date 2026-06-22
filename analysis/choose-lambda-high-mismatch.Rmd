@@ -196,7 +196,7 @@ fit_susie_out <- susie_suff_stat(
 # Fit SuSiE-relax over a grid of lambda
 
 ```{r lambda-grid-fit}
-lambda_grid <- c(1e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1)
+lambda_grid <- c(1e-5, 1e-4, 1e-3, 1e-2, 0.1, 0.2, 0.3, 0.4, 0.5)
 
 relax_fits <- lapply(lambda_grid, function(lambda) {
   Rbar <- make_rbar(R0, lambda = lambda)
@@ -257,6 +257,27 @@ best_lambda
 ```
 
 The red circle marks the \(\lambda\) with the largest final ELBO.
+
+Because maximizing the ELBO often favors large \(\lambda\) here, we zoom in on
+the large-\(\lambda\) region \(\{0.1, 0.2, 0.3, 0.4, 0.5\}\).
+
+```{r elbo-vs-lambda-zoom}
+zoom_lambdas <- c(0.1, 0.2, 0.3, 0.4, 0.5)
+zoom_summary <- lambda_summary[lambda_summary$lambda %in% zoom_lambdas, ]
+zoom_best_idx <- which.max(zoom_summary$final_elbo)
+
+plot(
+  zoom_summary$lambda, zoom_summary$final_elbo,
+  type = "b", lwd = 2, pch = 16,
+  xlab = expression(lambda), ylab = "Final ELBO",
+  main = "High mismatch: final ELBO vs lambda (zoomed)"
+)
+points(
+  zoom_summary$lambda[zoom_best_idx], zoom_summary$final_elbo[zoom_best_idx],
+  col = "red", pch = 1, cex = 2.5, lwd = 2
+)
+grid()
+```
 
 # PIP of the best lambda vs susieR on R0
 
