@@ -92,7 +92,7 @@ The main empirical behavior we want to demonstrate is:
 
 - When the reference LD mismatch is low, ordinary SuSiE and SuSiE-relax both recover the two true signals.
 
-- When the reference LD mismatch is high, ordinary SuSiE with out-of-sample LD can overfit and select all \(L=5\) effects, while SuSiE-relax responds by learning a small \(\nu_0\), using stronger LD relaxation, and selecting fewer effects.
+- When the reference LD mismatch is high, ordinary SuSiE with out-of-sample LD can overfit and select all \(L=5\) effects, while SuSiE-relax responds by learning a small \(\nu_0\), using stronger LD relaxation, and selecting only one effect.
 
 ```{r helper-functions}
 standardize_sim <- function(res) {
