@@ -13,7 +13,7 @@
 
 <title>Home</title>
 
-<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
@@ -328,7 +328,7 @@ title="This is the local directory in which the code in this file was executed."
 This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
 analysis was created with <a
   href="https://github.com/workflowr/workflowr">workflowr</a> (version
-1.7.2). The <em>Checks</em> tab describes the reproducibility checks
+1.7.1). The <em>Checks</em> tab describes the reproducibility checks
 that were applied when the results were created. The <em>Past
 versions</em> tab lists the development history.
 </p>
@@ -357,15 +357,15 @@ results.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree74799f220abc63a207fbbd13dc99dfbaec87efd0targetblank74799f2a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtreebec8a52ef2160491a5f5c36f7efaaa2dab2f2060targetblankbec8a52a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/dodat-stats/susie-relax/tree/74799f220abc63a207fbbd13dc99dfbaec87efd0" target="_blank">74799f2</a>
+<a href="https://github.com/dodat-stats/susie-relax/tree/bec8a52ef2160491a5f5c36f7efaaa2dab2f2060" target="_blank">bec8a52</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree74799f220abc63a207fbbd13dc99dfbaec87efd0targetblank74799f2a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtreebec8a52ef2160491a5f5c36f7efaaa2dab2f2060targetblankbec8a52a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -375,7 +375,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/dodat-stats/susie-relax/tree/74799f220abc63a207fbbd13dc99dfbaec87efd0" target="_blank">74799f2</a>.
+<a href="https://github.com/dodat-stats/susie-relax/tree/bec8a52ef2160491a5f5c36f7efaaa2dab2f2060" target="_blank">bec8a52</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -390,17 +390,12 @@ were generated:
 </p>
 <pre><code>
 Ignored files:
-    Ignored:    .DS_Store
     Ignored:    .Rproj.user/
-    Ignored:    analysis/.DS_Store
+    Ignored:    .claude/
+    Ignored:    analysis/.Rhistory
 
-Untracked files:
-    Untracked:  code/SER-relax-prototype.R
-    Untracked:  code/SER-relax.R
-    Untracked:  code/SuSiE-relax.R
-    Untracked:  code/plot.R
-    Untracked:  code/sim_2pop.R
-    Untracked:  tex/
+Unstaged changes:
+    Modified:   analysis/susie-relax-demonstrate.Rmd
 
 </code></pre>
 <p>
@@ -415,6 +410,7 @@ have uncommitted changes.
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
+
 <p>
 These are the previous versions of the repository in which changes were
 made to the R Markdown (<code>analysis/index.Rmd</code>) and HTML
@@ -444,6 +440,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/dodat-stats/susie-relax/blob/bec8a52ef2160491a5f5c36f7efaaa2dab2f2060/analysis/index.Rmd" target="_blank">bec8a52</a>
+</td>
+<td>
+dodat-stats
+</td>
+<td>
+2026-06-22
+</td>
+<td>
+Add lambda-selection analyses (low- and
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/dodat-stats/susie-relax/30a0d958a8cdda7bd0ca5867369f7927ac39d509/docs/index.html" target="_blank">30a0d95</a>
+</td>
+<td>
+dodat-stats
+</td>
+<td>
+2026-06-22
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -535,12 +565,18 @@ algorithm that is much faster and can still recover the true <span
 class="math inline">\(\nu_0\)</span> and is interpretable.</p></li>
 <li><p><a href="susie-relax-demonstrate.html">SuSiE-relax
 Demonstration</a> - SuSiE extension of the SER model above.</p></li>
+<li><p><a href="choose-lambda-low-mismatch.html">Choosing lambda
+(low-mismatch case)</a> - How the ridge parameter <span
+class="math inline">\(\lambda\)</span> in <span
+class="math inline">\(\bar R = (1-\lambda) R_0 + \lambda I\)</span>
+affects the fine-mapping result, using the final ELBO to select <span
+class="math inline">\(\lambda\)</span>.</p></li>
+<li><p><a href="choose-lambda-high-mismatch.html">Choosing lambda
+(high-mismatch case)</a> - The same <span
+class="math inline">\(\lambda\)</span> investigation in the
+high-mismatch regime, where the reference panel is small and susieR on
+<span class="math inline">\(R_0\)</span> overfits.</p></li>
 </ol>
-</div>
-</div>
-</div>
-</div>
-</div>
 
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
