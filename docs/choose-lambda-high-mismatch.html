@@ -15,7 +15,7 @@
 
 <title>Choosing lambda (high-mismatch case)</title>
 
-<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
@@ -408,7 +408,7 @@ title="This is the local directory in which the code in this file was executed."
 This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
 analysis was created with <a
   href="https://github.com/workflowr/workflowr">workflowr</a> (version
-1.7.1). The <em>Checks</em> tab describes the reproducibility checks
+1.7.2). The <em>Checks</em> tab describes the reproducibility checks
 that were applied when the results were created. The <em>Past
 versions</em> tab lists the development history.
 </p>
@@ -521,15 +521,15 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtreebec8a52ef2160491a5f5c36f7efaaa2dab2f2060targetblankbec8a52a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtreed0b71ae91cdb8f5f4e1e1daa3173f4edd14d8e7dtargetblankd0b71aea">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/dodat-stats/susie-relax/tree/bec8a52ef2160491a5f5c36f7efaaa2dab2f2060" target="_blank">bec8a52</a>
+<a href="https://github.com/dodat-stats/susie-relax/tree/d0b71ae91cdb8f5f4e1e1daa3173f4edd14d8e7d" target="_blank">d0b71ae</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtreebec8a52ef2160491a5f5c36f7efaaa2dab2f2060targetblankbec8a52a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtreed0b71ae91cdb8f5f4e1e1daa3173f4edd14d8e7dtargetblankd0b71aea"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -539,7 +539,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/dodat-stats/susie-relax/tree/bec8a52ef2160491a5f5c36f7efaaa2dab2f2060" target="_blank">bec8a52</a>.
+<a href="https://github.com/dodat-stats/susie-relax/tree/d0b71ae91cdb8f5f4e1e1daa3173f4edd14d8e7d" target="_blank">d0b71ae</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -554,12 +554,10 @@ were generated:
 </p>
 <pre><code>
 Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
-    Ignored:    .claude/
-    Ignored:    analysis/.Rhistory
-
-Unstaged changes:
-    Modified:   analysis/susie-relax-demonstrate.Rmd
+    Ignored:    analysis/.DS_Store
 
 </code></pre>
 <p>
@@ -574,7 +572,6 @@ have uncommitted changes.
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
-
 <p>
 These are the previous versions of the repository in which changes were
 made to the R Markdown
@@ -606,6 +603,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/dodat-stats/susie-relax/blob/d0b71ae91cdb8f5f4e1e1daa3173f4edd14d8e7d/analysis/choose-lambda-high-mismatch.Rmd" target="_blank">d0b71ae</a>
+</td>
+<td>
+dodat-stats
+</td>
+<td>
+2026-06-22
+</td>
+<td>
+update high-mismatch case
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/dodat-stats/susie-relax/cff4fc94c23e34c72b5cac257580ca2d0bf37fb6/docs/choose-lambda-high-mismatch.html" target="_blank">cff4fc9</a>
+</td>
+<td>
+dodat-stats
+</td>
+<td>
+2026-06-22
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -819,7 +850,7 @@ not depend on <span class="math inline">\(\lambda\)</span>.</p>
 number="3">
 <h1><span class="header-section-number">3</span> Fit SuSiE-relax over a
 grid of lambda</h1>
-<pre class="r"><code>lambda_grid &lt;- c(1e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1)
+<pre class="r"><code>lambda_grid &lt;- c(1e-5, 1e-4, 1e-3, 1e-2, 0.1, 0.2, 0.3, 0.4, 0.5)
 
 relax_fits &lt;- lapply(lambda_grid, function(lambda) {
   Rbar &lt;- make_rbar(R0, lambda = lambda)
@@ -857,14 +888,15 @@ lambda_summary &lt;- do.call(rbind, lapply(seq_along(lambda_grid), function(i) {
 
 lambda_summary</code></pre>
 <pre><code>  lambda final_elbo n_iter       nu0        tau2 selected_L   causal_pip
-1  1e-05  -578.7899   3000  10.00000 0.076923077          1 0.003, 0.003
+1  1e-05  -578.7944   3000  10.00000 0.076923077          1 0.003, 0.003
 2  1e-04   777.6574   3000  10.00000 0.076923077          1 0.003, 0.003
-3  5e-04  1667.6124   2417  10.00000 0.076923077          1 0.003, 0.003
-4  1e-03  2063.1240   1400  10.00000 0.076923077          1 0.003, 0.004
-5  5e-03  1907.7697   3000 238.48964 0.004140964          2 0.003, 0.003
-6  1e-02  3357.6279   1480  10.00000 0.076923077          1 1.000, 0.004
-7  5e-02  3524.6008    765  10.00000 0.076923077          1 0.972, 0.007
-8  1e-01  3548.5816    736  24.56976 0.036271630          1 0.993, 0.005</code></pre>
+3  1e-03  2063.1240   1400  10.00000 0.076923077          1 0.003, 0.004
+4  1e-02  3357.6279   1480  10.00000 0.076923077          1 1.000, 0.004
+5  1e-01  3548.5816    736  24.56976 0.036271630          1 0.993, 0.005
+6  2e-01  3559.7987    738  60.18752 0.015825910          1 1.000, 0.006
+7  3e-01  3553.7752    952 106.67634 0.009117737          1 1.000, 0.014
+8  4e-01  3538.3390    976 173.74898 0.005657741          1 1.000, 0.101
+9  5e-01  3527.9293    544 892.10511 0.001117187          4 1.000, 0.998</code></pre>
 </div>
 <div id="final-elbo-against-lambda" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Final ELBO against
@@ -883,11 +915,68 @@ points(
   col = &quot;red&quot;, pch = 1, cex = 2.5, lwd = 2
 )
 grid()</code></pre>
-<p><img src="figure/choose-lambda-high-mismatch.Rmd/elbo-vs-lambda-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/choose-lambda-high-mismatch.Rmd/elbo-vs-lambda-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-elbo-vs-lambda-1">
+Past versions of elbo-vs-lambda-1.png
+</button>
+</p>
+<div id="fig-elbo-vs-lambda-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/dodat-stats/susie-relax/blob/cff4fc94c23e34c72b5cac257580ca2d0bf37fb6/docs/figure/choose-lambda-high-mismatch.Rmd/elbo-vs-lambda-1.png" target="_blank">cff4fc9</a>
+</td>
+<td>
+dodat-stats
+</td>
+<td>
+2026-06-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code>best_lambda</code></pre>
-<pre><code>[1] 0.1</code></pre>
+<pre><code>[1] 0.2</code></pre>
 <p>The red circle marks the <span class="math inline">\(\lambda\)</span>
 with the largest final ELBO.</p>
+<p>Because maximizing the ELBO often favors large <span
+class="math inline">\(\lambda\)</span> here, we zoom in on the
+large-<span class="math inline">\(\lambda\)</span> region <span
+class="math inline">\(\{0.1, 0.2, 0.3, 0.4, 0.5\}\)</span>.</p>
+<pre class="r"><code>zoom_lambdas &lt;- c(0.1, 0.2, 0.3, 0.4, 0.5)
+zoom_summary &lt;- lambda_summary[lambda_summary$lambda %in% zoom_lambdas, ]
+zoom_best_idx &lt;- which.max(zoom_summary$final_elbo)
+
+plot(
+  zoom_summary$lambda, zoom_summary$final_elbo,
+  type = &quot;b&quot;, lwd = 2, pch = 16,
+  xlab = expression(lambda), ylab = &quot;Final ELBO&quot;,
+  main = &quot;High mismatch: final ELBO vs lambda (zoomed)&quot;
+)
+points(
+  zoom_summary$lambda[zoom_best_idx], zoom_summary$final_elbo[zoom_best_idx],
+  col = &quot;red&quot;, pch = 1, cex = 2.5, lwd = 2
+)
+grid()</code></pre>
+<p><img src="figure/choose-lambda-high-mismatch.Rmd/elbo-vs-lambda-zoom-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="pip-of-the-best-lambda-vs-susier-on-r0" class="section level1"
 number="5">
@@ -917,10 +1006,10 @@ summary &lt;- rbind(
 summary</code></pre>
 <pre><code>                           method selected_L      nu0               gamma_hat
 1                  susieR with R0          4       NA 336, 579, 697, 322, 405
-2 SuSiE-relax (best lambda = 0.1)          1 24.56976 336, 579, 579, 579, 579
+2 SuSiE-relax (best lambda = 0.2)          1 60.18752 336, 565, 565, 565, 565
                           top_alpha   causal_pip
 1 1.000, 1.000, 0.660, 0.991, 0.327 1.000, 0.000
-2 0.993, 0.001, 0.001, 0.001, 0.001 0.993, 0.005</code></pre>
+2 1.000, 0.001, 0.001, 0.001, 0.001 1.000, 0.006</code></pre>
 <pre class="r"><code>old_par &lt;- par(no.readonly = TRUE)
 par(mfrow = c(1, 2))
 plot_pip(
@@ -935,7 +1024,44 @@ plot_pip(
   beta_true,
   main = sprintf(&quot;SuSiE-relax (lambda = %g)&quot;, best_lambda)
 )</code></pre>
-<p><img src="figure/choose-lambda-high-mismatch.Rmd/best-pip-plots-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/choose-lambda-high-mismatch.Rmd/best-pip-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-best-pip-plots-1">
+Past versions of best-pip-plots-1.png
+</button>
+</p>
+<div id="fig-best-pip-plots-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/dodat-stats/susie-relax/blob/cff4fc94c23e34c72b5cac257580ca2d0bf37fb6/docs/figure/choose-lambda-high-mismatch.Rmd/best-pip-plots-1.png" target="_blank">cff4fc9</a>
+</td>
+<td>
+dodat-stats
+</td>
+<td>
+2026-06-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code>par(old_par)</code></pre>
 <br>
 <p>
@@ -946,13 +1072,13 @@ Session information
 </p>
 <div id="workflowr-sessioninfo" class="collapse">
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 4.3.2 (2023-10-31)
-Platform: aarch64-apple-darwin20 (64-bit)
-Running under: macOS 26.5.1
+<pre><code>R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS Tahoe 26.5.1
 
 Matrix products: default
 BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
-LAPACK: /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.11.0
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -964,25 +1090,30 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] susieR_0.14.2   workflowr_1.7.1
+[1] susieR_0.14.2   workflowr_1.7.2
 
 loaded via a namespace (and not attached):
  [1] sass_0.4.10        generics_0.1.4     stringi_1.8.7      lattice_0.22-7    
- [5] digest_0.6.39      magrittr_2.0.3     evaluate_1.0.5     grid_4.3.2        
+ [5] digest_0.6.39      magrittr_2.0.4     evaluate_1.0.5     grid_4.5.2        
  [9] RColorBrewer_1.1-3 fastmap_1.2.0      plyr_1.8.9         rprojroot_2.1.1   
-[13] jsonlite_2.0.0     Matrix_1.6-1.1     processx_3.8.6     whisker_0.4.1     
-[17] reshape_0.8.10     ps_1.9.1           mixsqp_0.3-54      promises_1.5.0    
-[21] httr_1.4.7         scales_1.4.0       jquerylib_0.1.4    cli_3.6.5         
-[25] rlang_1.1.6        crayon_1.5.3       withr_3.0.2        cachem_1.1.0      
-[29] yaml_2.3.10        otel_0.2.0         tools_4.3.2        dplyr_1.1.4       
-[33] ggplot2_3.5.2      httpuv_1.6.16      reticulate_1.42.0  png_0.1-8         
-[37] vctrs_0.6.5        R6_2.6.1           matrixStats_1.5.0  lifecycle_1.0.4   
-[41] git2r_0.36.2       stringr_1.6.0      fs_1.6.6           irlba_2.3.5.1     
-[45] pkgconfig_2.0.3    callr_3.7.6        pillar_1.11.1      bslib_0.9.0       
-[49] later_1.4.2        gtable_0.3.6       glue_1.8.0         Rcpp_1.1.0        
-[53] xfun_0.52          tibble_3.3.0       tidyselect_1.2.1   rstudioapi_0.17.1 
-[57] knitr_1.50         farver_2.1.2       htmltools_0.5.8.1  rmarkdown_2.29    
-[61] compiler_4.3.2     getPass_0.2-4     </code></pre>
+[13] jsonlite_2.0.0     Matrix_1.7-4       processx_3.8.6     whisker_0.4.1     
+[17] reshape_0.8.10     mixsqp_0.3-54      ps_1.9.1           promises_1.5.0    
+[21] httr_1.4.8         scales_1.4.0       jquerylib_0.1.4    cli_3.6.6         
+[25] rlang_1.2.0        crayon_1.5.3       withr_3.0.2        cachem_1.1.0      
+[29] yaml_2.3.12        otel_0.2.0         tools_4.5.2        dplyr_1.2.0       
+[33] ggplot2_4.0.2      httpuv_1.6.17      reticulate_1.46.0  png_0.1-9         
+[37] vctrs_0.7.1        R6_2.6.1           matrixStats_1.5.0  lifecycle_1.0.5   
+[41] git2r_0.36.2       stringr_1.6.0      fs_2.1.0           irlba_2.3.7       
+[45] pkgconfig_2.0.3    callr_3.7.6        pillar_1.11.1      bslib_0.10.0      
+[49] later_1.4.8        gtable_0.3.6       glue_1.8.0         Rcpp_1.1.1        
+[53] xfun_0.56          tibble_3.3.1       tidyselect_1.2.1   rstudioapi_0.18.0 
+[57] knitr_1.51         farver_2.1.2       htmltools_0.5.9    rmarkdown_2.30    
+[61] compiler_4.5.2     getPass_0.2-4      S7_0.2.1          </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 
