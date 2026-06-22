@@ -1,0 +1,750 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue]{hyperref}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\Om}{\Omega}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Unif}{\operatorname{Unif}}
+\newcommand{\IG}{\operatorname{IG}}
+\newcommand{\Gam}{\operatorname{Gamma}}
+\newcommand{\Normal}{\mathcal N}
+
+\title{SuSiE-relax: Prototype and Lite Variational Inference}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+Computation note of the susie-relax model.
+
+Throughout, \(x\in\mathbb R^J\) is the vector of marginal summary
+statistics, \(N\) is the GWAS sample size, and \(\Rbar\) is a reference
+LD correlation matrix. We write
+\[
+\Om=\Rbar^{-1},\qquad
+\mu_j=\Rbar_{-j,j},\qquad
+S_j=\Rbar_{-j,-j}-\Rbar_{-j,j}\Rbar_{j,-j}.
+\]
+For \(z_j\in\mathbb R^{J-1}\), let \(u_j(z_j)\in\mathbb R^J\) be the
+vector with \(j\)-th entry equal to \(1\) and remaining entries equal to
+\(z_j\).
+
+\section{SER-relax-prototype}
+
+SER-relax-prototype is the original single-effect regression model with
+uncertainty in the active LD column. The model is
+\begin{align}
+x\mid \beta,\gamma=j,d_j,z_j
+&\sim
+\Normal_J\left(\beta d_j u_j(z_j),\frac{\Rbar}{N}\right),\\
+\beta&\sim \Normal(0,\sigma_0^2),\\
+\gamma&\sim \Unif\{1,\ldots,J\}.
+\end{align}
+The relaxed LD column is induced by an inverse-Wishart model for the
+unknown correlation matrix \(R\),
+\[
+R\sim IW_J(\nu_0\Rbar,\nu_0+J+1).
+\]
+For a fixed column \(j\), define \(d_j=R_{jj}\) and
+\(z_j=R_{-j,j}/R_{jj}\). The induced column model is
+\begin{align}
+d_j&\sim
+\IG\left(\frac{\nu_0+2}{2},\frac{\nu_0}{2}\right),\\
+z_j\mid \omega_j
+&\sim
+\Normal_{J-1}\left(\mu_j,\frac{S_j}{\omega_j}\right),\\
+\omega_j&\sim
+\Gam\left(\frac{\nu_0+3}{2},\frac12\right),
+\end{align}
+using the shape--rate parameterization for Gamma distributions. Larger
+\(\nu_0\) concentrates \(R\) around \(\Rbar\); smaller \(\nu_0\) allows
+the active LD column to move farther away from the reference LD.
+
+\subsection{Variational Inference}
+
+We use the mean-field approximation
+\[
+q(\gamma=j,\beta,d_j,z_j,\omega_j)
+=
+\pi_j q_j(\beta)q_j(d_j)q_j(z_j)q_j(\omega_j),
+\]
+where
+\[
+q_j(\beta)=\Normal(m_{\beta j},v_{\beta j}),\qquad
+q_j(z_j)=\Normal_{J-1}(m_{zj},V_{zj}),
+\]
+and
+\[
+q_j(\omega_j)=\Gam(\alpha_{\omega j},\beta_{\omega j}).
+\]
+Let
+\[
+\bar\beta_j=m_{\beta j},\quad
+\overline{\beta^2}_j=v_{\beta j}+m_{\beta j}^2,\quad
+\bar d_j=\E_j[d_j],\quad
+\overline{d_j^2}=\E_j[d_j^2],\quad
+\bar\omega_j=\E_j[\omega_j].
+\]
+Define
+\begin{align}
+A_j
+&=
+1+\tr(S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)^\top S_j^{-1}(m_{zj}-\mu_j),\\
+B_j
+&=
+x_j+(m_{zj}-\mu_j)^\top S_j^{-1}(x_{-j}-\mu_jx_j),\\
+Q_j
+&=
+\tr(S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)^\top S_j^{-1}(m_{zj}-\mu_j).
+\end{align}
+Then the Gaussian update for the effect size is
+\begin{align}
+v_{\beta j}
+&=
+\left(\sigma_0^{-2}+N\overline{d_j^2}A_j\right)^{-1},\\
+m_{\beta j}
+&=
+v_{\beta j}N\bar d_jB_j.
+\end{align}
+Let
+\[
+T_{1j}=\bar\beta_j\bar d_j,\qquad
+T_{2j}=\overline{\beta^2}_j\overline{d_j^2}.
+\]
+The Gaussian update for the relaxed LD column is
+\begin{align}
+V_{zj}
+&=
+\frac{S_j}{NT_{2j}+\bar\omega_j},\\
+m_{zj}
+&=
+\mu_j+
+\frac{NT_{1j}}{NT_{2j}+\bar\omega_j}
+(x_{-j}-\mu_jx_j).
+\end{align}
+The Gamma factor for \(\omega_j\) is
+\begin{align}
+\alpha_{\omega j}
+&=
+\frac{\nu_0+J+2}{2},\\
+\beta_{\omega j}
+&=
+\frac{1+Q_j}{2}.
+\end{align}
+The factor \(q_j(d_j)\) is non-standard. Its optimal density is
+\[
+q_j(d_j)
+\propto
+d_j^{-(\nu_0+2)/2-1}
+\exp\left\{
+-\frac{\nu_0}{2d_j}
+-\frac{N}{2}\overline{\beta^2}_jA_jd_j^2
++N\bar\beta_jB_jd_j
+\right\},
+\qquad d_j>0.
+\]
+In implementation we work with \(r_j=\log d_j\). The unnormalized
+log-density in \(r_j\), including the Jacobian, is
+\[
+\ell_j(r)
+=
+-\left(\frac{\nu_0+2}{2}+1\right)r
+-\frac{\nu_0}{2e^r}
+-\frac{N}{2}\overline{\beta^2}_jA_je^{2r}
++N\bar\beta_jB_je^r
++r.
+\]
+Numerical quadrature over \(r\) gives
+\(\E_j[d_j]\), \(\E_j[d_j^2]\), \(\E_j[d_j^{-1}]\),
+\(\E_j[\log d_j]\), and \(E_j[\log q_j(d_j)]\).
+
+The coordinate probability is
+\[
+\pi_j=
+\frac{\exp(\mathcal L_j)}
+{\sum_{k=1}^J\exp(\mathcal L_k)},
+\]
+where the local lower bound is
+\begin{align}
+\mathcal L_j
+&=
+\log(1/J)
++E_j\log p(x\mid \beta,d_j,z_j,\gamma=j)
++E_j\log p(\beta)
++E_j\log p(d_j\mid\nu_0) \nonumber\\
+&\quad
++E_j\log p(\omega_j\mid\nu_0)
++E_j\log p(z_j\mid\omega_j)
+-E_j\log q_j(\beta)
+-E_j\log q_j(d_j) \nonumber\\
+&\quad
+-E_j\log q_j(\omega_j)
+-E_j\log q_j(z_j).
+\end{align}
+The full SER-relax-prototype ELBO is
+\[
+\mathcal L_{\mathrm{prototype}}
+=
+\sum_{j=1}^J
+\pi_j\{\mathcal L_j-\log\pi_j\}.
+\]
+
+\subsection{\texorpdfstring{Learning \(\nu_0\)}{Learning nu0}}
+
+Holding \(q\) fixed, the \(\nu_0\)-dependent part of the prototype ELBO
+is
+\[
+M_{\mathrm{prototype}}(\nu_0)
+=
+\sum_{j=1}^J
+\pi_j
+\left\{
+E_j\log p(d_j\mid\nu_0)
++E_j\log p(\omega_j\mid\nu_0)
+\right\}.
+\]
+With
+\[
+a_d=\frac{\nu_0+2}{2},\quad b_d=\frac{\nu_0}{2},\quad
+a_\omega=\frac{\nu_0+3}{2},\quad b_\omega=\frac12,
+\]
+this objective becomes
+\begin{align}
+M_{\mathrm{prototype}}(\nu_0)
+&=
+\sum_{j=1}^J\pi_j
+\Big[
+a_d\log b_d-\log\Gamma(a_d)
+-(a_d+1)\E_j\log d_j
+-b_d\E_j(d_j^{-1}) \nonumber\\
+&\qquad\qquad
++a_\omega\log b_\omega-\log\Gamma(a_\omega)
++(a_\omega-1)\E_j\log\omega_j
+-b_\omega\E_j\omega_j
+\Big].
+\end{align}
+This one-dimensional objective can be optimized directly over
+\(\nu_0>0\), or over \(\eta=\log\nu_0\) with Newton updates. Direct
+bounded optimization is usually more stable in practice.
+
+\subsection{Implementation Algebra}
+
+The key identities come from the block inverse of \(\Rbar\). Because
+\(\Rbar\) is a correlation matrix,
+\[
+\Om_{-j,-j}=S_j^{-1},\qquad
+\Om_{-j,j}=-S_j^{-1}\mu_j.
+\]
+Therefore
+\begin{align}
+u_j(z_j)^\top\Om u_j(z_j)
+&=
+1+(z_j-\mu_j)^\top S_j^{-1}(z_j-\mu_j),\\
+u_j(z_j)^\top\Om x
+&=
+x_j+(z_j-\mu_j)^\top S_j^{-1}(x_{-j}-\mu_jx_j).
+\end{align}
+These identities avoid repeated manipulation of full \(J\times J\)
+columns. The prototype is nevertheless computationally heavier than the
+main method because it requires quadrature for every \(q_j(d_j)\) and a
+Gamma update for every \(q_j(\omega_j)\).
+
+\section{SER-relax}
+
+SER-relax is the simplified single-effect model. It keeps the central
+idea that the active LD column can relax around \(\Rbar\), but removes
+the two latent variables that made the prototype slow:
+\[
+d_j=1,\qquad
+\omega_j=\nu_0+3.
+\]
+Equivalently, with
+\[
+\tau^2=(\nu_0+3)^{-1},\qquad \tau^{-2}=\nu_0+3,
+\]
+the relaxed-column prior is
+\[
+z_j\mid\nu_0\sim
+\Normal_{J-1}(\mu_j,\tau^2S_j).
+\]
+The single-effect model is
+\begin{align}
+x\mid\beta,\gamma=j,z_j
+&\sim
+\Normal_J\left(\beta u_j(z_j),\frac{\Rbar}{N}\right),\\
+\beta&\sim \Normal(0,\sigma_0^2),\\
+\gamma&\sim\Unif\{1,\ldots,J\}.
+\end{align}
+
+\subsection{Variational Inference}
+
+We use
+\[
+q(\gamma=j,\beta,z_j)=\pi_jq_j(\beta)q_j(z_j),
+\]
+where
+\[
+q_j(\beta)=\Normal(m_{\beta j},v_{\beta j}),\qquad
+q_j(z_j)=\Normal_{J-1}(m_{zj},V_{zj}).
+\]
+For a current \(q_j(z_j)\), define
+\[
+\bar\beta_j=m_{\beta j},\qquad
+\overline{\beta^2}_j=v_{\beta j}+m_{\beta j}^2,
+\]
+and the same \(A_j\), \(B_j\), and \(Q_j\) as above, but without \(d_j\)
+and \(\omega_j\). The update for \(q_j(\beta)\) is
+\begin{align}
+v_{\beta j}
+&=
+\left(\sigma_0^{-2}+NA_j\right)^{-1},\\
+m_{\beta j}
+&=
+v_{\beta j}NB_j.
+\end{align}
+The update for \(q_j(z_j)\) is
+\begin{align}
+V_{zj}
+&=
+\frac{S_j}{N\overline{\beta^2}_j+\tau^{-2}},\\
+m_{zj}
+&=
+\mu_j+
+\frac{N\bar\beta_j}
+{N\overline{\beta^2}_j+\tau^{-2}}
+(x_{-j}-\mu_jx_j).
+\end{align}
+The local lower bound is
+\begin{align}
+\mathcal L_j^{\mathrm{SER}}
+&=
+\log(1/J)
++E_j\log p(x\mid\beta,z_j,\gamma=j)
++E_j\log p(\beta)
++E_j\log p(z_j\mid\nu_0) \nonumber\\
+&\quad
+-E_j\log q_j(\beta)
+-E_j\log q_j(z_j).
+\end{align}
+Thus
+\[
+\pi_j=
+\frac{\exp(\mathcal L_j^{\mathrm{SER}})}
+{\sum_{k=1}^J\exp(\mathcal L_k^{\mathrm{SER}})}.
+\]
+The expected log-likelihood is
+\begin{align}
+E_j\log p(x\mid\beta,z_j,\gamma=j)
+&=
+-\frac{J}{2}\log(2\pi)
+-\frac12\log\left|\frac{\Rbar}{N}\right| \nonumber\\
+&\quad
+-\frac{N}{2}
+\left[
+x^\top\Om x
+-2\bar\beta_jB_j
++\overline{\beta^2}_jA_j
+\right].
+\end{align}
+The relaxed-column prior contribution is
+\[
+E_j\log p(z_j\mid\nu_0)
+=
+-\frac{J-1}{2}\log(2\pi)
+-\frac12\log|S_j|
++\frac{J-1}{2}\log\tau^{-2}
+-\frac{\tau^{-2}}{2}Q_j.
+\]
+The full SER-relax ELBO is
+\[
+\mathcal L_{\mathrm{SER}}
+=
+\sum_{j=1}^J
+\pi_j
+\{\mathcal L_j^{\mathrm{SER}}-\log\pi_j\}.
+\]
+
+\subsection{\texorpdfstring{Learning \(\nu_0\)}{Learning nu0}}
+
+Holding \(q\) fixed, only the Gaussian prior terms for \(z_j\) depend on
+\(\nu_0\). Hence, up to constants,
+\[
+M_{\mathrm{SER}}(\nu_0)
+=
+\sum_{j=1}^J
+\pi_j
+\left\{
+\frac{J-1}{2}\log\tau^{-2}
+-\frac{\tau^{-2}}{2}Q_j
+\right\}.
+\]
+Since \(\sum_j\pi_j=1\), the closed-form update in the \(\tau^2\)
+parameterization is
+\[
+\hat\tau^2
+=
+\frac{\sum_{j=1}^J\pi_jQ_j}{J-1},
+\qquad
+\hat\nu_0=\frac{1}{\hat\tau^2}-3.
+\]
+In code we bound \(\nu_0\) to avoid invalid or numerically extreme
+updates. Since \(\nu_0>0\), the natural prior variance satisfies
+\(\tau^2<1/3\).
+
+\subsection{Implementation Algebra}
+
+SER-relax can be implemented without explicitly forming all
+\(S_j^{-1}\) matrices. For a vector \(r\), define
+\[
+C_j(r)
+=
+(r_{-j}-\mu_jr_j)^\top S_j^{-1}(r_{-j}-\mu_jr_j).
+\]
+The block inverse identity gives
+\[
+C_j(r)=r^\top\Om r-r_j^2.
+\]
+Also, because \(\Rbar_{jj}=1\), the Schur determinant identity gives
+\[
+|S_j|=|\Rbar|.
+\]
+Write
+\[
+z_{\mathrm{denom},j}
+=
+N\overline{\beta^2}_j+\tau^{-2},
+\qquad
+z_{\mathrm{scale},j}
+=
+\frac{N\bar\beta_j}{z_{\mathrm{denom},j}}.
+\]
+Then
+\[
+m_{zj}=\mu_j+z_{\mathrm{scale},j}(r_{-j}-\mu_jr_j),
+\qquad
+V_{zj}=S_j/z_{\mathrm{denom},j}.
+\]
+The quantities needed for the beta update and the local ELBO are
+\begin{align}
+Q_j
+&=
+\frac{J-1}{z_{\mathrm{denom},j}}
++z_{\mathrm{scale},j}^2C_j(r),\\
+A_j&=1+Q_j,\\
+B_j&=r_j+z_{\mathrm{scale},j}C_j(r).
+\end{align}
+Thus each coordinate only needs \(r_j\), \(C_j(r)\), the shared
+\(\log|\Rbar|\), and the current scalar variational parameters.
+
+\section{SuSiE-relax}
+
+SuSiE-relax is the multi-effect version of SER-relax. This is the main
+method. For effects \(\ell=1,\ldots,L\),
+\[
+\gamma_\ell\sim\Unif\{1,\ldots,J\},\qquad
+\beta_\ell\sim\Normal(0,\sigma_\ell^2),
+\]
+and, conditional on \(\gamma_\ell=j\),
+\[
+z_{\ell j}\mid\nu_0
+\sim
+\Normal_{J-1}(\mu_j,\tau^2S_j),
+\qquad
+\tau^{-2}=\nu_0+3.
+\]
+The observation model is
+\[
+x\mid\{\beta_\ell,\gamma_\ell,z_{\ell,\gamma_\ell}\}_{\ell=1}^L
+\sim
+\Normal_J
+\left(
+\sum_{\ell=1}^L
+\beta_\ell u_{\gamma_\ell}(z_{\ell,\gamma_\ell}),
+\frac{\Rbar}{N}
+\right).
+\]
+
+\subsection{Variational Inference}
+
+We use the independent effect approximation
+\[
+q=
+\prod_{\ell=1}^L
+q_\ell(\gamma_\ell)
+\prod_{j=1}^J
+q_{\ell j}(\beta_\ell)q_{\ell j}(z_{\ell j}),
+\]
+where
+\[
+q_\ell(\gamma_\ell=j)=\pi_{\ell j},\qquad
+q_{\ell j}(\beta_\ell)
+=
+\Normal(m_{\beta,\ell j},v_{\beta,\ell j}),
+\]
+and
+\[
+q_{\ell j}(z_{\ell j})
+=
+\Normal_{J-1}(m_{z,\ell j},V_{z,\ell j}).
+\]
+Define the posterior mean contribution of effect \(\ell\) by
+\[
+\bar\theta_\ell
+=
+\sum_{j=1}^J
+\pi_{\ell j}\bar\beta_{\ell j}u_j(m_{z,\ell j}).
+\]
+When updating effect \(\ell\), use the current residual
+\[
+r_\ell=x-\sum_{k\ne\ell}\bar\theta_k.
+\]
+For each coordinate \(j\), define
+\begin{align}
+A_{\ell j}
+&=
+1+\tr(S_j^{-1}V_{z,\ell j})
++(m_{z,\ell j}-\mu_j)^\top S_j^{-1}
+(m_{z,\ell j}-\mu_j),\\
+B_{\ell j}(r_\ell)
+&=
+r_{\ell j}
++(m_{z,\ell j}-\mu_j)^\top S_j^{-1}
+(r_{\ell,-j}-\mu_jr_{\ell j}),\\
+Q_{\ell j}
+&=
+\tr(S_j^{-1}V_{z,\ell j})
++(m_{z,\ell j}-\mu_j)^\top S_j^{-1}
+(m_{z,\ell j}-\mu_j).
+\end{align}
+Let
+\[
+\bar\beta_{\ell j}=m_{\beta,\ell j},\qquad
+\overline{\beta^2}_{\ell j}
+=
+v_{\beta,\ell j}+m_{\beta,\ell j}^2.
+\]
+The updates are the single-effect SER-relax updates applied to the
+residual \(r_\ell\):
+\begin{align}
+v_{\beta,\ell j}
+&=
+\left(\sigma_\ell^{-2}+NA_{\ell j}\right)^{-1},\\
+m_{\beta,\ell j}
+&=
+v_{\beta,\ell j}NB_{\ell j}(r_\ell),\\
+V_{z,\ell j}
+&=
+\frac{S_j}{N\overline{\beta^2}_{\ell j}+\tau^{-2}},\\
+m_{z,\ell j}
+&=
+\mu_j+
+\frac{N\bar\beta_{\ell j}}
+{N\overline{\beta^2}_{\ell j}+\tau^{-2}}
+(r_{\ell,-j}-\mu_jr_{\ell j}).
+\end{align}
+The coordinate weights are
+\[
+\pi_{\ell j}
+=
+\frac{
+\exp(\mathcal L_{\ell j}^{\mathrm{coord}})
+}{
+\sum_{k=1}^J
+\exp(\mathcal L_{\ell k}^{\mathrm{coord}})
+},
+\]
+where \(\mathcal L_{\ell j}^{\mathrm{coord}}\) is the SER-relax local
+lower bound computed with residual \(r_\ell\), prior variance
+\(\sigma_\ell^2\), and the variational factors for effect \(\ell\).
+After updating \(\pi_{\ell j}\), recompute \(\bar\theta_\ell\).
+
+\subsection{Full ELBO}
+
+Let
+\[
+C_x=
+-\frac{J}{2}\log(2\pi)
+-\frac12\log\left|\frac{\Rbar}{N}\right|.
+\]
+The expected log-likelihood is
+\begin{align}
+E_q\log p(x\mid\cdot)
+&=
+C_x
+-\frac{N}{2}
+\Bigg[
+x^\top\Om x
+-2\sum_{\ell=1}^L\bar\theta_\ell^\top\Om x \nonumber\\
+&\qquad
++\sum_{\ell=1}^L\sum_{j=1}^J
+\pi_{\ell j}\overline{\beta^2}_{\ell j}A_{\ell j}
++2\sum_{1\le \ell<k\le L}
+\bar\theta_\ell^\top\Om\bar\theta_k
+\Bigg].
+\end{align}
+The full SuSiE-relax ELBO is
+\begin{align}
+\mathcal L_{\mathrm{SuSiE-relax}}
+&=
+E_q\log p(x\mid\cdot) \nonumber\\
+&\quad
++\sum_{\ell=1}^L\sum_{j=1}^J
+\pi_{\ell j}
+\Big[
+\log(1/J)
++E_{\ell j}\log p(\beta_\ell)
++E_{\ell j}\log p(z_{\ell j}\mid\nu_0) \nonumber\\
+&\qquad\qquad
+-E_{\ell j}\log q_{\ell j}(\beta_\ell)
+-E_{\ell j}\log q_{\ell j}(z_{\ell j})
+\Big]
+-\sum_{\ell=1}^L\sum_{j=1}^J
+\pi_{\ell j}\log\pi_{\ell j}.
+\end{align}
+Here
+\[
+E_{\ell j}\log p(z_{\ell j}\mid\nu_0)
+=
+-\frac{J-1}{2}\log(2\pi)
+-\frac12\log|S_j|
++\frac{J-1}{2}\log\tau^{-2}
+-\frac{\tau^{-2}}{2}Q_{\ell j}.
+\]
+
+\subsection{\texorpdfstring{Learning \(\nu_0\)}{Learning nu0}}
+
+The \(\nu_0\)-dependent part of the SuSiE-relax ELBO is
+\[
+M_{\mathrm{SuSiE-relax}}(\nu_0)
+=
+\sum_{\ell=1}^L\sum_{j=1}^J
+\pi_{\ell j}
+\left\{
+\frac{J-1}{2}\log\tau^{-2}
+-\frac{\tau^{-2}}{2}Q_{\ell j}
+\right\}.
+\]
+Because \(\sum_j\pi_{\ell j}=1\) for each effect,
+\[
+\hat\tau^2
+=
+\frac{
+\sum_{\ell=1}^L\sum_{j=1}^J\pi_{\ell j}Q_{\ell j}
+}{L(J-1)},
+\qquad
+\hat\nu_0=\frac{1}{\hat\tau^2}-3.
+\]
+In implementation this update is bounded, for example by
+\(\nu_0\in[\nu_{\min},\nu_{\max}]\). Empirically, monitoring both the
+ELBO and \(\nu_0\) is important: with small reference panels, \(\nu_0\)
+can move slowly and apparent duplicated effects may be transient until
+the relaxation level has converged.
+
+\subsection{Implementation Algebra}
+
+The same scalar representation used in SER-relax applies to each
+effect-specific residual \(r_\ell\). Define
+\[
+C_{\ell j}
+=
+C_j(r_\ell)
+=
+r_\ell^\top\Om r_\ell-r_{\ell j}^2.
+\]
+With
+\[
+z_{\mathrm{denom},\ell j}
+=
+N\overline{\beta^2}_{\ell j}+\tau^{-2},
+\qquad
+z_{\mathrm{scale},\ell j}
+=
+\frac{N\bar\beta_{\ell j}}
+{z_{\mathrm{denom},\ell j}},
+\]
+we have
+\begin{align}
+Q_{\ell j}
+&=
+\frac{J-1}{z_{\mathrm{denom},\ell j}}
++z_{\mathrm{scale},\ell j}^2C_{\ell j},\\
+A_{\ell j}&=1+Q_{\ell j},\\
+B_{\ell j}(r_\ell)
+&=
+r_{\ell j}+z_{\mathrm{scale},\ell j}C_{\ell j}.
+\end{align}
+This is the main computational simplification: each effect update only
+requires the residual \(r_\ell\), the quadratic
+\(r_\ell^\top\Om r_\ell\), and coordinate-wise scalar operations.
+
+The posterior mean effect can also be computed without explicitly
+forming every \(m_{z,\ell j}\). Since
+\[
+u_j(m_{z,\ell j})
+=
+\Rbar_{\cdot j}
++z_{\mathrm{scale},\ell j}
+\{r_\ell-r_{\ell j}\Rbar_{\cdot j}\},
+\]
+the effect mean is
+\begin{align}
+\bar\theta_\ell
+&=
+\sum_{j=1}^J
+\pi_{\ell j}\bar\beta_{\ell j}
+\left[
+\Rbar_{\cdot j}
++z_{\mathrm{scale},\ell j}
+\{r_\ell-r_{\ell j}\Rbar_{\cdot j}\}
+\right] \nonumber\\
+&=
+\Rbar\,
+\left\{
+\pi_\ell\odot\bar\beta_\ell
+\odot(1-z_{\mathrm{scale},\ell}\odot r_\ell)
+\right\}
++
+r_\ell
+\sum_{j=1}^J
+\pi_{\ell j}\bar\beta_{\ell j}z_{\mathrm{scale},\ell j}.
+\end{align}
+This is the formula used by the fast implementation. It avoids building
+a \(J\times J\) matrix of relaxed columns for every effect.
+
+\subsection{IBSS Algorithm}
+
+The coordinate-ascent procedure is an IBSS-style algorithm:
+\begin{enumerate}[leftmargin=*]
+\item Initialize \(\pi_{\ell j}\), \(m_{\beta,\ell j}\),
+\(v_{\beta,\ell j}\), \(m_{z,\ell j}\), \(V_{z,\ell j}\),
+\(\bar\theta_\ell\), and \(\nu_0\).
+\item For each effect \(\ell=1,\ldots,L\), form
+\[
+r_\ell=x-\sum_{k\ne\ell}\bar\theta_k.
+\]
+\item For all coordinates \(j\), update \(q_{\ell j}(\beta_\ell)\),
+\(q_{\ell j}(z_{\ell j})\), \(A_{\ell j}\), \(B_{\ell j}\), and
+\(Q_{\ell j}\) using the scalar algebra above.
+\item Compute the coordinate lower bounds
+\(\mathcal L_{\ell j}^{\mathrm{coord}}\), update
+\(\pi_{\ell j}\) by softmax, and recompute \(\bar\theta_\ell\).
+\item After sweeping through all effects, update the shared \(\nu_0\)
+using the closed-form moment update, with bounds.
+\item Compute the full ELBO and repeat until both the ELBO and \(\nu_0\)
+have stabilized.
+\end{enumerate}
+
+\end{document}
