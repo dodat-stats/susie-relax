@@ -1,5 +1,5 @@
 ---
-title: "SuSiE-relax Demonstration"
+title: "SuSiE-relax-prime Demonstration"
 author: "Dat Do"
 date: "`r Sys.Date()`"
 output:
@@ -23,20 +23,23 @@ knitr::opts_chunk$set(
 
 library(susieR)
 
-source("code/SuSiE-relax.R")
+source("code/susie-relax-prime.R")
 source("code/sim_2pop.R")
 source("code/plot.R")
 ```
 
-# From SER-relax to SuSiE-relax
+# From SER-relax-prime to SuSiE-relax-prime
 
-SER-relax models one active effect while allowing the active LD column to relax around the reference LD matrix. SuSiE-relax extends this idea to \(L\) possible single effects:
+This page mirrors `susie-relax-demonstrate.Rmd`, but replaces the original
+SuSiE-relax fit with the prime implementation in `code/susie-relax-prime.R`.
+This method is SuSiE-relax-prime. The single-effect prime model
+uses a latent relaxed contribution vector instead of directly sampling a relaxed
+LD column in the likelihood:
 \[
-x \mid \{\beta_\ell,\gamma_\ell,z_{\ell,\gamma_\ell}\}_{\ell=1}^L
+x \mid \theta_1,\ldots,\theta_L
 \sim
 N_J\left(
-\sum_{\ell=1}^L
-\beta_\ell u_{\gamma_\ell}(z_{\ell,\gamma_\ell}),
+\sum_{\ell=1}^L \theta_\ell,
 \frac{\bar R}{N}
 \right).
 \]
@@ -48,24 +51,26 @@ For each effect,
 \]
 and, conditional on \(\gamma_\ell=j\),
 \[
-z_{\ell j}\mid \nu_0
-\sim
-N_{J-1}\left(\mu_j,\frac{S_j}{\nu_0+3}\right).
+\theta_\ell = \beta_\ell\bar R_{\cdot j}+\eta_{\ell j},
+\qquad
+\eta_{\ell j,j}=0,
+\qquad
+\eta_{\ell j,-j}\sim N_{J-1}(0,\sigma_\ell^2\tau^2S_j).
 \]
 Here
 \[
 \mu_j=\bar R_{-j,j},
 \qquad
-S_j=\bar R_{-j,-j}-\bar R_{-j,j}\bar R_{j,-j}.
+S_j=\bar R_{-j,-j}-\bar R_{-j,j}\bar R_{j,-j},
+\qquad
+\tau^2=(\nu_0+3)^{-1}.
 \]
 
 The variational approximation factorizes over effects:
 \[
 q =
 \prod_{\ell=1}^L
-q_\ell(\gamma_\ell)
-\prod_{j=1}^J
-q_{\ell j}(\beta_\ell)q_{\ell j}(z_{\ell j}).
+q_\ell(\gamma_\ell,\beta_\ell,\eta_\ell).
 \]
 The inference algorithm is IBSS-like. When updating effect \(\ell\), we form the residual
 \[
@@ -75,36 +80,30 @@ where
 \[
 \bar\theta_\ell =
 \sum_{j=1}^J
-\pi_{\ell j}E\{\beta_\ell u_j(z_{\ell j})\}.
+\alpha_{\ell j}
+\left[
+m_{\ell j}\bar R_{\cdot j}
+\;+\;
+\rho_\ell(r_\ell-r_{\ell j}\bar R_{\cdot j})
+\right].
 \]
-Then we apply the SER-relax update to this residual. After each full sweep over effects, the shared \(\nu_0\) is updated by the closed-form empirical-Bayes update
+Then we apply the SER-relax-prime update to this residual. After each full sweep
+over effects, the shared \(\nu_0\) is updated by the closed-form empirical-Bayes update
 \[
 \hat\tau^2 =
 \frac{
-\sum_{\ell=1}^L\sum_{j=1}^J\pi_{\ell j}Q_{\ell j}
+\sum_{\ell=1}^L D_\ell/\sigma_\ell^2
 }{L(J-1)},
 \qquad
 \hat\nu_0 = \frac{1}{\hat\tau^2}-3,
 \]
 with lower and upper bounds in implementation.
-We also estimate each effect-specific prior variance by
-\[
-\hat\sigma_\ell^2 =
-\sum_{j=1}^J
-\pi_{\ell j}
-E_q(\beta_\ell^2\mid\gamma_\ell=j)
-=
-\sum_{j=1}^J
-\pi_{\ell j}
-\left(v_{\beta,\ell j}+m_{\beta,\ell j}^2\right),
-\]
-again with implementation bounds to avoid degenerate values.
 
 The main empirical behavior we want to demonstrate is:
 
-- When the reference LD mismatch is low, ordinary SuSiE and SuSiE-relax both recover the two true signals.
+- When the reference LD mismatch is low, ordinary SuSiE and SuSiE-relax-prime both recover the two true signals.
 
-- When the reference LD mismatch is high, ordinary SuSiE with out-of-sample LD can overfit and select all \(L=5\) effects, while SuSiE-relax responds by learning a small \(\nu_0\), using stronger LD relaxation, and selecting only one effect.
+- When the reference LD mismatch is high, ordinary SuSiE with out-of-sample LD can overfit and select all \(L=5\) effects, while SuSiE-relax-prime can respond by learning a small \(\nu_0\), using stronger LD relaxation, and selecting fewer effects.
 
 ```{r helper-functions}
 standardize_sim <- function(res) {
@@ -166,7 +165,7 @@ count_selected_cs <- function(alpha, R, coverage = 0.95,
 }
 
 summarize_fit <- function(label, alpha, pip, R_for_cs, beta_true,
-                          nu0 = NA_real_, sigma2 = NA_real_) {
+                          nu0 = NA_real_) {
   alpha <- as.matrix(alpha)
   top <- apply(alpha, 1, which.max)
   top_alpha <- apply(alpha, 1, max)
@@ -176,7 +175,6 @@ summarize_fit <- function(label, alpha, pip, R_for_cs, beta_true,
     method = label,
     selected_L = length(cs_info$cs),
     nu0 = nu0,
-    sigma2 = paste(sprintf("%.4g", sigma2), collapse = ", "),
     gamma_hat = paste(top, collapse = ", "),
     top_alpha = paste(sprintf("%.3f", top_alpha), collapse = ", "),
     causal_pip = paste(sprintf("%.3f", pip[beta_true != 0]), collapse = ", ")
@@ -226,9 +224,10 @@ plot_tau2_convergence <- function(fit, main_prefix) {
 
 run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
                      lambda = 0.01, L = 5,
-                     relax_max_iter = 3000,
-                     relax_nu0_init = 2000,
-                     relax_nu0_bounds = c(10, 10000)) {
+                     prime_max_iter = 3000,
+                     prime_nu0_init = 2000,
+                     prime_nu0_bounds = c(10, 10000),
+                     prime_elbo_update_interval = 10) {
   res <- sim_2pop(
     chrom = "chr22",
     start = 20e6,
@@ -256,25 +255,22 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
     L = L
   )
 
-  relax_fit_time <- system.time({
-    fit_relax <- fit_susie_relax(
+  prime_fit_time <- system.time({
+    fit_prime <- fit_susie_relax_prime(
       x = v,
       Rbar = Rbar,
       N = N,
       L = L,
       sigma2 = rep(0.3^2, L),
-      nu0_init = relax_nu0_init,
+      nu0_init = prime_nu0_init,
       estimate_nu0 = TRUE,
-      estimate_sigma2 = TRUE,
       warmup_iter = 5,
-      max_iter = relax_max_iter,
+      max_iter = prime_max_iter,
       tol = 1e-7,
       verbose = FALSE,
-      nu0_bounds = relax_nu0_bounds,
-      sigma2_bounds = c(1e-12, 1),
-      elbo_update_interval = 10,
+      nu0_bounds = prime_nu0_bounds,
+      elbo_update_interval = prime_elbo_update_interval,
       nu0_update_interval = 1,
-      sigma2_update_interval = 1,
       nu0_tol = 1e-4
     )
   })
@@ -288,13 +284,12 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
       beta_true = beta_true
     ),
     summarize_fit(
-      label = "SuSiE-relax",
-      alpha = fit_relax$alpha,
-      pip = fit_relax$pip,
+      label = "SuSiE-relax-prime",
+      alpha = fit_prime$alpha,
+      pip = fit_prime$pip,
       R_for_cs = Rbar,
       beta_true = beta_true,
-      nu0 = fit_relax$nu0,
-      sigma2 = fit_relax$sigma2
+      nu0 = fit_prime$nu0
     )
   )
 
@@ -312,8 +307,8 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
     beta_true = beta_true,
     causal = which(beta_true != 0),
     fit_susie_out = fit_susie_out,
-    fit_relax = fit_relax,
-    relax_fit_time = relax_fit_time,
+    fit_prime = fit_prime,
+    prime_fit_time = prime_fit_time,
     summary = summary
   )
 }
@@ -321,7 +316,7 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
 
 # Low-mismatch Case
 
-Here the reference panel size is \(N_0=1000\), so the out-of-sample LD is close enough to the GWAS LD. We expect both ordinary SuSiE and SuSiE-relax to select two effects.
+Here the reference panel size is \(N_0=1000\), so the out-of-sample LD is close enough to the GWAS LD. We expect both ordinary SuSiE and SuSiE-relax-prime to select two effects.
 
 ```{r low-mismatch-fit}
 low_case <- run_case(
@@ -332,12 +327,13 @@ low_case <- run_case(
   J = 1000L,
   lambda = 0.01,
   L = 5,
-  relax_max_iter = 2000,
-  relax_nu0_init = 2000,
-  relax_nu0_bounds = c(10, 10000)
+  prime_max_iter = 1000,
+  prime_nu0_init = 2000,
+  prime_nu0_bounds = c(10, 10000),
+  prime_elbo_update_interval = 5
 )
 
-low_case$relax_fit_time
+low_case$prime_fit_time
 low_case$causal
 low_case$summary
 ```
@@ -352,29 +348,36 @@ plot_pip(
   main = "Low mismatch: susieR with R0"
 )
 plot_pip(
-  low_case$fit_relax,
+  low_case$fit_prime,
   low_case$Rbar,
   low_case$beta_true,
-  main = "Low mismatch: SuSiE-relax"
+  main = "Low mismatch: SuSiE-relax-prime"
 )
 par(old_par)
 
-plot_convergence(low_case$fit_relax, "Low mismatch SuSiE-relax")
+plot_convergence(low_case$fit_prime, "Low mismatch SuSiE-relax-prime")
 ```
+
+Printing the ELBO (only compute once every few iterations because this is the most expensive step)
+
+```{r}
+low_case$fit_prime$elbo
+```
+
 
 It might make more sense to look at \(1/(\nu_0+3)\) instead of \(\nu_0\), because this is the relaxed-column variance scale used by the model. Large changes in \(\nu_0\) at high values may correspond to very small changes in the actual relaxation variance.
 
 ```{r low-mismatch-tau2-convergence}
-plot_tau2_convergence(low_case$fit_relax, "Low mismatch SuSiE-relax")
+plot_tau2_convergence(low_case$fit_prime, "Low mismatch SuSiE-relax-prime")
 ```
 
-# High-mismatch Case
+# High-mismatch Case (due to small N0)
 
-Here the reference panel size is \(N_0=100\). The out-of-sample LD is much noisier. We fit ordinary SuSiE with upper bound \(L=5\) using the out-of-sample LD \(R_0\), and fit SuSiE-relax with the stabilized matrix
+Here the reference panel size is \(N_0=100\). The out-of-sample LD is much noisier. We fit ordinary SuSiE with upper bound \(L=5\) using the out-of-sample LD \(R_0\), and fit SuSiE-relax-prime with the stabilized matrix
 \[
 \bar R = 0.99R_0 + 0.01I.
 \]
-The expected behavior is that ordinary SuSiE overfits and selects all five effects, while SuSiE-relax learns a small \(\nu_0\), relaxes the LD column, and selects only one effect.
+The expected behavior is that ordinary SuSiE overfits and selects all five effects, while SuSiE-relax-prime learns a small \(\nu_0\), relaxes the latent contribution, and selects fewer effects.
 
 ```{r high-mismatch-fit}
 high_case <- run_case(
@@ -385,12 +388,13 @@ high_case <- run_case(
   J = 1000L,
   lambda = 0.01,
   L = 5,
-  relax_max_iter = 3000,
-  relax_nu0_init = 2000,
-  relax_nu0_bounds = c(10, 10000)
+  prime_max_iter = 3000,
+  prime_nu0_init = 2000,
+  prime_nu0_bounds = c(10, 10000),
+  prime_elbo_update_interval = 5
 )
 
-high_case$relax_fit_time
+high_case$prime_fit_time
 high_case$causal
 high_case$summary
 ```
@@ -405,27 +409,28 @@ plot_pip(
   main = "High mismatch: susieR with R0"
 )
 plot_pip(
-  high_case$fit_relax,
+  high_case$fit_prime,
   high_case$Rbar,
   high_case$beta_true,
-  main = "High mismatch: SuSiE-relax"
+  main = "High mismatch: SuSiE-relax-prime"
 )
 par(old_par)
 
-plot_convergence(high_case$fit_relax, "High mismatch SuSiE-relax")
+plot_convergence(high_case$fit_prime, "High mismatch SuSiE-relax-prime")
 ```
 
 ```{r high-mismatch-effect-details}
 data.frame(
-  effect = seq_len(nrow(high_case$fit_relax$alpha)),
-  top = apply(high_case$fit_relax$alpha, 1, which.max),
-  top_alpha = apply(high_case$fit_relax$alpha, 1, max)
+  effect = seq_len(nrow(high_case$fit_prime$alpha)),
+  top = apply(high_case$fit_prime$alpha, 1, which.max),
+  top_alpha = apply(high_case$fit_prime$alpha, 1, max)
 )
 ```
 
+
 # High-mismatch Case (due to difference ancestry)
 
-```{r ancestry-mismatch-simulation-function}
+```{r}
 sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
 
   stdpopsim <- reticulate::import("stdpopsim")
@@ -433,12 +438,15 @@ sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
 
   set.seed(seed)
 
+  # 1. Get Realistic Genetic Map from stdpopsim
   species <- stdpopsim$get_species("HomSap")
   contig  <- species$get_contig(chrom, left = as.integer(start), right = as.integer(end))
 
+  # 2. Get OutOfAfrica_3G09 Demography (YRI, CEU, CHB)
   demo_model <- species$get_demographic_model("OutOfAfrica_3G09")
   demography <- demo_model$model
 
+  # 3. Run Simulation
   ts <- msprime$sim_ancestry(
     samples = reticulate::dict(CHB = as.integer(n_gwas), CEU = as.integer(n_ref)),
     demography = demography,
@@ -448,6 +456,7 @@ sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
 
   ts <- msprime$sim_mutations(ts, rate = 1.29e-8, random_seed = as.integer(seed))
 
+  # 4. Extract Genotypes
   chb_id <- NULL
   ceu_id <- NULL
   for (p in reticulate::iterate(ts$populations())) {
@@ -463,24 +472,20 @@ sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
   to_diploid <- function(hap_idx) {
     idx <- as.integer(hap_idx) + 1
     g_hap <- G_all[, idx, drop = FALSE]
-    g_dip <- g_hap[, seq(1, ncol(g_hap), by = 2)] +
-      g_hap[, seq(2, ncol(g_hap), by = 2)]
-    t(g_dip)
+    g_dip <- g_hap[, seq(1, ncol(g_hap), by = 2)] + g_hap[, seq(2, ncol(g_hap), by = 2)]
+    return(t(g_dip))
   }
 
   G_gwas <- to_diploid(samples_gwas)
   G_ref  <- to_diploid(samples_ref)
 
+  # 5. Filter for Common Variants (MAF > 5%)
   maf_gwas <- colMeans(G_gwas) / 2
   maf_ref  <- colMeans(G_ref) / 2
 
-  common_mask <- (maf_gwas > 0.05) & (maf_gwas < 0.95) &
-    (maf_ref > 0.05) & (maf_ref < 0.95)
+  common_mask <- (maf_gwas > 0.05) & (maf_gwas < 0.95) & (maf_ref > 0.05) & (maf_ref < 0.95)
   n_common <- sum(common_mask)
-  if (n_common < J) {
-    stop(paste0("Only ", n_common, " common variants found but J = ", J,
-                ". Try a larger region."))
-  }
+  if (n_common < J) stop(paste0("Only ", n_common, " common variants found but J = ", J, ". Try a larger region."))
   G_gwas <- G_gwas[, common_mask, drop = FALSE]
   G_ref  <- G_ref[, common_mask, drop = FALSE]
 
@@ -491,6 +496,7 @@ sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
   G  <- G_gwas[, cols_to_keep, drop = FALSE]
   G0 <- G_ref[, cols_to_keep, drop = FALSE]
 
+  # 6. Generate summary stats
   X <- sweep(G, 2, colMeans(G), "-")
   N <- nrow(X)
 
@@ -520,52 +526,52 @@ sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
 
   v <- (t(X) %*% y) / N
 
-  list(
+  return(list(
     v = as.vector(v),
     R = R,
     R0 = R0,
     beta_true = beta_true,
     causal_SNPs_loc = causal_SNPs_loc
-  )
+  ))
 }
+
 ```
 
-```{r ancestry-mismatch-simulate}
-seed <- 2
+```{r}
+seed = 2
 chrom <- "chr22"
 start <- 20e6
-end <- 21e6
-N <- 25000L
-N0 <- 500L
-J <- 500L
-h2 <- 0.01
+end   <- 21e6
+N     <- 25000L
+N0 = 500L
+J     <- 500L
+h2    <- 0.01
 
-res <- sim_asn_eur(
-  chrom, start, end,
-  n_gwas = N,
-  n_ref = N0,
-  J = J,
-  h2 = h2,
-  seed = seed
-)
+res <- sim_asn_eur(chrom, start, end,
+                n_gwas = N,
+                n_ref = N0,
+                J = J,
+                h2 = h2,
+                seed = seed)
 
-v <- res$v
-R <- res$R
-R0 <- res$R0
-beta_true <- res$beta_true
+v               <- res$v
+R               <- res$R
+R0              <- res$R0
+beta_true       <- res$beta_true
 causal_SNPs_loc <- res$causal_SNPs_loc
 
-d <- 1 / sqrt(diag(R))
-v <- d * v
-R <- cov2cor(R)
-R0 <- cov2cor(R0)
+## standardized
+d = 1 / sqrt(diag(R))
+v = d * v
+R = cov2cor(R)
+R0 = cov2cor(R0)
 
-x <- v
+x = v
 plot(x, pch = 16)
 points(causal_SNPs_loc, x[causal_SNPs_loc], pch = 16, col = "red")
 ```
 
-```{r ancestry-mismatch-fit-relax}
+```{r ancestry-mismatch-fit-prime}
 lambda <- 0.1
 L <- 5
 Rbar <- make_rbar(R0, lambda = lambda)
@@ -578,8 +584,8 @@ fit_susie_out_asn_eur <- susie_suff_stat(
   L = L
 )
 
-relax_fit_time_asn_eur <- system.time({
-  fit_relax_asn_eur <- fit_susie_relax(
+prime_fit_time_asn_eur <- system.time({
+  fit_prime_asn_eur <- fit_susie_relax_prime(
     x = x,
     Rbar = Rbar,
     N = N,
@@ -587,21 +593,18 @@ relax_fit_time_asn_eur <- system.time({
     sigma2 = rep(0.3^2, L),
     nu0_init = 2000,
     estimate_nu0 = TRUE,
-    estimate_sigma2 = TRUE,
     warmup_iter = 5,
     max_iter = 3000,
     tol = 1e-7,
     verbose = FALSE,
     nu0_bounds = c(10, 10000),
-    sigma2_bounds = c(1e-12, 1),
     elbo_update_interval = 5,
     nu0_update_interval = 1,
-    sigma2_update_interval = 1,
     nu0_tol = 1e-4
   )
 })
 
-relax_fit_time_asn_eur
+prime_fit_time_asn_eur
 causal_SNPs_loc
 rbind(
   summarize_fit(
@@ -612,18 +615,17 @@ rbind(
     beta_true = beta_true
   ),
   summarize_fit(
-    label = "SuSiE-relax",
-    alpha = fit_relax_asn_eur$alpha,
-    pip = fit_relax_asn_eur$pip,
+    label = "SuSiE-relax-prime",
+    alpha = fit_prime_asn_eur$alpha,
+    pip = fit_prime_asn_eur$pip,
     R_for_cs = Rbar,
     beta_true = beta_true,
-    nu0 = fit_relax_asn_eur$nu0,
-    sigma2 = fit_relax_asn_eur$sigma2
+    nu0 = fit_prime_asn_eur$nu0
   )
 )
 ```
 
-```{r ancestry-mismatch-relax-plots}
+```{r ancestry-mismatch-prime-plots}
 old_par <- par(no.readonly = TRUE)
 par(mfrow = c(1, 2))
 plot_pip(
@@ -633,23 +635,23 @@ plot_pip(
   main = "Ancestry mismatch: susieR with R0"
 )
 plot_pip(
-  fit_relax_asn_eur,
+  fit_prime_asn_eur,
   Rbar,
   beta_true,
-  main = "Ancestry mismatch: SuSiE-relax"
+  main = "Ancestry mismatch: SuSiE-relax-prime"
 )
 par(old_par)
 
 plot_convergence(
-  fit_relax_asn_eur,
-  "Ancestry mismatch SuSiE-relax"
+  fit_prime_asn_eur,
+  "Ancestry mismatch SuSiE-relax-prime"
 )
 ```
 
-```{r ancestry-mismatch-relax-effect-details}
+```{r ancestry-mismatch-prime-effect-details}
 data.frame(
-  effect = seq_len(nrow(fit_relax_asn_eur$alpha)),
-  top = apply(fit_relax_asn_eur$alpha, 1, which.max),
-  top_alpha = apply(fit_relax_asn_eur$alpha, 1, max)
+  effect = seq_len(nrow(fit_prime_asn_eur$alpha)),
+  top = apply(fit_prime_asn_eur$alpha, 1, which.max),
+  top_alpha = apply(fit_prime_asn_eur$alpha, 1, max)
 )
 ```

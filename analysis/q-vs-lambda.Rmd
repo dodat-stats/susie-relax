@@ -1,0 +1,360 @@
+---
+title: "Scale of q as lambda varies"
+author: "Dat Do"
+date: "`r Sys.Date()`"
+output:
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 7,
+  fig.height = 4.5
+)
+
+source("code/sim_2pop.R")
+```
+
+# Goal
+
+In the SER-relax calculation, the term
+\[
+q(\lambda) = x^\top \bar R(\lambda)^{-1} x
+\]
+can be important, where
+\[
+\bar R(\lambda) = (1-\lambda)R_0 + \lambda I.
+\]
+This note investigates the scale of \(q(\lambda)\) in three settings:
+
+1. Low mismatch: same ancestry, large reference panel.
+2. High mismatch from small reference sample size.
+3. High mismatch from different ancestry.
+
+The goal is only to understand how \(q\) changes with \(\lambda\), not to fit
+SuSiE-relax.
+
+```{r helpers}
+standardize_sim <- function(res) {
+  d <- 1 / sqrt(diag(res$R))
+  res$v <- d * res$v
+  res$R <- cov2cor(res$R)
+  res$R0 <- cov2cor(res$R0)
+  res
+}
+
+q_path <- function(x, R0, lambda_grid) {
+  R0 <- (R0 + t(R0)) / 2
+  eig <- eigen(R0, symmetric = TRUE)
+  x_rot <- crossprod(eig$vectors, x)
+
+  out <- do.call(rbind, lapply(lambda_grid, function(lambda) {
+    denom <- (1 - lambda) * eig$values + lambda
+    data.frame(
+      lambda = lambda,
+      q = sum(as.numeric(x_rot)^2 / denom),
+      min_eigen = min(denom),
+      max_eigen = max(denom),
+      condition_number = max(denom) / min(denom),
+      n_nonpositive_eigen = sum(denom <= 0)
+    )
+  }))
+  out
+}
+
+q_from_R <- function(x, R) {
+  R <- (R + t(R)) / 2
+  as.numeric(crossprod(x, solve(R, x)))
+}
+
+plot_q_path <- function(tab, main, q_true = NULL) {
+  plot(
+    tab$lambda, tab$q,
+    type = "l", lwd = 2, log = "x",
+    xlab = expression(lambda),
+    ylab = expression(q(lambda) == x^T * bar(R)(lambda)^{-1} * x),
+    main = main
+  )
+  points(tab$lambda, tab$q, pch = 16, cex = 0.6)
+  if (!is.null(q_true)) {
+    abline(h = q_true, col = "gray40", lty = 2, lwd = 2)
+  }
+  grid()
+}
+
+plot_condition_path <- function(tab, main) {
+  plot(
+    tab$lambda, tab$condition_number,
+    type = "l", lwd = 2, log = "xy",
+    xlab = expression(lambda),
+    ylab = "Condition number",
+    main = main
+  )
+  points(tab$lambda, tab$condition_number, pch = 16, cex = 0.6)
+  grid()
+}
+
+sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
+
+  stdpopsim <- reticulate::import("stdpopsim")
+  msprime   <- reticulate::import("msprime")
+
+  set.seed(seed)
+
+  species <- stdpopsim$get_species("HomSap")
+  contig  <- species$get_contig(chrom, left = as.integer(start), right = as.integer(end))
+
+  demo_model <- species$get_demographic_model("OutOfAfrica_3G09")
+  demography <- demo_model$model
+
+  ts <- msprime$sim_ancestry(
+    samples = reticulate::dict(CHB = as.integer(n_gwas), CEU = as.integer(n_ref)),
+    demography = demography,
+    recombination_rate = contig$recombination_map,
+    random_seed = as.integer(seed)
+  )
+
+  ts <- msprime$sim_mutations(ts, rate = 1.29e-8, random_seed = as.integer(seed))
+
+  chb_id <- NULL
+  ceu_id <- NULL
+  for (p in reticulate::iterate(ts$populations())) {
+    if (!is.null(p$metadata) && p$metadata$name == "CHB") chb_id <- p$id
+    if (!is.null(p$metadata) && p$metadata$name == "CEU") ceu_id <- p$id
+  }
+
+  samples_gwas <- ts$samples(population = as.integer(chb_id))
+  samples_ref  <- ts$samples(population = as.integer(ceu_id))
+
+  G_all <- ts$genotype_matrix()
+
+  to_diploid <- function(hap_idx) {
+    idx <- as.integer(hap_idx) + 1
+    g_hap <- G_all[, idx, drop = FALSE]
+    g_dip <- g_hap[, seq(1, ncol(g_hap), by = 2)] +
+      g_hap[, seq(2, ncol(g_hap), by = 2)]
+    t(g_dip)
+  }
+
+  G_gwas <- to_diploid(samples_gwas)
+  G_ref  <- to_diploid(samples_ref)
+
+  maf_gwas <- colMeans(G_gwas) / 2
+  maf_ref  <- colMeans(G_ref) / 2
+
+  common_mask <- (maf_gwas > 0.05) & (maf_gwas < 0.95) &
+    (maf_ref > 0.05) & (maf_ref < 0.95)
+  n_common <- sum(common_mask)
+  if (n_common < J) {
+    stop(paste0("Only ", n_common, " common variants found but J = ", J,
+                ". Try a larger region."))
+  }
+  G_gwas <- G_gwas[, common_mask, drop = FALSE]
+  G_ref  <- G_ref[, common_mask, drop = FALSE]
+
+  J_all <- min(ncol(G_gwas), J)
+  max_start <- J_all - J
+  start_idx <- if (max_start > 0) sample(0:max_start, 1) else 0
+  cols_to_keep <- (start_idx + 1):(start_idx + J)
+  G  <- G_gwas[, cols_to_keep, drop = FALSE]
+  G0 <- G_ref[, cols_to_keep, drop = FALSE]
+
+  X <- sweep(G, 2, colMeans(G), "-")
+  N <- nrow(X)
+
+  G0_centered <- sweep(G0, 2, colMeans(G0), "-")
+
+  R0 <- stats::cov(G0_centered)
+  R0[is.na(R0)] <- 0
+
+  R <- stats::cov(X)
+  R[is.na(R)] <- 0
+
+  num_causal <- 2
+  first_causal_SNP <- sample(1:J, 1)
+  second_causal_SNP <- which.min(R[first_causal_SNP, ]^2)
+  causal_SNPs_loc <- c(first_causal_SNP, second_causal_SNP)
+
+  beta_true <- rep(0, J)
+  beta_true[causal_SNPs_loc] <- stats::runif(num_causal) + 0.01
+
+  var_expl <- sum((X %*% beta_true)^2 / N)
+  scale <- h2 / var_expl
+  beta_true <- beta_true * sqrt(scale)
+
+  y <- (X %*% beta_true) + sqrt(1 - h2) * stats::rnorm(N)
+  y_std <- sqrt(sum((y - mean(y))^2) / N)
+  y <- (y - mean(y)) / y_std
+
+  v <- (t(X) %*% y) / N
+
+  list(
+    v = as.vector(v),
+    R = R,
+    R0 = R0,
+    beta_true = beta_true,
+    causal_SNPs_loc = causal_SNPs_loc
+  )
+}
+```
+
+```{r lambda-grid}
+lambda_grid <- c(10^seq(-6, -1, length.out = 45), seq(0.12, 1, length.out = 23))
+```
+
+# Simulate the three settings
+
+```{r simulate-low-mismatch}
+res_low <- sim_2pop(
+  chrom = "chr22",
+  start = 20e6,
+  end = 21e6,
+  T_split = 20,
+  n_gwas = 20000L,
+  n_ref = 2000L,
+  J = 1000L,
+  h2 = 0.01,
+  seed = 6
+)
+res_low <- standardize_sim(res_low)
+```
+
+```{r simulate-small-reference-mismatch}
+res_small_ref <- sim_2pop(
+  chrom = "chr22",
+  start = 20e6,
+  end = 21e6,
+  T_split = 20,
+  n_gwas = 20000L,
+  n_ref = 100L,
+  J = 1000L,
+  h2 = 0.01,
+  seed = 9
+)
+res_small_ref <- standardize_sim(res_small_ref)
+```
+
+```{r simulate-ancestry-mismatch}
+res_ancestry <- sim_asn_eur(
+  chrom = "chr22",
+  start = 20e6,
+  end = 21e6,
+  n_gwas = 25000L,
+  n_ref = 500L,
+  J = 500L,
+  h2 = 0.01,
+  seed = 2
+)
+res_ancestry <- standardize_sim(res_ancestry)
+```
+
+# Compute q over lambda
+
+```{r compute-q}
+q_low <- q_path(res_low$v, res_low$R0, lambda_grid)
+q_low$setting <- "Low mismatch"
+
+q_small_ref <- q_path(res_small_ref$v, res_small_ref$R0, lambda_grid)
+q_small_ref$setting <- "Small reference mismatch"
+
+q_ancestry <- q_path(res_ancestry$v, res_ancestry$R0, lambda_grid)
+q_ancestry$setting <- "Ancestry mismatch"
+
+q_all <- rbind(q_low, q_small_ref, q_ancestry)
+
+q_true <- c(
+  "Low mismatch" = q_from_R(res_low$v, res_low$R),
+  "Small reference mismatch" = q_from_R(res_small_ref$v, res_small_ref$R),
+  "Ancestry mismatch" = q_from_R(res_ancestry$v, res_ancestry$R)
+)
+
+summary_table <- do.call(rbind, lapply(split(q_all, q_all$setting), function(tab) {
+  data.frame(
+    setting = tab$setting[1],
+    q_in_sample_R = q_true[tab$setting[1]],
+    q_min = min(tab$q),
+    q_max = max(tab$q),
+    q_lambda_1e_4 = tab$q[which.min(abs(tab$lambda - 1e-4))],
+    q_lambda_1e_2 = tab$q[which.min(abs(tab$lambda - 1e-2))],
+    q_lambda_0_1 = tab$q[which.min(abs(tab$lambda - 0.1))],
+    q_lambda_1 = tab$q[which.min(abs(tab$lambda - 1))]
+  )
+}))
+
+summary_table
+```
+
+# q as lambda varies
+
+```{r q-plots, fig.width=10, fig.height=4}
+old_par <- par(no.readonly = TRUE)
+par(mfrow = c(1, 3))
+plot_q_path(q_low, "Low mismatch", q_true["Low mismatch"])
+plot_q_path(q_small_ref, "Small reference mismatch", q_true["Small reference mismatch"])
+plot_q_path(q_ancestry, "Ancestry mismatch", q_true["Ancestry mismatch"])
+par(old_par)
+```
+
+The dashed horizontal line is \(x^\top R^{-1}x\), using the in-sample LD
+matrix \(R\). This is not available in real summary-data analysis, but it is a
+useful simulation reference.
+
+```{r q-combined, fig.width=7, fig.height=5}
+plot(
+  range(q_all$lambda), range(q_all$q),
+  type = "n", log = "xy",
+  xlab = expression(lambda),
+  ylab = expression(q(lambda) == x^T * bar(R)(lambda)^{-1} * x),
+  main = expression("Scale of " * q(lambda) * " across mismatch settings")
+)
+cols <- c(
+  "Low mismatch" = "black",
+  "Small reference mismatch" = "red3",
+  "Ancestry mismatch" = "blue3"
+)
+for (setting in names(cols)) {
+  tab <- q_all[q_all$setting == setting, ]
+  lines(tab$lambda, tab$q, lwd = 2, col = cols[setting])
+  abline(h = q_true[setting], col = cols[setting], lwd = 1, lty = 2)
+}
+legend("topright", legend = names(cols), col = cols, lwd = 2, bty = "n")
+grid()
+```
+
+# Conditioning of the stabilized LD
+
+When \(\lambda\) is very small, \(\bar R(\lambda)\) can be poorly conditioned,
+especially when the reference panel is small and \(R_0\) is rank deficient.
+This explains why \(q(\lambda)\) can become very large near \(\lambda=0\).
+
+```{r condition-plots, fig.width=10, fig.height=4}
+old_par <- par(no.readonly = TRUE)
+par(mfrow = c(1, 3))
+plot_condition_path(q_low, "Low mismatch")
+plot_condition_path(q_small_ref, "Small reference mismatch")
+plot_condition_path(q_ancestry, "Ancestry mismatch")
+par(old_par)
+```
+
+```{r eigen-summary}
+eigen_summary <- do.call(rbind, lapply(split(q_all, q_all$setting), function(tab) {
+  data.frame(
+    setting = tab$setting[1],
+    min_eigen_at_smallest_lambda = tab$min_eigen[which.min(tab$lambda)],
+    condition_at_smallest_lambda = tab$condition_number[which.min(tab$lambda)],
+    min_eigen_at_lambda_0_1 = tab$min_eigen[which.min(abs(tab$lambda - 0.1))],
+    condition_at_lambda_0_1 = tab$condition_number[which.min(abs(tab$lambda - 0.1))]
+  )
+}))
+
+eigen_summary
+```

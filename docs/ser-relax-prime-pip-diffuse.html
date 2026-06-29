@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Dat Do" />
+
+<meta name="date" content="2026-06-25" />
+
+<title>SER-relax-prime PIP Diffuseness</title>
+
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">susie-relax</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/dodat-stats/susie-relax">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">SER-relax-prime PIP Diffuseness</h1>
+<h4 class="author">Dat Do</h4>
+<h4 class="date">2026-06-25</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2026-06-25
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>susie-relax/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.2). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
+changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R
+Markdown file created these results, you’ll want to first commit it to
+the Git repo. If you’re still working on the analysis, you can ignore
+this warning. When you’re finished, you can run
+<code>wflow_publish</code> to commit the R Markdown file and build the
+HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20260621code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20260621)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20260621code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20260621)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree9fdb56f9407a72376d53d659bbb45b41b4aa5d36targetblank9fdb56fa">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/dodat-stats/susie-relax/tree/9fdb56f9407a72376d53d659bbb45b41b4aa5d36" target="_blank">9fdb56f</a>
+</a>
+</p>
+</div>
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree9fdb56f9407a72376d53d659bbb45b41b4aa5d36targetblank9fdb56fa"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version
+<a href="https://github.com/dodat-stats/susie-relax/tree/9fdb56f9407a72376d53d659bbb45b41b4aa5d36" target="_blank">9fdb56f</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
+    Ignored:    code/.Rhistory
+
+Untracked files:
+    Untracked:  .Renviron
+    Untracked:  analysis/ser-relax-prime-pip-diffuse.Rmd
+    Untracked:  analysis/susie-relax-prime-demonstrate.Rmd
+    Untracked:  code/susie-relax-prime.R
+    Untracked:  tex/SER-relax-irrelevance-null-SNPs.aux
+    Untracked:  tex/SER-relax-irrelevance-null-SNPs.log
+    Untracked:  tex/SER-relax-irrelevance-null-SNPs.out
+    Untracked:  tex/SER-relax-irrelevance-null-SNPs.pdf
+    Untracked:  tex/SER-relax-irrelevance-null-SNPs.synctex.gz
+    Untracked:  tex/SER-relax-irrelevance-null-SNPs.tex
+    Untracked:  tex/susie-relax-prime.aux
+    Untracked:  tex/susie-relax-prime.log
+    Untracked:  tex/susie-relax-prime.out
+    Untracked:  tex/susie-relax-prime.pdf
+    Untracked:  tex/susie-relax-prime.synctex.gz
+    Untracked:  tex/susie-relax-prime.tex
+
+Unstaged changes:
+    Modified:   .Rprofile
+    Modified:   analysis/index.Rmd
+    Modified:   analysis/susie-relax-demonstrate.Rmd
+    Modified:   code/SuSiE-relax.R
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with
+<code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<pre class="r"><code>knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 9,
+  fig.height = 4.5
+)
+
+source(&quot;code/sim_2pop.R&quot;)
+source(&quot;code/SER-relax.R&quot;)
+source(&quot;code/SuSiE-relax.R&quot;)</code></pre>
+<div id="goal" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Goal</h1>
+<p>For <span class="math inline">\(L=1\)</span>, SER/SuSiE-RSS and
+SER-relax-prime both rank SNPs only by <span
+class="math inline">\(x_j^2\)</span>. The only difference is the
+coefficient multiplying <span class="math inline">\(N x_j^2/2\)</span>.
+This page uses the coalescent simulation to generate <span
+class="math inline">\(x\)</span> and <span
+class="math inline">\(R_0\)</span>, sets <span class="math display">\[
+\sigma_0^2 = \max_{j:\beta_j\ne 0}\beta_j^2,
+\]</span> and compares the closed-form PIPs: <span
+class="math display">\[
+\mathrm{PIP}_{\mathrm{rss},j}
+\propto
+\exp\left\{
+\frac{N}{2}
+\frac{N\sigma_0^2}{1+N\sigma_0^2}
+x_j^2
+\right\},
+\]</span> and <span class="math display">\[
+\mathrm{PIP}_{\mathrm{prime},j}
+\propto
+\exp\left\{
+\frac{N}{2}
+\left(
+\frac{N\sigma_0^2}{1+N\sigma_0^2}
+-
+\frac{N\sigma_0^2\tau^2}{1+N\sigma_0^2\tau^2}
+\right)
+x_j^2
+\right\},
+\qquad
+\tau^2=(\nu_0+3)^{-1}.
+\]</span></p>
+<p>The comparison uses <span class="math inline">\(\nu_0=10\)</span> and
+<span class="math inline">\(\nu_0=100\)</span>. The reference LD <span
+class="math inline">\(R_0\)</span> is still generated by the simulation,
+but it does not enter these closed-form <span
+class="math inline">\(L=1\)</span> PIPs because the <span
+class="math inline">\(R_0\)</span>-dependent quadratic term is common
+across candidate causal SNPs and cancels in the normalization.</p>
+<pre class="r"><code>standardize_sim &lt;- function(res) {
+  d &lt;- 1 / sqrt(diag(res$R))
+  res$v &lt;- d * res$v
+  res$R &lt;- cov2cor(res$R)
+  res$R0 &lt;- cov2cor(res$R0)
+  res
+}
+
+softmax &lt;- function(x) {
+  z &lt;- x - max(x)
+  exp_z &lt;- exp(z)
+  exp_z / sum(exp_z)
+}
+
+ser_rss_pip &lt;- function(x, N, sigma2) {
+  kappa &lt;- N * sigma2 / (1 + N * sigma2)
+  softmax(0.5 * N * kappa * x^2)
+}
+
+ser_relax_prime_pip &lt;- function(x, N, sigma2, nu0) {
+  tau2 &lt;- 1 / (nu0 + 3)
+  kappa &lt;- N * sigma2 / (1 + N * sigma2)
+  rho &lt;- N * sigma2 * tau2 / (1 + N * sigma2 * tau2)
+  softmax(0.5 * N * (kappa - rho) * x^2)
+}
+
+coefficient_table &lt;- function(N, sigma2, nu0_grid) {
+  t &lt;- N * sigma2
+  rss &lt;- t / (1 + t)
+  prime &lt;- vapply(nu0_grid, function(nu0) {
+    tau2 &lt;- 1 / (nu0 + 3)
+    rss - t * tau2 / (1 + t * tau2)
+  }, numeric(1))
+  data.frame(
+    method = c(&quot;SER/SuSiE-RSS&quot;, paste0(&quot;SER-relax-prime, nu0=&quot;, nu0_grid)),
+    nu0 = c(NA_real_, nu0_grid),
+    tau2 = c(0, 1 / (nu0_grid + 3)),
+    exponent_coefficient = c(rss, prime),
+    relative_to_rss = c(1, prime / rss)
+  )
+}
+
+pip_summary &lt;- function(pip, label, rss_pip, causal) {
+  active &lt;- pip &gt; 0
+  entropy &lt;- -sum(pip[active] * log(pip[active]))
+  data.frame(
+    method = label,
+    top_snp = which.max(pip),
+    top_pip = max(pip),
+    causal_total_pip = sum(pip[causal]),
+    effective_number = exp(entropy),
+    max_abs_diff_from_rss = max(abs(pip - rss_pip)),
+    corr_with_rss = suppressWarnings(cor(pip, rss_pip))
+  )
+}
+
+plot_pips &lt;- function(pip_list, causal, beta_true) {
+  old_par &lt;- par(no.readonly = TRUE)
+  on.exit(par(old_par), add = TRUE)
+
+  ymax &lt;- max(unlist(pip_list))
+  par(mfrow = c(1, length(pip_list)), mar = c(4, 4, 3, 1))
+  for (nm in names(pip_list)) {
+    pip &lt;- pip_list[[nm]]
+    plot(
+      seq_along(pip), pip,
+      type = &quot;h&quot;,
+      lwd = 1.5,
+      ylim = c(0, ymax),
+      xlab = &quot;SNP index&quot;,
+      ylab = &quot;PIP&quot;,
+      main = nm
+    )
+    points(causal, pip[causal], pch = 19, col = &quot;red&quot;)
+    rug(causal, col = &quot;red&quot;, lwd = 2)
+    grid()
+  }
+}</code></pre>
+</div>
+<div id="simulation" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Simulation</h1>
+<pre class="r"><code>N &lt;- 20000L
+J &lt;- 1000L
+N0 &lt;- 100L
+seed &lt;- 6
+nu0_grid &lt;- c(10, 100)
+
+res &lt;- sim_2pop(
+  chrom = &quot;chr22&quot;,
+  start = 20e6,
+  end = 21e6,
+  T_split = 20,
+  n_gwas = N,
+  n_ref = N0,
+  J = J,
+  h2 = 0.01,
+  seed = seed
+)
+res &lt;- standardize_sim(res)
+
+x &lt;- res$v
+R0 &lt;- res$R0
+beta_true &lt;- res$beta_true
+causal &lt;- which(beta_true != 0)
+sigma2 &lt;- max(beta_true[causal]^2)
+
+data.frame(
+  causal_snp = causal,
+  beta_true = beta_true[causal],
+  beta2 = beta_true[causal]^2
+)</code></pre>
+<pre><code>  causal_snp beta_true      beta2
+1         10 0.1259710 0.01586868
+2        886 0.1791148 0.03208210</code></pre>
+<pre class="r"><code>sigma2</code></pre>
+<pre><code>[1] 0.0320821</code></pre>
+<pre class="r"><code>coefficient_table(N, sigma2, nu0_grid)</code></pre>
+<pre><code>                    method nu0        tau2 exponent_coefficient relative_to_rss
+1            SER/SuSiE-RSS  NA 0.000000000            0.9984439      1.00000000
+2  SER-relax-prime, nu0=10  10 0.076923077            0.0183021      0.01833063
+3 SER-relax-prime, nu0=100 100 0.009708738            0.1367654      0.13697857</code></pre>
+</div>
+<div id="closed-form-pips" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Closed-form PIPs</h1>
+<pre class="r"><code>pip_rss &lt;- ser_rss_pip(x, N, sigma2)
+pip_prime &lt;- lapply(nu0_grid, function(nu0) {
+  ser_relax_prime_pip(x, N, sigma2, nu0)
+})
+names(pip_prime) &lt;- paste0(&quot;SER-relax-prime\nnu0=&quot;, nu0_grid)
+
+pip_list &lt;- c(list(&quot;SER/SuSiE-RSS&quot; = pip_rss), pip_prime)
+
+do.call(rbind, c(
+  list(pip_summary(pip_rss, &quot;SER/SuSiE-RSS&quot;, pip_rss, causal)),
+  Map(function(pip, nm) pip_summary(pip, nm, pip_rss, causal),
+      pip_prime, names(pip_prime))
+))</code></pre>
+<pre><code>                                           method top_snp     top_pip
+1                                   SER/SuSiE-RSS     886 1.000000000
+SER-relax-prime\nnu0=10   SER-relax-prime\nnu0=10     886 0.002868085
+SER-relax-prime\nnu0=100 SER-relax-prime\nnu0=100     886 0.698771722
+                         causal_total_pip effective_number
+1                             1.000000000          1.00000
+SER-relax-prime\nnu0=10       0.004545474        997.55035
+SER-relax-prime\nnu0=100      0.711463404         13.41649
+                         max_abs_diff_from_rss corr_with_rss
+1                                    0.0000000     1.0000000
+SER-relax-prime\nnu0=10              0.9971319     0.7416212
+SER-relax-prime\nnu0=100             0.3012283     0.9997247</code></pre>
+<pre class="r"><code>plot_pips(pip_list, causal, beta_true)</code></pre>
+<p><img src="figure/ser-relax-prime-pip-diffuse.Rmd/plot-pips-1.png" alt="" width="864" style="display: block; margin: auto;" /></p>
+</div>
+<div id="ser-relax-pips" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> SER-relax PIPs</h1>
+<p>Unlike SER-relax-prime, original SER-relax does not have a
+closed-form PIP that is simply a rescaled softmax of <span
+class="math inline">\(x_j^2\)</span>. Here we apply the single-effect
+SER-relax variational algorithm to the same simulated data, fixing <span
+class="math inline">\(\nu_0=10\)</span> and <span
+class="math inline">\(\nu_0=100\)</span>, and compare its PIPs to the
+closed-form curves above.</p>
+<pre class="r"><code>J = dim(R0)[1]
+Rbar = .99 * R0 + .01 * diag(1, J)
+fit_ser &lt;- lapply(nu0_grid, function(nu0) {
+  fit_ser_relax(
+    x = x,
+    Rbar = Rbar,
+    N = N,
+    sigma0 = sqrt(sigma2),
+    nu0_init = nu0,
+    estimate_nu0 = FALSE,
+    max_iter = 200,
+    tol = 1e-8,
+    verbose = FALSE
+  )
+})
+names(fit_ser) &lt;- paste0(&quot;SER-relax\nnu0=&quot;, nu0_grid)
+
+pip_ser &lt;- lapply(fit_ser, `[[`, &quot;pi&quot;)
+
+do.call(rbind, Map(function(pip, nm) {
+  pip_summary(pip, nm, pip_rss, causal)
+}, pip_ser, names(pip_ser)))</code></pre>
+<pre><code>                               method top_snp top_pip causal_total_pip
+SER-relax\nnu0=10   SER-relax\nnu0=10     886       1                1
+SER-relax\nnu0=100 SER-relax\nnu0=100     886       1                1
+                   effective_number max_abs_diff_from_rss corr_with_rss
+SER-relax\nnu0=10                 1          1.976197e-13             1
+SER-relax\nnu0=100                1          1.976197e-13             1</code></pre>
+<pre class="r"><code>plot_pips(pip_ser, causal, beta_true)</code></pre>
+<p><img src="figure/ser-relax-prime-pip-diffuse.Rmd/plot-ser-relax-pips-1.png" alt="" width="864" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot_pips(c(pip_list, pip_ser), causal, beta_true)</code></pre>
+<p><img src="figure/ser-relax-prime-pip-diffuse.Rmd/plot-all-pips-1.png" alt="" width="864" style="display: block; margin: auto;" /></p>
+</div>
+<div id="comment-on-the-results" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Comment on the
+results</h1>
+<ol style="list-style-type: decimal">
+<li><p>We see that susie-relax-prime has near similar PIP to susie-rss
+when <span class="math inline">\(\nu_0\)</span> is around 100, while it
+will be too diffuse when <span class="math inline">\(\nu_0\)</span> is
+as small as 10.</p></li>
+<li><p>Looking back at the
+<code>susie-relax-prime-demonstration.html</code>, the highly mismatch
+case, we observe that the optimal <span
+class="math inline">\(\nu_0\)</span> converge to 600, marking that the
+final PIP will be similar to susie-rss’s PIP.</p></li>
+<li><p>Looking back at the <code>susie-relax-demonstration.html</code>,
+the highly mismatch case, we observe that the optimal <span
+class="math inline">\(\nu_0\)</span> converge to the lower bound (10).
+But interestingly the PIP of that model is not diffused at all. It is
+still concentrated around the strongest associated SNP.</p></li>
+<li><p>To explain this difference between the two model: Recall the
+conditional probabilities in the two models, with the probability in
+<code>susie-relax</code> being denoted by <span
+class="math inline">\(p\)</span> and <code>susie-relax-prime</code>
+being denoted by <span class="math inline">\(\tilde p\)</span>.</p></li>
+</ol>
+<p><span class="math display">\[
+p(x | \beta, \gamma = j) =
+\mathcal{N}(x | \beta u_j(\mu_j), \tfrac{R}{N} + \beta^2 \tau^2
+S_j^{pad})
+\]</span> and</p>
+<p><span class="math display">\[
+\tilde p(x | \beta, \gamma = j) =
+\mathcal{N}(x | \beta u_j(\mu_j), \tfrac{R}{N} + \sigma_0^2 \tau^2
+S_j^{pad}),
+\]</span> where</p>
+<ul>
+<li><span class="math inline">\(\mu_j = \bar R_{j, -j}\in
+\mathbb{R}^{J-1}\)</span>,</li>
+<li><span class="math inline">\(u_j(z_j\in \mathbb{R}^{J})\)</span> is
+the vector with <span class="math inline">\(j\)</span>-th coordinate
+being 1 and the rest being <span
+class="math inline">\(\mu_j\)</span>,</li>
+<li><span class="math inline">\(S_j \mathbb{R}^{(J-1)\times
+(J-1)}\)</span> is the Schur complement of <span
+class="math inline">\(\bar R_{jj}\)</span></li>
+<li>and <span class="math inline">\(S_j^{pad} \in \mathbb{R}^{J\times
+J}\)</span> is the matrix with <span class="math inline">\(j\)</span>-th
+row and column being 0 and the rest being <span
+class="math inline">\(S_j\)</span>.</li>
+</ul>
+<p>Let <span class="math inline">\(q = x^\top (\bar R)^{-1} x\)</span>,
+we have</p>
+<p><span class="math display">\[
+p(\gamma=j \mid x) \propto
+\int
+(1+N\beta^2\tau^2)^{-(J-1)/2}
+\exp\!\left(-\frac{N}{2(1+N\beta^2\tau^2)}q\right) \times
+\exp\!\left(-\frac{N^2\beta^2\tau^2}{2(1+N\beta^2\tau^2)}x_j^2 + N\beta
+x_j - \frac{N}{2}\beta^2\right)
+p(\beta \mid 0,\sigma_0^2)\,d\beta.
+\]</span> On the other hand, <span class="math display">\[
+\tilde p(\gamma=j \mid x) \propto
+\int
+(1+N\sigma_0^2\tau^2)^{-(J-1)/2}
+\exp\!\left(-\frac{N}{2(1+N\sigma_0^2\tau^2)}q\right) \times
+\exp\!\left(-\frac{N^2\sigma_0^2\tau^2}{2(1+N\sigma_0^2\tau^2)}x_j^2 +
+N\beta x_j - \frac{N}{2}\beta^2\right)
+p(\beta \mid 0,\sigma_0^2)\,d\beta,
+\]</span> Note that <span class="math inline">\(\sigma_0^2\)</span> here
+is common for all <span class="math inline">\(j\)</span> (and it does
+not depend on <span class="math inline">\(\beta\)</span> so it can be
+brought out of the integral), therefore, <span class="math display">\[
+\tilde p(\gamma=j \mid x) \propto
+\int
+\exp\!\left(-\frac{N^2\sigma_0^2\tau^2}{2(1+N\sigma_0^2\tau^2)}x_j^2 +
+N\beta x_j - \frac{N}{2}\beta^2\right)
+p(\beta \mid 0,\sigma_0^2)\,d\beta,
+\]</span></p>
+<p>which leads to</p>
+<p><span class="math display">\[
+\tilde p(\gamma=j \mid x) \propto \exp\left\{
+\frac{N}{2}
+\left(
+\frac{N\sigma_0^2}{1+N\sigma_0^2}
+-
+\frac{N\sigma_0^2\tau^2}{1+N\sigma_0^2\tau^2}
+\right)
+x_j^2
+\right\}.
+\]</span></p>
+<ol start="5" style="list-style-type: decimal">
+<li><p>The important distinction is not that the original
+<code>susie-relax</code> relaxes low-Z SNPs more. It is closer to the
+opposite. In the original model, the amount of relaxation is tied to the
+latent effect size through <span
+class="math inline">\(N\beta^2\tau^2\)</span>. For a candidate SNP with
+large <span class="math inline">\(x_j\)</span>, the factor <span
+class="math display">\[
+\exp\left(N\beta x_j-\frac{N}{2}\beta^2\right)
+p(\beta\mid 0,\sigma_0^2)
+\]</span> pulls the integral toward <span
+class="math inline">\(\beta\)</span> values with the same sign as <span
+class="math inline">\(x_j\)</span> and with magnitude roughly
+proportional to <span class="math inline">\(|x_j|\)</span>. Thus large-Z
+SNPs are precisely the SNPs for which the integral places mass on larger
+<span class="math inline">\(\beta^2\)</span>, and therefore on a larger
+effective relaxation <span
+class="math inline">\(N\beta^2\tau^2\)</span>. Null SNPs with <span
+class="math inline">\(x_j\approx 0\)</span> keep most of their integral
+near <span class="math inline">\(\beta\approx 0\)</span>, so their
+effective relaxation is small.</p>
+<p>Another way to see this is to write the original local evidence as
+<span class="math display">\[
+p(\gamma=j\mid x)
+\propto
+\int
+H(\beta^2)
+\exp\left\{
+N\beta x_j
+-
+\frac{N}{2}\beta^2
+-
+A(\beta^2)x_j^2
+\right\}
+p(\beta\mid 0,\sigma_0^2)\,d\beta,
+\]</span> where <span class="math display">\[
+H(\beta^2)
+=
+(1+N\beta^2\tau^2)^{-(J-1)/2}
+\exp\left\{-\frac{N}{2(1+N\beta^2\tau^2)}q\right\}
+\]</span> and <span class="math display">\[
+A(\beta^2)
+=
+\frac{N^2\beta^2\tau^2}{2(1+N\beta^2\tau^2)}.
+\]</span> The <span class="math inline">\(H(\beta^2)\)</span> term is
+common as a function of <span class="math inline">\(\beta^2\)</span>,
+but it cannot be cancelled outside the integral because the linear term
+<span class="math inline">\(N\beta x_j\)</span> changes how each SNP
+weights different values of <span
+class="math inline">\(\beta^2\)</span>. Consequently, the original model
+does not simply apply one common flattening coefficient to all <span
+class="math inline">\(x_j^2\)</span>. The active SNP can get both a
+large effect-size posterior and the LD-column flexibility needed to
+explain the residual LD pattern. This is why a small <span
+class="math inline">\(\nu_0\)</span> can still lead to concentrated
+PIPs.</p></li>
+<li><p>In <code>susie-relax-prime</code>, we replace <span
+class="math inline">\(\beta^2\)</span> in the covariance by the fixed
+prior scale <span class="math inline">\(\sigma_0^2\)</span>. Therefore
+the determinant term and the <span class="math inline">\(q=x^\top\bar
+R^{-1}x\)</span> term become <span class="math display">\[
+(1+N\sigma_0^2\tau^2)^{-(J-1)/2}
+\exp\left\{
+-\frac{N}{2(1+N\sigma_0^2\tau^2)}q
+\right\},
+\]</span> which is common across <span class="math inline">\(j\)</span>
+and can be pulled out of the normalization. What remains is exactly
+<span class="math display">\[
+\tilde p(\gamma=j\mid x)
+\propto
+\exp\left\{
+\frac{N}{2}
+\left[
+\frac{N\sigma_0^2}{1+N\sigma_0^2}
+-
+\frac{N\sigma_0^2\tau^2}{1+N\sigma_0^2\tau^2}
+\right]
+x_j^2
+\right\}.
+\]</span> Thus prime applies the same relaxation penalty to every SNP,
+independent of how strongly the data support a large <span
+class="math inline">\(\beta\)</span> for that SNP. When <span
+class="math inline">\(\nu_0\)</span> is small, <span
+class="math inline">\(\tau^2\)</span> is large and the subtraction term
+can be large, so the coefficient multiplying <span
+class="math inline">\(x_j^2\)</span> shrinks and the PIPs become more
+diffuse. This is a deliberate price paid by the prime approximation to
+obtain the irrelevance-of-null-SNPs property: for <span
+class="math inline">\(L=1\)</span>, PIPs depend only on <span
+class="math inline">\(x_j^2\)</span>, not on coordinate-specific
+LD-column fit.</p></li>
+<li><p>This also explains the empirical difference between the two
+demonstration pages. In the original <code>susie-relax</code>
+high-mismatch example, learning <span
+class="math inline">\(\nu_0=10\)</span> means that the model wants
+substantial LD-column flexibility for effects that the data support. It
+does not imply diffuse PIPs. In the <code>susie-relax-prime</code>
+high-mismatch example, learning a much larger <span
+class="math inline">\(\nu_0\)</span> is natural because a small <span
+class="math inline">\(\nu_0\)</span> would impose a global flattening of
+the <span class="math inline">\(x_j^2\)</span> evidence and would make
+the single-effect posterior too diffuse.</p></li>
+</ol>
+</div>
+<div id="susie-relax-with-l2" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> SuSiE-relax With <span
+class="math inline">\(L=2\)</span></h1>
+<p>The single-effect SER-relax fit above can behave differently from the
+previous multi-effect analysis. To check the same data under the
+multi-effect model, fit SuSiE-relax with <span
+class="math inline">\(L=2\)</span>, estimate <span
+class="math inline">\(\nu_0\)</span>, and plot the resulting marginal
+PIP.</p>
+<pre class="r"><code>fit_susie_relax_l2 &lt;- fit_susie_relax(
+  x = x,
+  Rbar = Rbar,
+  N = N,
+  L = 2,
+  sigma2 = rep(sigma2, 2),
+  nu0_init = 2000,
+  estimate_nu0 = TRUE,
+  estimate_sigma2 = TRUE,
+  warmup_iter = 5,
+  max_iter = 1000,
+  tol = 1e-7,
+  verbose = FALSE,
+  nu0_bounds = c(10, 10000),
+  sigma2_bounds = c(1e-12, 1),
+  elbo_update_interval = 10,
+  nu0_update_interval = 1,
+  sigma2_update_interval = 1,
+  nu0_tol = 1e-4
+)
+
+data.frame(
+  nu0 = fit_susie_relax_l2$nu0,
+  tau2 = fit_susie_relax_l2$tau2,
+  sigma2 = paste(sprintf(&quot;%.4g&quot;, fit_susie_relax_l2$sigma2), collapse = &quot;, &quot;),
+  gamma_hat = paste(fit_susie_relax_l2$gamma_hat, collapse = &quot;, &quot;),
+  top_alpha = paste(sprintf(&quot;%.3f&quot;, apply(fit_susie_relax_l2$alpha, 1, max)),
+                    collapse = &quot;, &quot;),
+  causal_total_pip = sum(fit_susie_relax_l2$pip[causal])
+)</code></pre>
+<pre><code>       nu0        tau2        sigma2 gamma_hat    top_alpha causal_total_pip
+1 658.8325 0.001510956 0.619, 0.4944  886, 886 1.000, 1.000                1</code></pre>
+<pre class="r"><code>plot_pips(
+  list(&quot;SuSiE-relax\nL=2, estimated nu0&quot; = fit_susie_relax_l2$pip),
+  causal,
+  beta_true
+)</code></pre>
+<p><img src="figure/ser-relax-prime-pip-diffuse.Rmd/plot-susie-relax-l2-pip-1.png" alt="" width="864" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>old_par &lt;- par(no.readonly = TRUE)
+on.exit(par(old_par), add = TRUE)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+elbo_iter &lt;- which(!is.na(fit_susie_relax_l2$elbo))
+plot(
+  elbo_iter,
+  fit_susie_relax_l2$elbo[elbo_iter],
+  type = &quot;b&quot;,
+  pch = 16,
+  lwd = 2,
+  xlab = &quot;Iteration&quot;,
+  ylab = &quot;ELBO&quot;,
+  main = &quot;SuSiE-relax L=2 ELBO&quot;
+)
+grid()
+plot(
+  seq_along(fit_susie_relax_l2$nu0_trace),
+  fit_susie_relax_l2$nu0_trace,
+  type = &quot;l&quot;,
+  lwd = 2,
+  xlab = &quot;Iteration&quot;,
+  ylab = expression(hat(nu)[0]),
+  main = expression(&quot;SuSiE-relax L=2 &quot; * hat(nu)[0])
+)
+grid()</code></pre>
+<p><img src="figure/ser-relax-prime-pip-diffuse.Rmd/plot-susie-relax-l2-convergence-1.png" alt="" width="864" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>par(old_par)</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS Tahoe 26.5.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+ [1] Matrix_1.7-4      jsonlite_2.0.0    compiler_4.5.2    promises_1.5.0   
+ [5] Rcpp_1.1.1        stringr_1.6.0     git2r_0.36.2      later_1.4.8      
+ [9] jquerylib_0.1.4   png_0.1-9         yaml_2.3.12       fastmap_1.2.0    
+[13] reticulate_1.46.0 lattice_0.22-7    R6_2.6.1          workflowr_1.7.2  
+[17] knitr_1.51        tibble_3.3.1      rprojroot_2.1.1   bslib_0.10.0     
+[21] pillar_1.11.1     rlang_1.2.0       cachem_1.1.0      stringi_1.8.7    
+[25] httpuv_1.6.17     xfun_0.56         fs_2.1.0          sass_0.4.10      
+[29] otel_0.2.0        cli_3.6.6         withr_3.0.2       magrittr_2.0.4   
+[33] digest_0.6.39     grid_4.5.2        rstudioapi_0.18.0 lifecycle_1.0.5  
+[37] vctrs_0.7.1       evaluate_1.0.5    glue_1.8.0        rmarkdown_2.30   
+[41] tools_4.5.2       pkgconfig_2.0.3   htmltools_0.5.9  </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

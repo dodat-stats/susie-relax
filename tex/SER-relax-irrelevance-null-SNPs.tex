@@ -1,0 +1,1307 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue]{hyperref}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\Om}{\Omega}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Unif}{\operatorname{Unif}}
+\newcommand{\IG}{\operatorname{IG}}
+\newcommand{\Gam}{\operatorname{Gamma}}
+\newcommand{\Normal}{\mathcal N}
+
+\newtheorem{lemma}{Lemma}
+
+\title{Proof of the ``irrelevance of the null SNPs'' of the SER-relax model}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Two helpful lemmas}
+
+\begin{lemma}
+Let $R$ be a $J \times J$ positive semi-definite matrix, and let $x \in \mathbb{R}^J$ be a vector partitioned as $x = \begin{pmatrix} x_1 \\ x_2 \end{pmatrix}$, where $x_1$ is a scalar. Let $S_1$ be the Schur complement of the top-left scalar element $R_{11}$ in $R$, and let $S$ be a $J \times J$ matrix formed by padding $S_1$ with zeros such that the first row and column are zero, and the bottom-right $(J-1) \times (J-1)$ block is $S_1$. For any positive scalar $\zeta$, the following relationship holds:
+\[
+x^T (R + \zeta S)^{-1} x = \frac{1}{1 + \zeta} \left( x^T R^{-1} x \right) + \frac{\zeta}{1 + \zeta} \left( x_1^2 R_{11}^{-1} \right)
+\]
+\end{lemma}
+
+\begin{proof}
+Partition $R$ into block form as $R = \begin{pmatrix} R_{11} & R_{12} \\ R_{21} & R_{22} \end{pmatrix}$. The Schur complement of $R_{11}$ is $S_1 = R_{22} - R_{21} R_{11}^{-1} R_{12}$.
+
+Let $\tilde{R} = R + \zeta S$. Written in block form, this is:
+\[
+\tilde{R} = \begin{pmatrix} R_{11} & R_{12} \\ R_{21} & R_{22} + \zeta S_1 \end{pmatrix}
+\]
+
+The Schur complement of $R_{11}$ in $\tilde{R}$ is given by:
+\[
+\tilde{S}_1 = (R_{22} + \zeta S_1) - R_{21} R_{11}^{-1} R_{12} = S_1 + \zeta S_1 = (1 + \zeta) S_1
+\]
+
+Using the standard block matrix inversion formula, the inverse of $R$ can be written as:
+\[
+R^{-1} = \begin{pmatrix} R_{11}^{-1} & 0 \\ 0 & 0 \end{pmatrix} + K S_1^{-1} K^T
+\]
+where $K = \begin{pmatrix} -R_{11}^{-1} R_{12} \\ I \end{pmatrix}$.
+
+Applying the same inversion formula to $\tilde{R}$, and noting that $K$ remains unchanged, we obtain:
+\[
+\tilde{R}^{-1} = \begin{pmatrix} R_{11}^{-1} & 0 \\ 0 & 0 \end{pmatrix} + K \tilde{S}_1^{-1} K^T = \begin{pmatrix} R_{11}^{-1} & 0 \\ 0 & 0 \end{pmatrix} + \frac{1}{1 + \zeta} K S_1^{-1} K^T
+\]
+
+From the decomposition of $R^{-1}$, we know that $K S_1^{-1} K^T = R^{-1} - \begin{pmatrix} R_{11}^{-1} & 0 \\ 0 & 0 \end{pmatrix}$. Substituting this into the equation for $\tilde{R}^{-1}$ yields:
+\[
+\tilde{R}^{-1} = \begin{pmatrix} R_{11}^{-1} & 0 \\ 0 & 0 \end{pmatrix} + \frac{1}{1 + \zeta} \left( R^{-1} - \begin{pmatrix} R_{11}^{-1} & 0 \\ 0 & 0 \end{pmatrix} \right)
+\]
+\[
+\tilde{R}^{-1} = \frac{1}{1 + \zeta} R^{-1} + \frac{\zeta}{1 + \zeta} \begin{pmatrix} R_{11}^{-1} & 0 \\ 0 & 0 \end{pmatrix}
+\]
+
+Finally, multiplying by $x^T$ on the left and $x$ on the right isolates $x_1^2 R_{11}^{-1}$ in the second term, resulting in:
+\[
+x^T (R + \zeta S)^{-1} x = \frac{1}{1 + \zeta} \left( x^T R^{-1} x \right) + \frac{\zeta}{1 + \zeta} \left( x_1^2 R_{11}^{-1} \right)
+\]
+which completes the proof.
+\end{proof}
+
+\vspace{1em}
+
+\begin{lemma}
+Let $R$, $S$, and $\zeta$ be defined as in Lemma 1. The determinant of the perturbed matrix $R + \zeta S$ satisfies the following relationship:
+\[
+\det(R + \zeta S) = (1 + \zeta)^{J-1} \det(R)
+\]
+\end{lemma}
+
+\begin{proof}
+Using the determinant formula for block matrices, the determinant of $R$ can be expressed as the product of the determinant of its top-left block and the determinant of its corresponding Schur complement:
+\[
+\det(R) = \det(R_{11}) \det(S_1)
+\]
+
+Applying the same block determinant formula to the perturbed matrix $\tilde{R} = R + \zeta S$, and recalling from Lemma 1 that its Schur complement is $\tilde{S}_1 = (1 + \zeta) S_1$, we have:
+\[
+\det(R + \zeta S) = \det(R_{11}) \det((1 + \zeta) S_1)
+\]
+
+Because $S_1$ is a matrix of dimension $(J-1) \times (J-1)$, factoring out the scalar $(1 + \zeta)$ from the determinant yields:
+\[
+\det((1 + \zeta) S_1) = (1 + \zeta)^{J-1} \det(S_1)
+\]
+
+Substituting this scalar property back into the determinant equation gives:
+\[
+\det(R + \zeta S) = (1 + \zeta)^{J-1} \det(R_{11}) \det(S_1)
+\]
+
+Since $\det(R_{11}) \det(S_1) = \det(R)$, we obtain the final result:
+\[
+\det(R + \zeta S) = (1 + \zeta)^{J-1} \det(R)
+\]
+which completes the proof.
+\end{proof}
+
+
+\section{Proof of the property}
+Here we will show that the PIP from SER-relax does not depend on the off-diagonal parts of $\bar{R}$. Recall the SER-relax model:
+\[
+\begin{cases}
+x  \mid z_j, \beta, \gamma=j
+  \sim \mathcal{N} \left(\beta u_j(z_j),\; \dfrac{\bar{R}}{N}\right) \\
+z_j \sim \mathcal{N}(\mu_j,\;\tau^2 S_j)
+\end{cases}
+\]
+
+\noindent where $\mu_j = \bar{R}_{-j,j}\in \mathbb{R}^{J-1}$, \quad $S_j = \bar{R}_{-j,-j} - \mu_j\mu_j^T$ is the Schur complement of $\bar{R}_{jj}$, and $u_j(z_j)$ is the vector with 1 on the $j$-element and the rest is $z_j$.
+
+\paragraph{Goal.} We want to calculate $p(\gamma = j \mid x,\beta)$ and $p(\gamma = j \mid x)$, and show that it only depends on $\bar{R}$ through
+\[
+q = x^T\bar{R}^{-1}x.
+\]
+
+
+
+\paragraph{Calculation for $j = 1$.}
+\[
+\begin{cases}
+x = \begin{pmatrix} x_1 \\ x_{-1} \end{pmatrix} \mid z_1, \beta, \gamma=1
+  \sim \mathcal{N} \left(\beta\begin{pmatrix}1\\z_1\end{pmatrix},\;
+  \dfrac{\bar{R}}{N}\right) \\
+z_1 \sim \mathcal{N}(\mu_1,\;\tau^2 S_1)
+\end{cases}
+\]
+
+\noindent where $\mu_1 = \bar{R}_{-1,1}$, \quad $S_1 = \bar{R}_{-1,-1} - \mu_1\mu_1^T$.
+
+\medskip
+\noindent \textbf{Marginal \& Conditional:} Marginalize out $z_1$:
+
+\[
+x \mid \beta,\,\gamma=1 \;\sim\;
+\mathcal{N}\!\left(
+  \beta\begin{pmatrix}1\\\mu_1\end{pmatrix},\;
+  \frac{1}{N}\begin{pmatrix}1 & \mu_1^T \\ \mu_1 & \bar{R}_{-1,-1}+N\beta^2\tau^2 S_1\end{pmatrix}
+\right)
+\]
+
+\noindent Let
+\[
+\tilde{R}
+= \begin{pmatrix} 1 & \mu_1^T \\ \mu_1 & \bar{R}_{-1,-1}+N\beta^2\tau^2 S_1 \end{pmatrix}
+= \bar{R} + \begin{pmatrix} 0 & 0 \\ 0 & N\beta^2\tau^2 S_1 \end{pmatrix}.
+\]
+We have
+\[
+p(x \mid \beta,\,\gamma=1)
+= \frac{N^{J/2}}{(2\pi)^{J/2}\,|\tilde{R}|^{1/2}}
+  \exp\!\left(
+    -\frac{N}{2}
+    \left(x-\beta\begin{pmatrix}1\\\mu_1\end{pmatrix}\right)^{\!T}
+    \tilde{R}^{-1}
+    \left(x-\beta\begin{pmatrix}1\\\mu_1\end{pmatrix}\right)
+  \right)
+\]
+
+\begin{enumerate}
+\item Because $\begin{pmatrix}1\\\mu_1\end{pmatrix}$ is the first column of $\tilde{R}$,
+\[
+\tilde{R}^{-1}\begin{pmatrix}1\\\mu_1\end{pmatrix} = e_1,
+\qquad
+\begin{pmatrix}1\\\mu_1\end{pmatrix}^{\!T}
+\tilde{R}^{-1}
+\begin{pmatrix}1\\\mu_1\end{pmatrix} = 1.
+\]
+
+\item \textbf{Using Lemma 1} with $\zeta = N\beta^2\tau^2$ we have
+\[
+x^T\tilde{R}^{-1}x
+= \frac{1}{1+N\beta^2\tau^2}\,x^T\bar{R}^{-1}x
+  + \frac{N\beta^2\tau^2}{1+N\beta^2\tau^2}\,x_1^2.
+\]
+
+
+\item \textbf{Using Lemma 2:}
+\[
+\det(\tilde{R}) = (1+N\beta^2\tau^2)^{J-1}\,\det(\bar{R}).
+\]
+\end{enumerate}
+
+\medskip
+\noindent Combine all of them and let
+\[
+q = x^T\bar{R}^{-1}x,
+\]
+we have
+\begin{align*}
+p(x \mid \beta,\,\gamma=1)
+&= \frac{N^{J/2}}{(2\pi)^{J/2}\,|\bar{R}|^{1/2}\,(1+N\beta^2\tau^2)^{(J-1)/2}}
+\exp\!\left(-\frac{N}{2(1+N\beta^2\tau^2)}q\right) \\
+&\quad\times
+\exp\!\left(-\frac{N^2\beta^2\tau^2}{2(1+N\beta^2\tau^2)}x_1^2\right)
+\exp\!\left(N\beta x_1 - \frac{N}{2}\beta^2\right).
+\end{align*}
+
+\noindent Similarly,
+\begin{align}\label{eq:conditional-prob-x-given-beta-gamma}
+p(x \mid \beta,\,\gamma=j)
+&= \frac{N^{J/2}}{(2\pi)^{J/2}\,|\bar{R}|^{1/2}\,(1+N\beta^2\tau^2)^{(J-1)/2}}
+\exp\!\left(-\frac{N}{2(1+N\beta^2\tau^2)}q\right) \nonumber \\
+&\quad\times
+\exp\!\left(-\frac{N^2\beta^2\tau^2}{2(1+N\beta^2\tau^2)}x_j^2\right)
+\exp\!\left(N\beta x_j - \frac{N}{2}\beta^2\right).
+\end{align}
+
+% \paragraph{Conclusion for $p(\gamma=j\mid x,\beta)$.}
+% Assuming a uniform prior on $\gamma$, the terms involving $|\bar{R}|$ and $q$ do not depend on $j$ when $\beta$ is fixed, so they cancel in the normalization over $j$. Thus
+% \begin{align*}
+% p(\gamma=j \mid x,\beta)
+% &=
+% \frac{
+% \exp\!\left(-\frac{N^2\beta^2\tau^2}{2(1+N\beta^2\tau^2)}x_j^2 + N\beta x_j\right)}
+% {\sum_{k=1}^J
+% \exp\!\left(-\frac{N^2\beta^2\tau^2}{2(1+N\beta^2\tau^2)}x_k^2 + N\beta x_k\right)}.
+% \end{align*}
+% Therefore $p(\gamma=j\mid x,\beta)$ does not depend on $q=x^T\bar{R}^{-1}x$.
+
+\paragraph{Conclusion for $p(\gamma=j\mid x)$.}
+After integrating over $\beta$, the $q$-dependent term remains inside the integral. Dropping constants that are common to all $j$,
+\begin{align*}
+p(\gamma=j \mid x)
+&\propto
+\int
+(1+N\beta^2\tau^2)^{-(J-1)/2}
+\exp\!\left(-\frac{N}{2(1+N\beta^2\tau^2)}q\right) \\
+&\quad\times
+\exp\!\left(-\frac{N^2\beta^2\tau^2}{2(1+N\beta^2\tau^2)} x_j^2 \right) \times
+\exp\!\left(N\beta x_j - \frac{N}{2}\beta^2\right)
+p(\beta \mid 0,\sigma_0^2)\,d\beta .
+\end{align*}
+Now combine the last exponential factor with the Gaussian prior on $\beta$.
+Let
+\[
+s_N^2 = \frac{1}{N+\sigma_0^{-2}},
+\qquad
+m_j = \frac{N}{N+\sigma_0^{-2}}x_j,
+\]
+so that $m_j \approx x_j$ and $s_N^2$ is small when $N$ is large. Completing
+the square gives
+\[
+\exp\!\left(N\beta x_j - \frac{N}{2}\beta^2\right)
+p(\beta \mid 0,\sigma_0^2)
+=
+C_j\,p(\beta \mid m_j,s_N^2),
+\]
+where
+\[
+C_j =
+\frac{1}{\sigma_0\sqrt{N+\sigma_0^{-2}}}
+\exp\!\left(
+  \frac{\sigma_0^{2} N}{\sigma_0^{2} N+1}\frac{Nx_j^2}{2}
+\right).
+\]
+Therefore the same expression can be written as
+\begin{align*}
+p(\gamma=j \mid x)
+&\propto
+\E_{\beta \sim \Normal(m_j,s_N^2)}
+\Bigg[
+(1+N\beta^2\tau^2)^{-(J-1)/2}
+\exp\!\left(-\frac{N}{2(1+N\beta^2\tau^2)}q\right) \\
+&\hspace{8em}\times
+\exp\!\left(\left( \frac{N\sigma_0^2}{1+N\sigma_0^2} - \frac{N\beta^2\tau^2}{1+N\beta^2\tau^2} \right) \dfrac{N x_j^2}{2}\right)
+\Bigg].
+\end{align*}
+
+\paragraph{Implication for PIP diffuseness.}
+This expectation form gives a useful way to compare SER-relax to
+SER-relax-prime when $\nu_0$ is small. Define
+\[
+z_j = \sqrt{N}x_j,\qquad
+\rho = \frac{N\sigma_0^2}{1+N\sigma_0^2},
+\qquad
+r(a) = \frac{a}{1+a}.
+\]
+It is useful to change variables to
+\[
+U=\sqrt{N}\beta.
+\]
+Since
+\[
+\beta \mid x_j \sim \Normal(m_j,s_N^2),
+\qquad
+m_j = \rho x_j,\qquad s_N^2=\frac{1}{N+\sigma_0^{-2}},
+\]
+we have the exact induced distribution
+\[
+U \mid x_j \sim \Normal(\rho z_j,\rho).
+\]
+When $N\sigma_0^2$ is large, $\rho\approx 1$, so this is approximately
+\[
+U \mid x_j \sim \Normal(z_j,1).
+\]
+Thus the original SER-relax expression can be written as
+\[
+p(\gamma=j \mid x)
+\propto
+\E_{U \sim \Normal(\rho z_j,\rho)}
+\left[
+G(U^2)
+\exp\left\{
+\frac{1}{2}\left(\rho-r(\tau^2U^2)\right)z_j^2
+\right\}
+\right],
+\]
+where
+\[
+G(U^2)
+=
+(1+\tau^2U^2)^{-(J-1)/2}
+\exp\left\{
+-\frac{Nq}{2(1+\tau^2U^2)}
+\right\}.
+\]
+This is the main distinction from SER-relax-prime. In the original model, the
+relaxation scale inside the integral is $\tau^2U^2$, and the distribution of
+$U$ is centered at the SNP-specific value $\rho z_j$. Thus a SNP with a large
+$z_j$ is allowed to put mass on large $U^2$, whereas a null SNP with
+$z_j\approx 0$ has $U$ centered near zero. To reach the same large $U^2$ as
+the top SNP, a null SNP must pay a Gaussian tail cost under
+$\Normal(\rho z_j,\rho)$.
+
+A simple plug-in approximation replaces $U$ by its mean $\rho z_j$:
+\[
+\log p(\gamma=j\mid x)
+\approx
+\frac{1}{2}\left\{\rho-r(\tau^2\rho^2 z_j^2)\right\}z_j^2
+-\frac{J-1}{2}\log(1+\tau^2\rho^2 z_j^2)
+-\frac{Nq}{2(1+\tau^2\rho^2 z_j^2)}
++ \text{constant}.
+\]
+When $\rho\approx 1$, this becomes the simpler approximation with
+$\tau^2z_j^2$. This plug-in formula is only an approximation; the exact
+statement is the expectation over $U \sim \Normal(\rho z_j,\rho)$ above.
+
+In SER-relax-prime, $\beta^2$ in the covariance is replaced by the fixed prior
+scale $\sigma_0^2$. Consequently the determinant and $q$ terms are common
+across $j$ and cancel in the normalization over SNPs. The resulting single-SNP
+weight is
+\[
+\tilde p(\gamma=j \mid x)
+\propto
+\exp\left\{
+\frac{1}{2}
+\left[
+\rho-r(N\sigma_0^2\tau^2)
+\right]z_j^2
+\right\}.
+\]
+Thus SER-relax-prime applies the same attenuation to the $z_j^2$ evidence for
+every SNP:
+\[
+\text{SER-relax-prime attenuation: } r(N\sigma_0^2\tau^2).
+\]
+The exact log-weight gap between the top SNP $j_\star$ and another SNP $k$ in
+SER-relax-prime is
+\[
+\log \tilde p(\gamma=j_\star\mid x)
+-
+\log \tilde p(\gamma=k\mid x)
+=
+\frac{1}{2}
+\left\{\rho-r(N\sigma_0^2\tau^2)\right\}
+(z_{j_\star}^2-z_k^2).
+\]
+If $\sigma_0^2$ is learned and is of the order of the largest observed
+$x_j^2$, then
+\[
+N\sigma_0^2 \approx z_{j_\star}^2.
+\]
+Therefore the prime attenuation can be similar to the original model's
+plug-in attenuation at the top SNP. This observation is important: the
+difference between the two models is not necessarily that the top SNP is less
+attenuated in original SER-relax. The difference is that SER-relax-prime
+applies the top-SNP-scale attenuation globally to every SNP. If
+$N\sigma_0^2\tau^2$ is large, then
+\[
+r(N\sigma_0^2\tau^2)\approx \rho\approx 1,
+\]
+and the coefficient of every $z_j^2$ is close to zero. The log-weight gaps
+collapse, and the PIPs become diffuse.
+
+In original SER-relax, the analogous relaxation is not global. It is integrated
+against
+\[
+U\mid x_j \sim \Normal(\rho z_j,\rho).
+\]
+For the top SNP, this distribution is centered near $z_{j_\star}$, so the
+integral can use large $U^2$ values and obtain LD-column flexibility. For a
+null SNP, the distribution is centered near zero, so the same large relaxation
+requires a tail event. Consequently null SNPs do not receive the same effective
+relaxation as the top SNP. This SNP-specific integration can preserve the
+ranking and keep the highest PIP on the SNP with the largest $Z$-score, even
+when the learned $\sigma_0^2$ is of the order of $\max_j x_j^2$ and
+$\nu_0$ is small.
+
+\paragraph{Taylor expansion around the prime scale.}
+The preceding comparison can be made more explicit by expanding the original
+SER-relax expectation around the fixed scale used by SER-relax-prime. Let
+\[
+a=N\sigma_0^2,\qquad b=1+\tau^2 a,\qquad S=U^2,\qquad \Delta=S-a.
+\]
+Write the log of the non-Gaussian part of the original expectation as
+\[
+H_j(s)
+=
+-\frac{J-1}{2}\log(1+\tau^2s)
+-\frac{Nq}{2(1+\tau^2s)}
++\frac{1}{2}\left\{\rho-r(\tau^2s)\right\}z_j^2.
+\]
+Then
+\[
+p(\gamma=j\mid x)
+\propto
+\E_{U\sim \Normal(\rho z_j,\rho)}
+\left[\exp\{H_j(U^2)\}\right].
+\]
+A Taylor expansion around $s=a$ gives
+\[
+H_j(a+\Delta)
+=
+H_j(a)+A_j\Delta+\frac{1}{2}B_j\Delta^2+O(\Delta^3),
+\]
+where
+\[
+H_j(a)
+=
+-\frac{J-1}{2}\log b
+-\frac{Nq}{2b}
++\frac{1}{2}\left\{\rho-r(\tau^2a)\right\}z_j^2,
+\]
+\[
+A_j
+=
+\frac{\tau^2}{2}
+\left\{
+\frac{Nq-z_j^2}{b^2}
+-\frac{J-1}{b}
+\right\},
+\]
+and
+\[
+B_j
+=
+\frac{\tau^4}{2}
+\left\{
+\frac{J-1}{b^2}
+-\frac{2(Nq-z_j^2)}{b^3}
+\right\}.
+\]
+The zeroth-order term is
+\[
+\exp\{H_j(a)\}
+\propto
+\exp\left\{
+\frac{1}{2}\left[
+\rho-r(N\sigma_0^2\tau^2)
+\right]z_j^2
+\right\},
+\]
+because the determinant and $q$ terms in $H_j(a)$ do not depend on $j$. This is
+exactly the SER-relax-prime weight. Thus SER-relax-prime can be viewed as the
+zeroth-order approximation to original SER-relax obtained by setting
+\[
+U^2=N\beta^2=N\sigma_0^2
+\]
+for every SNP.
+
+The first correction is SNP-specific because the distribution of $\Delta=U^2-a$
+depends on $z_j$. Under $U\sim \Normal(\rho z_j,\rho)$,
+\[
+\E_j[\Delta]
+=
+\rho+\rho^2z_j^2-a,
+\]
+and
+\[
+\Var_j(\Delta)
+=
+2\rho^2+4\rho^3z_j^2.
+\]
+Keeping terms through second order gives the approximation
+\[
+\log p(\gamma=j\mid x)
+\approx
+H_j(a)
++A_j\E_j[\Delta]
++\frac{1}{2}B_j\E_j[\Delta^2]
++\frac{1}{2}A_j^2\Var_j(\Delta)
++\text{constant}.
+\]
+This expression shows where SER-relax can depart from SER-relax-prime. If
+$j_\star$ is the strongest SNP and the learned prior variance satisfies
+$a=N\sigma_0^2\approx z_{j_\star}^2$, then
+\[
+\E_{j_\star}[U^2]\approx a
+\]
+up to an $O(1)$ correction when $a$ is large. Therefore the prime
+zeroth-order approximation is locally reasonable for the top SNP. For a null
+SNP with $z_j\approx 0$, however,
+\[
+\E_j[U^2]\approx \rho\approx 1,
+\qquad
+\E_j[\Delta]\approx 1-a,
+\]
+so $U^2$ is not close to $a$ at all. The Taylor expansion around $a$ is then
+not a good local approximation for that SNP. This is precisely the difference:
+SER-relax-prime evaluates all SNPs at the same top-SNP-scale value
+$U^2=a$, whereas original SER-relax evaluates each SNP by integrating over a
+distribution centered at its own $\rho z_j$.
+
+This also clarifies the role of the $G(U^2)$ term. At zeroth order,
+$G(a)$ is common across SNPs and cancels, which is what happens in
+SER-relax-prime. In original SER-relax, $G(U^2)$ remains inside the
+SNP-specific expectation. A strong SNP, whose $U$ distribution is centered far
+from zero, can place mass on large $U^2$ values and access the corresponding
+LD-column flexibility. A null SNP, whose $U$ distribution is centered near
+zero, cannot access the same part of $G(U^2)$ without paying a Gaussian tail
+cost. Therefore even if $\sigma_0^2$ is learned to be close to the largest
+$x_j^2$, the original model does not give every SNP the same effective
+relaxation scale.
+
+\paragraph{Suggested diagnostics.}
+For each SNP, define the normalized SER-relax integrand in the $U$ scale,
+\[
+\pi_j(dU)
+\propto
+\phi(U;\rho z_j,\rho)\,
+G(U^2)
+\exp\left\{
+\frac{1}{2}\left(\rho-r(\tau^2U^2)\right)z_j^2
+\right\}\,dU,
+\]
+where $\phi(\cdot;\mu,v)$ is the $\Normal(\mu,v)$ density. A direct diagnostic
+is to compute
+\[
+\E_{\pi_j}[\tau^2U^2]
+\]
+for each SNP and compare it with the prime value
+\[
+N\sigma_0^2\tau^2.
+\]
+The expected pattern is that top SNPs have larger effective relaxation, null
+SNPs have much smaller effective relaxation, and SER-relax-prime uses one
+common relaxation scale for all SNPs. A second diagnostic is to compare the
+actual SER-relax PIPs with the plug-in approximation obtained by replacing
+$U$ by $\rho z_j$ in the expectation above.
+
+Therefore $p(\gamma=j\mid x)$ depends on $\bar{R}$ through $q=x^T\bar{R}^{-1}x$ in general. It does not depend on the off-diagonal elements of $\bar{R}$ separately once $q$ is fixed.
+
+
+\subsection{Approximate irrelevance of the null SNPs}
+
+Another way to understand the behavior of SER-relax is to condition on the
+marginal statistic $x_j$. Write
+\[
+x=\begin{pmatrix}x_j\\x_{-j}\end{pmatrix},
+\qquad
+\bar R
+=
+\begin{pmatrix}
+1 & \mu_j^T\\
+\mu_j & \bar R_{-j,-j}
+\end{pmatrix},
+\qquad
+S_j=\bar R_{-j,-j}-\mu_j\mu_j^T.
+\]
+In both susie-rss and SER-relax, the marginal distribution of $x_j$ is
+\[
+x_j\mid \beta,\gamma=j \sim \Normal(\beta,1/N).
+\]
+Therefore the posterior based only on $x_j$ is
+\[
+\beta\mid x_j,\gamma=j
+\sim
+\Normal(m_j,s_N^2),
+\qquad
+m_j=\rho x_j,\qquad
+s_N^2=\frac{\rho}{N},
+\qquad
+\rho=\frac{N\sigma_0^2}{1+N\sigma_0^2}.
+\]
+In susie-rss, the conditional distribution of the remaining coordinates is
+independent of $\beta$:
+\[
+p(x_{-j}\mid x_j,\beta,\gamma=j)
+=
+\Normal(x_j\mu_j,S_j/N).
+\]
+This is the exact irrelevance property: once $x_j$ is fixed, $x_{-j}$ does not
+change the relative evidence for SNP $j$ through $\beta$.
+
+In SER-relax, the conditional mean is still independent of $\beta$, but the
+conditional covariance is inflated by $\beta^2$:
+\[
+p(x_{-j}\mid x_j,\beta,\gamma=j)
+=
+\Normal\left(
+x_j\mu_j,
+\left(\frac{1}{N}+\beta^2\tau^2\right)S_j
+\right).
+\]
+Integrating over $\beta\mid x_j$ gives
+\[
+p(x_{-j}\mid x_j,\gamma=j)
+=
+\int
+\Normal\left(
+x_{-j}\mid x_j\mu_j,\,
+\left(\frac{1}{N}+\beta^2\tau^2\right)S_j
+\right)
+p(\beta\mid x_j,\gamma=j)\,d\beta
+\]
+\[
+=
+\E_{\beta\sim \Normal(m_j,s_N^2)}
+\left[
+\Normal\left(
+x_{-j}\mid x_j\mu_j,\,
+\left(\frac{1}{N}+\beta^2\tau^2\right)S_j
+\right)
+\right].
+\]
+This is a mixture of Gaussians with the same mean and the same shape matrix
+$S_j$, but with SNP-specific scalar variance inflation. Since
+$\beta\mid x_j$ is concentrated near $m_j=\rho x_j$, a plug-in approximation gives
+\[
+p(x_{-j}\mid x_j,\gamma=j)
+\approx
+\Normal\left(
+x_j\mu_j,\,
+\left(\frac{1}{N}+m_j^2\tau^2\right)S_j
+\right).
+\]
+When $\rho\approx 1$, this becomes
+\[
+p(x_{-j}\mid x_j,\gamma=j)
+\approx
+\Normal\left(
+x_j\mu_j,\,
+\left(\frac{1}{N}+x_j^2\tau^2\right)S_j
+\right).
+\]
+
+This gives an approximate null-SNP irrelevance statement. If SNP $j$ is null,
+then $x_j=O(N^{-1/2})$, and under $\beta\mid x_j$,
+\[
+\beta^2 = O_p(N^{-1}).
+\]
+Therefore the scalar covariance inflation satisfies
+\[
+\frac{1}{N}+\beta^2\tau^2
+=
+\frac{1}{N}\{1+O_p(\tau^2)\}.
+\]
+For moderate $\tau^2$, the SER-relax conditional distribution is close to the
+susie-rss conditional distribution:
+\[
+p(x_{-j}\mid x_j,\gamma=j)
+\approx
+\Normal(x_j\mu_j,S_j/N).
+\]
+In contrast, for a strong SNP with $z_j^2$ large, the inflation
+$1+N\beta^2\tau^2$ can be much larger than 1 under
+$\beta\mid x_j,\gamma=j$, allowing the active SNP's LD column to relax. This
+is the approximate version of irrelevance: null SNPs see little variance
+inflation after conditioning on their small $x_j$, while strong SNPs can
+receive substantial LD-column flexibility.
+
+This argument also shows why using $p(\beta\mid x,\gamma=j)$ directly is less
+clean. The full posterior $p(\beta\mid x,\gamma=j)$ already contains
+$x_{-j}$ through the Gaussian likelihood above, so it is circular for proving
+irrelevance of $x_{-j}$. The sharper statement is obtained by first
+conditioning on $x_j$ and then asking how much the remaining conditional
+distribution changes as $\beta$ varies over
+$\beta\mid x_j,\gamma=j$.
+
+\section{TO-DO}
+Understand the relationship between 
+\begin{enumerate}
+\item PIP only depends on $x$ and the diagonal of $R$.
+\item $p(x_{-j} | x_j, \beta, \gamma = j)$ does not depend on $\beta$.
+\end{enumerate}
+Look Yuxin's thesis and read the SI of susie-rss paper more carefully.
+
+Why does having $\beta^2$ in the variance make sense? Of course it follows from the IW or Wi model, but intuitively why does it make sense?
+
+Is there another model that arises from the conditional distribution:
+\begin{equation}\label{eq:conditional-dist-Matthew}
+p(x_{-j}\mid x_j, \beta, \gamma=j) = 
+\Normal\left(
+x_j \bar R_{j, -j} ,\,
+\left(\frac{1}{N}+ \dfrac{x_j^2}{\nu_0 + 3}\right)S_j
+\right)?
+\end{equation}
+
+\section{Some new models with better approximation to susie-love}
+Recall our original SER model from what is called `susie-love':
+\begin{align}\label{eq:likelihood-x-R-mean-var} 
+\begin{cases}
+x | R, \beta, \gamma \sim \mathcal{N}(\beta R_{\gamma}, R / N)\\
+R \sim \mathcal{IW}(\nu_0 \bar R, \nu_0 + J + 1).
+\end{cases}
+\end{align}
+Note that the latent matrix $R$ appears in both mean and variance of the likelihood in~\eqref{eq:likelihood-x-R-mean-var}. This model is very natural for unknown in-sample LD $R$, but is hard to make inferences. Last time we approximated $R$ in the variance to be $\bar R$, which makes the inference much easier but might eventually lead to the loss of the ``irrelevance of the null SNPs'' property. In principle, it makes sense that when $L = 1$, PIP of SNP j calculation should only depend on $x_j$ but not on other $x_k$ and $\bar R_{jk}$ (``irrelevance of the null SNPs'' property for SER).
+
+I think this original model is actually feasible for inference. Consider the following equivalent way to represent it.
+
+\subsection{Model A (equivalent to the original SER-love model)} Let's write down $p(x | R, \beta, \gamma = 1)$, other cases of $\gamma$ are similar. Let 
+$$d_1 = R_{11} \in \mathbb{R}_{+}, \quad z_1 = \dfrac{R_{-1, 1}}{d_1} \in \mathbb{R}^{J-1},$$
+and 
+$$S_1 = R_{-1, -1} - d_1 z_1 z_1^\top $$
+be the Schur's complement of $R_{11}$ in $R$. Hence, the latent $R$ is represented as
+\begin{equation}\label{eq:R-block}
+R = \begin{pmatrix}
+d_1 & d_1 z_1^\top \\
+d_1 z_1 & S_1 + d_1 z_1 z_1^\top
+\end{pmatrix}.
+\end{equation}
+Similarly, denote
+$$\bar S_1 = \bar R_{-1, -1} - \bar R_{-1, 1} \bar R_{-1, 1}^\top $$
+be the Schur's complement of $\bar R_{11}$ in $\bar R$, and $\mu_1 =  \bar R_{-1, 1}$, we can write
+\begin{equation}\label{eq:R-bar-block}
+\bar R = \begin{pmatrix}
+1 &\mu_1^\top \\
+\mu_1 & \bar S_1 + \mu_1 \mu_1^\top
+\end{pmatrix}.
+\end{equation}
+
+Properties of IW distribution (together with the fact that $\bar R_{11} = 1$)
+imply, using the shape--scale parameterization for the inverse-gamma
+distribution,
+\begin{equation}
+\begin{cases}
+d_1 \sim \IG\left(\dfrac{\nu_0 + 2}{2}, \dfrac{\nu_0}{2}\right) \\
+z_1 | S_1 \sim \mathcal{N}\left(\bar R_{-1, 1}, \dfrac{S_1}{\nu_0}\right)\\
+S_1 \sim \mathcal{IW}(\nu_0 \bar S_1, \nu_0 + J + 1)
+\end{cases}
+\end{equation}
+The original SER version of Susie-love (with $\gamma = 1$; similar for other $\gamma$) becomes:
+\begin{align}\label{eq:SER-model-A} 
+\begin{cases}
+x | \beta, \gamma = 1, z_1, S_1 \sim \mathcal{N}\left(\beta 
+\begin{pmatrix}
+d_1  \\
+d_1 z_1
+\end{pmatrix}, 
+\dfrac{1}{N} \begin{pmatrix}
+d_1 & d_1 z_1^\top \\
+d_1 z_1 & S_1 + d_1 z_1 z_1^\top
+\end{pmatrix}\right)\\
+d_1 \sim \IG\left(\dfrac{\nu_0 + 2}{2}, \dfrac{\nu_0}{2}\right) \\
+z_1 | S_1 \sim \mathcal{N}\left(\mu_1, \dfrac{S_1}{\nu_0}\right)\\
+S_1 \sim \mathcal{IW}(\nu_0 \bar S_1, \nu_0 + J + 1)\\
+\beta \sim \mathcal{N}(0, \sigma_0^2)
+\end{cases}
+\end{align}
+
+\paragraph{Deriving $p(x\mid \gamma=1)$.}
+Write
+\[
+x=\begin{pmatrix}x_1\\x_{-1}\end{pmatrix}.
+\]
+\paragraph{Step 1: likelihood conditional on all latent variables.}
+From the block normal distribution in~\eqref{eq:SER-model-A},
+\[
+p(x\mid \gamma=1,\beta,d_1,z_1,S_1)
+=
+\Normal_J\left(
+x\mid
+\beta
+\begin{pmatrix}
+d_1\\ d_1z_1
+\end{pmatrix},
+\frac{1}{N}
+\begin{pmatrix}
+d_1 & d_1z_1^\top\\
+d_1z_1 & S_1+d_1z_1z_1^\top
+\end{pmatrix}
+\right).
+\]
+Equivalently, using the conditional distribution of a block normal,
+\[
+p(x\mid \gamma=1,\beta,d_1,z_1,S_1)
+=
+\Normal\left(x_1\mid \beta d_1,\frac{d_1}{N}\right)
+\Normal_{J-1}\left(x_{-1}\mid x_1z_1,\frac{S_1}{N}\right).
+\]
+The key simplification is that, \textbf{after conditioning on $x_1$, the conditional
+mean of $x_{-1}$ is $x_1z_1$ and no longer contains $\beta$ or $d_1$} (relevant to our earlier discussion).
+
+\paragraph{Step 2: marginalize over $z_1\mid S_1$.}
+Since
+\[
+z_1\mid S_1\sim \Normal_{J-1}\left(\mu_1,\frac{S_1}{\nu_0}\right)
+\]
+and
+\[
+x_{-1}\mid x_1,z_1,S_1
+\sim
+\Normal_{J-1}\left(x_1z_1,\frac{S_1}{N}\right),
+\]
+we get
+\begin{equation}\label{eq:conditional-dist-susie-love}
+x_{-1}\mid x_1,S_1,\gamma=1
+\sim
+\Normal_{J-1}\left(
+x_1\mu_1,
+\left(\frac{1}{N}+\frac{x_1^2}{\nu_0}\right)S_1
+\right).
+\end{equation}
+Therefore
+\[
+p(x\mid \gamma=1,\beta,d_1,S_1)
+=
+\Normal\left(x_1\mid \beta d_1,\frac{d_1}{N}\right)
+\Normal_{J-1}\left(
+x_{-1}\mid x_1\mu_1,
+\left(\frac{1}{N}+\frac{x_1^2}{\nu_0}\right)S_1
+\right).
+\]
+What I found so interesting is that the conditional distribution $p(x_{-1}\mid x_1,S_1,\gamma=1)$ resembles what was suggested by Matthew last time (cf.~\eqref{eq:conditional-dist-Matthew}).
+
+\paragraph{Step 3: marginalize over $S_1$.}
+Because $S_1\sim \mathcal{IW}_{J-1}(\nu_0\bar S_1,\nu_0+J+1)$, integrating
+$S_1$ gives a multivariate $t$ distribution with $\nu_0+3$ degrees of freedom:
+\[
+x_{-1}\mid x_1,\gamma=1
+\sim
+t_{J-1,\nu_0+3}\left(
+x_1\mu_1,\,
+\frac{\nu_0}{\nu_0+3}\left(\frac{1}{N}+\frac{x_1^2}{\nu_0}\right)\bar S_1
+\right),
+\]
+where the second argument is the multivariate $t$ scale matrix. Thus
+\[
+p(x\mid \gamma=1,\beta,d_1)
+=
+\Normal\left(x_1\mid \beta d_1,\frac{d_1}{N}\right)
+t_{J-1,\nu_0+3}\left(
+x_{-1}\mid x_1\mu_1,\,
+\frac{\nu_0}{\nu_0+3}\left(\frac{1}{N}+\frac{x_1^2}{\nu_0}\right)\bar S_1
+\right).
+\]
+Equivalently, the $t$ factor is proportional to
+\[
+|\bar S_1|^{-1/2}
+\left(\frac{1}{N}+\frac{x_1^2}{\nu_0}\right)^{-(J-1)/2}
+\left[
+1+
+\frac{
+(x_{-1}-x_1\mu_1)^\top(\nu_0\bar S_1)^{-1}
+(x_{-1}-x_1\mu_1)
+}{\frac{1}{N}+\frac{x_1^2}{\nu_0}}
+\right]^{-(\nu_0+J+2)/2}.
+\]
+Using the block inverse formula (notice the block form of $\bar R$~\eqref{eq:R-bar-block}),
+\[
+x^\top\bar R^{-1}x
+=
+x_1^2+
+(x_{-1}-x_1\mu_1)^\top\bar S_1^{-1}
+(x_{-1}-x_1\mu_1),
+\]
+so
+\[
+1+
+\frac{
+(x_{-1}-x_1\mu_1)^\top(\nu_0\bar S_1)^{-1}
+(x_{-1}-x_1\mu_1)
+}{\frac{1}{N}+\frac{x_1^2}{\nu_0}}
+=
+\frac{x^\top\bar R^{-1}x+\nu_0/N}{x_1^2+\nu_0/N}.
+\]
+Therefore
+\begin{equation}\label{eq:T_1}
+T_1(x)
+\propto
+|\bar S_1|^{-1/2}
+\left(x_1^2+\frac{\nu_0}{N}\right)^{(\nu_0+3)/2}
+\left(x^\top\bar R^{-1}x+\frac{\nu_0}{N}\right)^{-(\nu_0+J+2)/2}.
+\end{equation}
+When comparing different values of $\gamma$, the final factor is common across
+SNPs. Also, since $\bar R_{11}=1$, $|\bar R|=|\bar S_1|$; analogously,
+$|\bar S_j|=|\bar R|$ for any SNP $j$ with $\bar R_{jj}=1$.
+
+
+
+\paragraph{Step 4: marginalize over $\beta$ and $d_1$.}
+The preceding display separates the problem into an $x_{-1}\mid x_1$ factor
+and an $x_1$ factor. Define
+\[
+T_1(x)=
+t_{J-1,\nu_0+3}\left(
+x_{-1}\mid x_1\mu_1,\,
+\frac{\nu_0}{\nu_0+3}\left(\frac{1}{N}+\frac{x_1^2}{\nu_0}\right)\bar S_1
+\right).
+\]
+If we integrate over $\beta$, then
+\[
+x_1\mid d_1,\gamma=1
+\sim
+\Normal\left(0,\frac{d_1}{N}+d_1^2\sigma_0^2\right),
+\]
+and hence (finally integrating over $d_1$):
+
+\[
+\boxed{
+p(x\mid \gamma=1)
+=
+T_1(x)
+\int_0^\infty
+\Normal\left(x_1\mid 0,\frac{d_1}{N}+d_1^2\sigma_0^2\right)
+\IG\left(d_1;\frac{\nu_0+2}{2},\frac{\nu_0}{2}\right)\,d d_1
+}.
+\]
+This is a one-dimensional integral over $d_1>0$. I do not see a standard
+closed form for it because the variance is $d_1/N+d_1^2\sigma_0^2$. Replacing $T_1$ with its expression in~\eqref{eq:T_1}, 
+
+\[
+\begin{aligned}
+p(x\mid \gamma=1)
+\propto\;& |\bar R|^{-1/2}
+\left(x_1^2+\frac{\nu_0}{N}\right)^{(\nu_0+3)/2}
+\left(x^\top\bar R^{-1}x+\frac{\nu_0}{N}\right)^{-(\nu_0+J+2)/2} \\
+&\quad\times
+\int_0^\infty
+\Normal\left(x_1\mid 0,\frac{d_1}{N}+d_1^2\sigma_0^2\right)\,d \IG(d_1)
+\end{aligned}
+\]
+Since $|\bar R|$ and $x^\top\bar R^{-1}x$ do not depend on which SNP is chosen,
+both factors cancel in the PIP normalization. Also,
+\[
+\left(x_j^2+\frac{\nu_0}{N}\right)^{(\nu_0+3)/2}
+=
+\left(\frac{\nu_0}{N}\right)^{(\nu_0+3)/2}
+\left(1+\frac{Nx_j^2}{\nu_0}\right)^{(\nu_0+3)/2},
+\]
+and the first factor is common across SNPs. Hence,
+\[
+\boxed{
+p(\gamma=j\mid x)
+\propto
+\left(1+\frac{Nx_j^2}{\nu_0}\right)^{(\nu_0+3)/2}
+\int_0^\infty
+\Normal\left(x_j\mid 0,\frac{d_j}{N}+d_j^2\sigma_0^2\right)\,d \IG(d_j)
+}.
+\]
+\textbf{Conclusion.} In the original SER-love model, the marginal likelihood
+depends on $x^\top\bar R^{-1}x$, but this dependence is common across SNPs and
+cancels when computing the PIP. The resulting PIP weight depends on SNP $j$
+only through $x_j$.
+
+\subsection{Model B} 
+Simplify $d_1 \equiv 1$ to avoid intractable integral (and we know the diagonal of the in-sample LD matrix is 1 anyway), we have the following model (model B):
+\begin{align}\label{eq:SER-model-B} 
+\begin{cases}
+x | \beta, \gamma = 1, z_1, S_1 \sim \mathcal{N}\left(\beta 
+\begin{pmatrix}
+1  \\
+z_1
+\end{pmatrix}, 
+\dfrac{1}{N} \begin{pmatrix}
+1 & z_1^\top \\
+z_1 & S_1 + z_1 z_1^\top
+\end{pmatrix}\right)\\
+z_1 | S_1 \sim \mathcal{N}\left(\mu_1, \dfrac{S_1}{\nu_0}\right)\\
+S_1 \sim \mathcal{IW}(\nu_0 \bar S_1, \nu_0 + J + 1)\\
+\beta \sim \mathcal{N}(0, \sigma_0^2)
+\end{cases}
+\end{align}
+
+This model leads to
+\[
+\boxed{
+p(x\mid\gamma=1)
+\propto
+|\bar R|^{-1/2}
+\left(1+\frac{Nx_j^2}{\nu_0}\right)^{(\nu_0+3)/2}
+\left(x^\top\bar R^{-1}x+\frac{\nu_0}{N}\right)^{-(\nu_0+J+2)/2}
+\Normal\left(x_1\mid 0,\frac{1}{N} + \sigma_0^2\right)
+}.
+\]
+Since $|\bar R|$ and $x^\top\bar R^{-1}x$ do not depend on which SNP is chosen,
+the PIP weights simplify further. Dropping the common factors gives
+\begin{equation}\label{eq:PIP-model-B}
+\boxed{
+p(\gamma=j \mid x)
+\propto
+\left(1+\frac{Nx_j^2}{\nu_0}\right)^{(\nu_0+3)/2}
+\Normal\left(x_j \mid 0,\frac{1}{N} + \sigma_0^2\right)
+}.
+\end{equation}
+
+\paragraph{Compare to SER-RSS's PIP.} Recall SER-RSS's PIP:
+\begin{equation}\label{eq:PIP-susie-RSS}
+\tilde{p}(\gamma=j\mid x)
+\propto \exp\left(\dfrac{N\sigma_0^{2}}{N\sigma_0^{2} + 1} \dfrac{N x_j^2}{2} \right)
+\end{equation}
+We now show that~\eqref{eq:PIP-model-B} tends to~\eqref{eq:PIP-susie-RSS}
+as $\nu_0\to\infty$. Since
+\[
+\left(1+\frac{Nx_j^2}{\nu_0}\right)^{(\nu_0+3)/2} = \left(1+ \dfrac{2}{\nu_0 + 3} \times \dfrac{\nu_0 + 3}{\nu_0} \frac{Nx_j^2}{2}\right)^{(\nu_0+3)/2} 
+\asymp \exp\left\{\frac{\nu_0 + 3}{\nu_0} \dfrac{Nx_j^2}{2}\right\}
+\]
+Also,
+\[
+\Normal\left(x_j\mid 0,\frac{1}{N}+\sigma_0^2\right)
+\propto
+\exp\left\{
+-\frac{x_j^2}{2(1/N+\sigma_0^2)}
+\right\}
+=
+\exp\left\{
+-\frac{1}{1+N\sigma_0^2} \frac{N x_j^2}{2}
+\right\}.
+\]
+Therefore the limiting weight in~\eqref{eq:PIP-model-B} is asymptotically (as $\nu_0$ gets large)
+\[
+\exp\left\{\left(\frac{\nu_0 + 3}{\nu_0} - \dfrac{1}{N\sigma_0^2 + 1}\right) \dfrac{Nx_j^2}{2}\right\} = \exp\left\{\left(\dfrac{N\sigma_0^2}{N\sigma_0^2 + 1} - \dfrac{1}{\nu_0 + 3}\right) \dfrac{Nx_j^2}{2}\right\} \approx \exp\left\{\dfrac{N\sigma_0^2}{N\sigma_0^2 + 1} \dfrac{Nx_j^2}{2}\right\}
+\]
+which is exactly the SER-RSS PIP weight in~\eqref{eq:PIP-susie-RSS}. Hence, for finite $\nu_0$, PIP under SER-love model (B) is slightly more diffused than susie-rss. 
+
+\paragraph{Inference under model B~\eqref{eq:SER-model-B}.}
+For a general SNP $j$, write
+\[
+\mu_j=\bar R_{-j,j},
+\qquad
+\bar S_j=\bar R_{-j,-j}-\mu_j\mu_j^\top,
+\qquad
+\kappa_j=\nu_0+Nx_j^2.
+\]
+Under model B, conditional on $\gamma=j$, the likelihood factorizes as
+\[
+p(x\mid \beta,z_j,S_j,\gamma=j)
+=
+\Normal\left(x_j\mid \beta,\frac{1}{N}\right)
+\Normal_{J-1}\left(x_{-j}\mid x_jz_j,\frac{S_j}{N}\right).
+\]
+Thus $\beta$ is conditionally independent of $(z_j,S_j)$ given $x$ and
+$\gamma=j$, and
+\[
+p(\beta,z_j,S_j\mid x,\gamma=j)
+=
+p(\beta\mid x_j,\gamma=j)\,
+p(z_j,S_j\mid x,\gamma=j).
+\]
+
+$\bullet$ The posterior for $\beta$ is the usual normal-normal update:
+\[
+\boxed{
+\beta\mid x,\gamma=j
+\sim
+\Normal\left(
+\frac{N}{N+\sigma_0^{-2}}x_j,\,
+\frac{1}{N+\sigma_0^{-2}}
+\right).
+}
+\]
+
+$\bullet$ For the LD-column variables, first condition on $S_j$. Combining
+\[
+z_j\mid S_j\sim \Normal_{J-1}\left(\mu_j,\frac{S_j}{\nu_0}\right),
+\qquad
+x_{-j}\mid x_j,z_j,S_j,\gamma=j
+\sim
+\Normal_{J-1}\left(x_jz_j,\frac{S_j}{N}\right)
+\]
+gives
+\[
+\boxed{
+z_j\mid S_j,x,\gamma=j
+\sim
+\Normal_{J-1}\left(
+\frac{\nu_0\mu_j+Nx_jx_{-j}}{\nu_0+Nx_j^2},\,
+\frac{S_j}{\nu_0+Nx_j^2}
+\right).
+}
+\]
+
+$\bullet$ Integrating out $z_j$ gives
+\[
+x_{-j}\mid x_j,S_j,\gamma=j
+\sim
+\Normal_{J-1}\left(
+x_j\mu_j,\,
+\left(\frac{1}{N}+\frac{x_j^2}{\nu_0}\right)S_j
+\right).
+\]
+Therefore the posterior for $S_j$ is inverse-Wishart:
+\[
+\boxed{
+S_j\mid x,\gamma=j
+\sim
+\mathcal{IW}\left(
+\nu_0\bar S_j+
+\frac{N\nu_0}{\nu_0+Nx_j^2}
+(x_{-j}-x_j\mu_j)(x_{-j}-x_j\mu_j)^\top,\,
+\nu_0+J+2
+\right).
+}
+\]
+Equivalently, the joint posterior of $(z_j,S_j)$ can be represented by first
+drawing $S_j$ from this inverse-Wishart distribution and then drawing $z_j$
+from the conditional normal distribution above. Finally, the full posterior
+over $\gamma$ uses the PIP weights in~\eqref{eq:PIP-model-B}, normalized over
+$j=1,\ldots,J$.
+
+\paragraph{Closed-form ELBO.}
+Because the conditional posteriors above are exact, the optimized ELBO for
+model B is the exact marginal log likelihood. Let
+\[
+V_\beta=\frac{1}{N}+\sigma_0^2,
+\qquad
+q=x^\top\bar R^{-1}x.
+\]
+For a uniform prior on $\gamma$, the optimized ELBO is
+\[
+\mathcal L(\nu_0,\sigma_0^2)
+=
+\log\left\{
+\frac{1}{J}\sum_{j=1}^J \exp(\ell_j)
+\right\},
+\]
+where the component log marginal likelihood can be written as
+\begin{align*}
+\ell_j
+=\;&
+-\frac{1}{2}\log(2\pi V_\beta)
+-\frac{x_j^2}{2V_\beta}
++\log\Gamma\left(\frac{\nu_0+J+2}{2}\right)
+-\log\Gamma\left(\frac{\nu_0+3}{2}\right) \\
+&\quad
+-\frac{J-1}{2}\log\pi
+-\frac{1}{2}\log|\bar S_j|
++\frac{\nu_0+3}{2}\log\left(x_j^2+\frac{\nu_0}{N}\right)
+-\frac{\nu_0+J+2}{2}\log\left(q+\frac{\nu_0}{N}\right).
+\end{align*}
+This is equivalent to the marginal likelihood derived above, but unlike the
+PIP formula it keeps the terms that are common across SNPs. Those common terms
+do not affect $\pi_j=p(\gamma=j\mid x)$ for fixed hyperparameters, but they do
+matter when learning $\nu_0$.
+
+\paragraph{Empirical Bayes learning of $\nu_0$ and $\sigma_0^2$.}
+The empirical Bayes estimates can be obtained by maximizing the closed-form
+objective
+\[
+(\hat\nu_0,\hat\sigma_0^2)
+=
+\arg\max_{\nu_0>0,\;\sigma_0^2\ge 0}
+\mathcal L(\nu_0,\sigma_0^2).
+\]
+After choosing $(\hat\nu_0,\hat\sigma_0^2)$, the posterior inclusion
+probabilities are
+\[
+\pi_j
+=
+\frac{\exp(\ell_j)}
+{\sum_{k=1}^J \exp(\ell_k)}
+\bigg|_{\nu_0=\hat\nu_0,\;\sigma_0^2=\hat\sigma_0^2}.
+\]
+Equivalently, for computing PIPs at fixed hyperparameters one may use the
+simplified weights in~\eqref{eq:PIP-model-B}; for empirical Bayes optimization
+one should use $\mathcal L(\nu_0,\sigma_0^2)$ above, because it retains the
+$\nu_0$-dependent normalizing constants and the common
+$\log(q+\nu_0/N)$ term.
+
+\paragraph{EM view of empirical Bayes.}
+Another way to use the fact that the posterior is exact is to write the usual
+ELBO identity. Let
+\[
+\theta=(\gamma,\beta,z_\gamma,S_\gamma),
+\qquad
+q(\theta)=p(\theta\mid x;\nu_0^{\mathrm{old}},\sigma_{0,\mathrm{old}}^2).
+\]
+Strictly speaking,
+\[
+\log p(x;\nu_0,\sigma_0^2)
+\ge
+\E_q\{\log p(x\mid\theta)\}
+-\operatorname{KL}\{q(\theta)\,\|\,p(\theta;\nu_0,\sigma_0^2)\},
+\]
+with equality when $q$ is the posterior under the same hyperparameters. In an
+EM algorithm, the E-step fixes $q$ at the current hyperparameters and the
+M-step maximizes
+\[
+Q(\nu_0,\sigma_0^2)
+=
+\E_q\{\log p(\theta;\nu_0,\sigma_0^2)\},
+\]
+because the likelihood term does not involve $\nu_0$ or $\sigma_0^2$ in model B.
+
+This gives a closed-form update for $\sigma_0^2$. If
+\[
+\pi_j=q(\gamma=j),
+\qquad
+m_{\beta j}=\frac{N}{N+\sigma_{0,\mathrm{old}}^{-2}}x_j,
+\qquad
+v_\beta=\frac{1}{N+\sigma_{0,\mathrm{old}}^{-2}},
+\]
+then
+\[
+\boxed{
+\sigma_{0,\mathrm{new}}^2
+=
+\sum_{j=1}^J \pi_j\left(m_{\beta j}^2+v_\beta\right).
+}
+\]
+
+For $\nu_0$, the same EM view reduces the update to a one-dimensional
+optimization, but not to a closed-form expression. Let $p=J-1$ and write the
+current posterior of $S_j$ as
+\[
+S_j\mid x,\gamma=j
+\sim
+\mathcal{IW}_p(\Psi_j,m_j),
+\qquad
+m_j=\nu_0^{\mathrm{old}}+J+2,
+\]
+where
+\[
+\Psi_j
+=
+\nu_0^{\mathrm{old}}\bar S_j+
+\frac{N\nu_0^{\mathrm{old}}}{\nu_0^{\mathrm{old}}+Nx_j^2}
+(x_{-j}-x_j\mu_j)(x_{-j}-x_j\mu_j)^\top.
+\]
+Also let
+\[
+\bar z_j
+=
+\frac{\nu_0^{\mathrm{old}}\mu_j+Nx_jx_{-j}}
+{\nu_0^{\mathrm{old}}+Nx_j^2},
+\qquad
+\kappa_j^{\mathrm{old}}=\nu_0^{\mathrm{old}}+Nx_j^2.
+\]
+The needed posterior expectations are
+\[
+A_j=\E_q\{\tr(\bar S_jS_j^{-1})\}
+=
+m_j\tr(\bar S_j\Psi_j^{-1}),
+\]
+\[
+B_j=\E_q\{(z_j-\mu_j)^\top S_j^{-1}(z_j-\mu_j)\}
+=
+m_j(\bar z_j-\mu_j)^\top\Psi_j^{-1}(\bar z_j-\mu_j)
++\frac{p}{\kappa_j^{\mathrm{old}}},
+\]
+and
+\[
+C_j=\E_q\{\log|S_j|\}
+=
+\log|\Psi_j|
+-\sum_{r=1}^p \psi\left(\frac{m_j+1-r}{2}\right)
+-p\log 2.
+\]
+Up to constants that do not depend on $\nu_0$, the EM objective for $\nu_0$ is
+\begin{align*}
+Q_\nu(\nu_0)
+=
+\sum_{j=1}^J \pi_j
+\Bigg[
+&\frac{p}{2}\log\nu_0
++\frac{\nu_0+J+1}{2}\log|\nu_0\bar S_j|
+-\frac{(\nu_0+J+1)p}{2}\log 2 \\
+&-\log\Gamma_p\left(\frac{\nu_0+J+1}{2}\right)
+-\frac{\nu_0+2J+2}{2}C_j
+-\frac{\nu_0}{2}(A_j+B_j)
+\Bigg].
+\end{align*}
+Thus
+\[
+\boxed{
+\nu_{0,\mathrm{new}}=\arg\max_{\nu_0>0} Q_\nu(\nu_0).
+}
+\]
+So the exact-posterior ELBO gives a particularly nice update for
+$\sigma_0^2$, and a stable scalar optimization for $\nu_0$. For $\nu_0$, the
+closed-form marginal likelihood $\mathcal L(\nu_0,\sigma_0^2)$ above is often
+even simpler to optimize directly, but the EM form is useful for deriving a
+monotone coordinate-ascent algorithm.
+
+\section{Extension to susie}
+Now we try to extend model B into a Susie-like model, where we allow more than one non-zero effect.
+
+\end{document}

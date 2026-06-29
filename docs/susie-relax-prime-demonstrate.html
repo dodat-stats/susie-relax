@@ -13,7 +13,7 @@
 
 <meta name="date" content="2026-06-25" />
 
-<title>SuSiE-relax Demonstration</title>
+<title>SuSiE-relax-prime Demonstration</title>
 
 <script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -359,7 +359,7 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">SuSiE-relax Demonstration</h1>
+<h1 class="title toc-ignore">SuSiE-relax-prime Demonstration</h1>
 <h4 class="author">Dat Do</h4>
 <h4 class="date">2026-06-25</h4>
 
@@ -428,10 +428,10 @@ changes </a>
 <div id="strongRMarkdownfilestronguncommittedchanges"
 class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown file has unstaged changes. To know which version of
-the R Markdown file created these results, you’ll want to first commit
-it to the Git repo. If you’re still working on the analysis, you can
-ignore this warning. When you’re finished, you can run
+<p>The R Markdown is untracked by Git. To know which version of the R
+Markdown file created these results, you’ll want to first commit it to
+the Git repo. If you’re still working on the analysis, you can ignore
+this warning. When you’re finished, you can run
 <code>wflow_publish</code> to commit the R Markdown file and build the
 HTML.</p>
 </div>
@@ -601,90 +601,9 @@ have uncommitted changes.
 </div>
 <div id="versions" class="tab-pane fade">
 <p>
-These are the previous versions of the repository in which changes were
-made to the R Markdown
-(<code>analysis/susie-relax-demonstrate.Rmd</code>) and HTML
-(<code>docs/susie-relax-demonstrate.html</code>) files. If you’ve
-configured a remote Git repository (see <code>?wflow_git_remote</code>),
-click on the hyperlinks in the table below to view the files as they
-were in that past version.
+There are no past versions. Publish this analysis with
+<code>wflow_publish()</code> to start tracking its development.
 </p>
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-File
-</th>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-<th>
-Message
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/dodat-stats/susie-relax/blob/24cc2ceaa3e04293564aaf37907d07b5eaba262e/analysis/susie-relax-demonstrate.Rmd" target="_blank">24cc2ce</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-22
-</td>
-<td>
-change some text
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/dodat-stats/susie-relax/ca6d203dabbc4d851def8aea65d1bb47c44f2265/docs/susie-relax-demonstrate.html" target="_blank">ca6d203</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-21
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/dodat-stats/susie-relax/blob/33faf9a52baa8af6f8157fc71aaf91ba7d8c8f89/analysis/susie-relax-demonstrate.Rmd" target="_blank">33faf9a</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-21
-</td>
-<td>
-Publish SuSiE-relax demonstrations in workflowr style
-</td>
-</tr>
-</tbody>
-</table>
-</div>
 <hr>
 </div>
 </div>
@@ -699,22 +618,23 @@ Publish SuSiE-relax demonstrations in workflowr style
 
 library(susieR)
 
-source(&quot;code/SuSiE-relax.R&quot;)
+source(&quot;code/susie-relax-prime.R&quot;)
 source(&quot;code/sim_2pop.R&quot;)
 source(&quot;code/plot.R&quot;)</code></pre>
-<div id="from-ser-relax-to-susie-relax" class="section level1"
-number="1">
-<h1><span class="header-section-number">1</span> From SER-relax to
-SuSiE-relax</h1>
-<p>SER-relax models one active effect while allowing the active LD
-column to relax around the reference LD matrix. SuSiE-relax extends this
-idea to <span class="math inline">\(L\)</span> possible single effects:
+<div id="from-ser-relax-prime-to-susie-relax-prime"
+class="section level1" number="1">
+<h1><span class="header-section-number">1</span> From SER-relax-prime to
+SuSiE-relax-prime</h1>
+<p>This page mirrors <code>susie-relax-demonstrate.Rmd</code>, but
+replaces the original SuSiE-relax fit with the prime implementation in
+<code>code/susie-relax-prime.R</code>. This method is SuSiE-relax-prime.
+The single-effect prime model uses a latent relaxed contribution vector
+instead of directly sampling a relaxed LD column in the likelihood:
 <span class="math display">\[
-x \mid \{\beta_\ell,\gamma_\ell,z_{\ell,\gamma_\ell}\}_{\ell=1}^L
+x \mid \theta_1,\ldots,\theta_L
 \sim
 N_J\left(
-\sum_{\ell=1}^L
-\beta_\ell u_{\gamma_\ell}(z_{\ell,\gamma_\ell}),
+\sum_{\ell=1}^L \theta_\ell,
 \frac{\bar R}{N}
 \right).
 \]</span> For each effect, <span class="math display">\[
@@ -724,21 +644,23 @@ N_J\left(
 \]</span> and, conditional on <span
 class="math inline">\(\gamma_\ell=j\)</span>, <span
 class="math display">\[
-z_{\ell j}\mid \nu_0
-\sim
-N_{J-1}\left(\mu_j,\frac{S_j}{\nu_0+3}\right).
+\theta_\ell = \beta_\ell\bar R_{\cdot j}+\eta_{\ell j},
+\qquad
+\eta_{\ell j,j}=0,
+\qquad
+\eta_{\ell j,-j}\sim N_{J-1}(0,\sigma_\ell^2\tau^2S_j).
 \]</span> Here <span class="math display">\[
 \mu_j=\bar R_{-j,j},
 \qquad
-S_j=\bar R_{-j,-j}-\bar R_{-j,j}\bar R_{j,-j}.
+S_j=\bar R_{-j,-j}-\bar R_{-j,j}\bar R_{j,-j},
+\qquad
+\tau^2=(\nu_0+3)^{-1}.
 \]</span></p>
 <p>The variational approximation factorizes over effects: <span
 class="math display">\[
 q =
 \prod_{\ell=1}^L
-q_\ell(\gamma_\ell)
-\prod_{j=1}^J
-q_{\ell j}(\beta_\ell)q_{\ell j}(z_{\ell j}).
+q_\ell(\gamma_\ell,\beta_\ell,\eta_\ell).
 \]</span> The inference algorithm is IBSS-like. When updating effect
 <span class="math inline">\(\ell\)</span>, we form the residual <span
 class="math display">\[
@@ -746,39 +668,32 @@ r_\ell = x-\sum_{k\ne\ell}\bar\theta_k,
 \]</span> where <span class="math display">\[
 \bar\theta_\ell =
 \sum_{j=1}^J
-\pi_{\ell j}E\{\beta_\ell u_j(z_{\ell j})\}.
-\]</span> Then we apply the SER-relax update to this residual. After
-each full sweep over effects, the shared <span
+\alpha_{\ell j}
+\left[
+m_{\ell j}\bar R_{\cdot j}
+\;+\;
+\rho_\ell(r_\ell-r_{\ell j}\bar R_{\cdot j})
+\right].
+\]</span> Then we apply the SER-relax-prime update to this residual.
+After each full sweep over effects, the shared <span
 class="math inline">\(\nu_0\)</span> is updated by the closed-form
 empirical-Bayes update <span class="math display">\[
 \hat\tau^2 =
 \frac{
-\sum_{\ell=1}^L\sum_{j=1}^J\pi_{\ell j}Q_{\ell j}
+\sum_{\ell=1}^L D_\ell/\sigma_\ell^2
 }{L(J-1)},
 \qquad
 \hat\nu_0 = \frac{1}{\hat\tau^2}-3,
-\]</span> with lower and upper bounds in implementation. We also
-estimate each effect-specific prior variance by <span
-class="math display">\[
-\hat\sigma_\ell^2 =
-\sum_{j=1}^J
-\pi_{\ell j}
-E_q(\beta_\ell^2\mid\gamma_\ell=j)
-=
-\sum_{j=1}^J
-\pi_{\ell j}
-\left(v_{\beta,\ell j}+m_{\beta,\ell j}^2\right),
-\]</span> again with implementation bounds to avoid degenerate
-values.</p>
+\]</span> with lower and upper bounds in implementation.</p>
 <p>The main empirical behavior we want to demonstrate is:</p>
 <ul>
 <li><p>When the reference LD mismatch is low, ordinary SuSiE and
-SuSiE-relax both recover the two true signals.</p></li>
+SuSiE-relax-prime both recover the two true signals.</p></li>
 <li><p>When the reference LD mismatch is high, ordinary SuSiE with
 out-of-sample LD can overfit and select all <span
-class="math inline">\(L=5\)</span> effects, while SuSiE-relax responds
-by learning a small <span class="math inline">\(\nu_0\)</span>, using
-stronger LD relaxation, and selecting only one effect.</p></li>
+class="math inline">\(L=5\)</span> effects, while SuSiE-relax-prime can
+respond by learning a small <span class="math inline">\(\nu_0\)</span>,
+using stronger LD relaxation, and selecting fewer effects.</p></li>
 </ul>
 <pre class="r"><code>standardize_sim &lt;- function(res) {
   d &lt;- 1 / sqrt(diag(res$R))
@@ -839,7 +754,7 @@ count_selected_cs &lt;- function(alpha, R, coverage = 0.95,
 }
 
 summarize_fit &lt;- function(label, alpha, pip, R_for_cs, beta_true,
-                          nu0 = NA_real_, sigma2 = NA_real_) {
+                          nu0 = NA_real_) {
   alpha &lt;- as.matrix(alpha)
   top &lt;- apply(alpha, 1, which.max)
   top_alpha &lt;- apply(alpha, 1, max)
@@ -849,7 +764,6 @@ summarize_fit &lt;- function(label, alpha, pip, R_for_cs, beta_true,
     method = label,
     selected_L = length(cs_info$cs),
     nu0 = nu0,
-    sigma2 = paste(sprintf(&quot;%.4g&quot;, sigma2), collapse = &quot;, &quot;),
     gamma_hat = paste(top, collapse = &quot;, &quot;),
     top_alpha = paste(sprintf(&quot;%.3f&quot;, top_alpha), collapse = &quot;, &quot;),
     causal_pip = paste(sprintf(&quot;%.3f&quot;, pip[beta_true != 0]), collapse = &quot;, &quot;)
@@ -899,9 +813,10 @@ plot_tau2_convergence &lt;- function(fit, main_prefix) {
 
 run_case &lt;- function(case_label, N0, seed, N = 20000L, J = 1000L,
                      lambda = 0.01, L = 5,
-                     relax_max_iter = 3000,
-                     relax_nu0_init = 2000,
-                     relax_nu0_bounds = c(10, 10000)) {
+                     prime_max_iter = 3000,
+                     prime_nu0_init = 2000,
+                     prime_nu0_bounds = c(10, 10000),
+                     prime_elbo_update_interval = 10) {
   res &lt;- sim_2pop(
     chrom = &quot;chr22&quot;,
     start = 20e6,
@@ -929,25 +844,22 @@ run_case &lt;- function(case_label, N0, seed, N = 20000L, J = 1000L,
     L = L
   )
 
-  relax_fit_time &lt;- system.time({
-    fit_relax &lt;- fit_susie_relax(
+  prime_fit_time &lt;- system.time({
+    fit_prime &lt;- fit_susie_relax_prime(
       x = v,
       Rbar = Rbar,
       N = N,
       L = L,
       sigma2 = rep(0.3^2, L),
-      nu0_init = relax_nu0_init,
+      nu0_init = prime_nu0_init,
       estimate_nu0 = TRUE,
-      estimate_sigma2 = TRUE,
       warmup_iter = 5,
-      max_iter = relax_max_iter,
+      max_iter = prime_max_iter,
       tol = 1e-7,
       verbose = FALSE,
-      nu0_bounds = relax_nu0_bounds,
-      sigma2_bounds = c(1e-12, 1),
-      elbo_update_interval = 10,
+      nu0_bounds = prime_nu0_bounds,
+      elbo_update_interval = prime_elbo_update_interval,
       nu0_update_interval = 1,
-      sigma2_update_interval = 1,
       nu0_tol = 1e-4
     )
   })
@@ -961,13 +873,12 @@ run_case &lt;- function(case_label, N0, seed, N = 20000L, J = 1000L,
       beta_true = beta_true
     ),
     summarize_fit(
-      label = &quot;SuSiE-relax&quot;,
-      alpha = fit_relax$alpha,
-      pip = fit_relax$pip,
+      label = &quot;SuSiE-relax-prime&quot;,
+      alpha = fit_prime$alpha,
+      pip = fit_prime$pip,
       R_for_cs = Rbar,
       beta_true = beta_true,
-      nu0 = fit_relax$nu0,
-      sigma2 = fit_relax$sigma2
+      nu0 = fit_prime$nu0
     )
   )
 
@@ -985,8 +896,8 @@ run_case &lt;- function(case_label, N0, seed, N = 20000L, J = 1000L,
     beta_true = beta_true,
     causal = which(beta_true != 0),
     fit_susie_out = fit_susie_out,
-    fit_relax = fit_relax,
-    relax_fit_time = relax_fit_time,
+    fit_prime = fit_prime,
+    prime_fit_time = prime_fit_time,
     summary = summary
   )
 }</code></pre>
@@ -996,7 +907,7 @@ run_case &lt;- function(case_label, N0, seed, N = 20000L, J = 1000L,
 <p>Here the reference panel size is <span
 class="math inline">\(N_0=1000\)</span>, so the out-of-sample LD is
 close enough to the GWAS LD. We expect both ordinary SuSiE and
-SuSiE-relax to select two effects.</p>
+SuSiE-relax-prime to select two effects.</p>
 <pre class="r"><code>low_case &lt;- run_case(
   case_label = &quot;low mismatch&quot;,
   N0 = 2000L,
@@ -1005,26 +916,24 @@ SuSiE-relax to select two effects.</p>
   J = 1000L,
   lambda = 0.01,
   L = 5,
-  relax_max_iter = 2000,
-  relax_nu0_init = 2000,
-  relax_nu0_bounds = c(10, 10000)
+  prime_max_iter = 1000,
+  prime_nu0_init = 2000,
+  prime_nu0_bounds = c(10, 10000),
+  prime_elbo_update_interval = 5
 )
 
-low_case$relax_fit_time</code></pre>
+low_case$prime_fit_time</code></pre>
 <pre><code>   user  system elapsed 
- 16.286   0.123  16.421 </code></pre>
+  0.142   0.005   0.142 </code></pre>
 <pre class="r"><code>low_case$causal</code></pre>
 <pre><code>[1] 109 941</code></pre>
 <pre class="r"><code>low_case$summary</code></pre>
-<pre><code>          method selected_L   nu0
-1 susieR with R0          2    NA
-2    SuSiE-relax          2 10000
-                                              sigma2               gamma_hat
-1                                                 NA     109, 941, 401, 1, 1
-2 0.003801, 0.003361, 3.776e-07, 3.783e-07, 3.79e-07 109, 941, 401, 401, 401
+<pre><code>             method selected_L   nu0               gamma_hat
+1    susieR with R0          2    NA     109, 941, 401, 1, 1
+2 SuSiE-relax-prime          2 10000 109, 401, 941, 401, 401
                           top_alpha   causal_pip
 1 1.000, 0.658, 0.123, 0.001, 0.001 1.000, 0.658
-2 1.000, 0.656, 0.001, 0.001, 0.001 1.000, 0.657</code></pre>
+2 1.000, 0.007, 0.624, 0.007, 0.007 1.000, 0.625</code></pre>
 <pre class="r"><code>old_par &lt;- par(no.readonly = TRUE)
 par(mfrow = c(1, 2))
 plot_pip(
@@ -1034,149 +943,47 @@ plot_pip(
   main = &quot;Low mismatch: susieR with R0&quot;
 )
 plot_pip(
-  low_case$fit_relax,
+  low_case$fit_prime,
   low_case$Rbar,
   low_case$beta_true,
-  main = &quot;Low mismatch: SuSiE-relax&quot;
+  main = &quot;Low mismatch: SuSiE-relax-prime&quot;
 )</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/low-mismatch-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-low-mismatch-plots-1">
-Past versions of low-mismatch-plots-1.png
-</button>
-</p>
-<div id="fig-low-mismatch-plots-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/dodat-stats/susie-relax/blob/ca6d203dabbc4d851def8aea65d1bb47c44f2265/docs/figure/susie-relax-demonstrate.Rmd/low-mismatch-plots-1.png" target="_blank">ca6d203</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-21
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/low-mismatch-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>par(old_par)
 
-plot_convergence(low_case$fit_relax, &quot;Low mismatch SuSiE-relax&quot;)</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/low-mismatch-plots-2.png" alt="" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-low-mismatch-plots-2">
-Past versions of low-mismatch-plots-2.png
-</button>
-</p>
-<div id="fig-low-mismatch-plots-2" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/dodat-stats/susie-relax/blob/ca6d203dabbc4d851def8aea65d1bb47c44f2265/docs/figure/susie-relax-demonstrate.Rmd/low-mismatch-plots-2.png" target="_blank">ca6d203</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-21
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+plot_convergence(low_case$fit_prime, &quot;Low mismatch SuSiE-relax-prime&quot;)</code></pre>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/low-mismatch-plots-2.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p>Printing the ELBO (only compute once every few iterations because
+this is the most expensive step)</p>
+<pre class="r"><code>low_case$fit_prime$elbo</code></pre>
+<pre><code> [1] 3770.607       NA       NA       NA 3834.013       NA       NA       NA
+ [9]       NA 4863.331       NA       NA       NA       NA 4905.530       NA
+[17]       NA       NA       NA 4905.532       NA       NA       NA       NA
+[25] 4905.532</code></pre>
 <p>It might make more sense to look at <span
 class="math inline">\(1/(\nu_0+3)\)</span> instead of <span
 class="math inline">\(\nu_0\)</span>, because this is the relaxed-column
 variance scale used by the model. Large changes in <span
 class="math inline">\(\nu_0\)</span> at high values may correspond to
 very small changes in the actual relaxation variance.</p>
-<pre class="r"><code>plot_tau2_convergence(low_case$fit_relax, &quot;Low mismatch SuSiE-relax&quot;)</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/low-mismatch-tau2-convergence-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-low-mismatch-tau2-convergence-1">
-Past versions of low-mismatch-tau2-convergence-1.png
-</button>
-</p>
-<div id="fig-low-mismatch-tau2-convergence-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/dodat-stats/susie-relax/blob/ca6d203dabbc4d851def8aea65d1bb47c44f2265/docs/figure/susie-relax-demonstrate.Rmd/low-mismatch-tau2-convergence-1.png" target="_blank">ca6d203</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-21
-</td>
-</tr>
-</tbody>
-</table>
+<pre class="r"><code>plot_tau2_convergence(low_case$fit_prime, &quot;Low mismatch SuSiE-relax-prime&quot;)</code></pre>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/low-mismatch-tau2-convergence-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 </div>
-</div>
-</div>
-<div id="high-mismatch-case" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> High-mismatch Case</h1>
+<div id="high-mismatch-case-due-to-small-n0" class="section level1"
+number="3">
+<h1><span class="header-section-number">3</span> High-mismatch Case (due
+to small N0)</h1>
 <p>Here the reference panel size is <span
 class="math inline">\(N_0=100\)</span>. The out-of-sample LD is much
 noisier. We fit ordinary SuSiE with upper bound <span
 class="math inline">\(L=5\)</span> using the out-of-sample LD <span
-class="math inline">\(R_0\)</span>, and fit SuSiE-relax with the
+class="math inline">\(R_0\)</span>, and fit SuSiE-relax-prime with the
 stabilized matrix <span class="math display">\[
 \bar R = 0.99R_0 + 0.01I.
 \]</span> The expected behavior is that ordinary SuSiE overfits and
-selects all five effects, while SuSiE-relax learns a small <span
-class="math inline">\(\nu_0\)</span>, relaxes the LD column, and selects
-only one effect.</p>
+selects all five effects, while SuSiE-relax-prime learns a small <span
+class="math inline">\(\nu_0\)</span>, relaxes the latent contribution,
+and selects fewer effects.</p>
 <pre class="r"><code>high_case &lt;- run_case(
   case_label = &quot;high mismatch&quot;,
   N0 = 100L,
@@ -1185,26 +992,24 @@ only one effect.</p>
   J = 1000L,
   lambda = 0.01,
   L = 5,
-  relax_max_iter = 3000,
-  relax_nu0_init = 2000,
-  relax_nu0_bounds = c(10, 10000)
+  prime_max_iter = 3000,
+  prime_nu0_init = 2000,
+  prime_nu0_bounds = c(10, 10000),
+  prime_elbo_update_interval = 5
 )
 
-high_case$relax_fit_time</code></pre>
+high_case$prime_fit_time</code></pre>
 <pre><code>   user  system elapsed 
- 40.011   0.254  40.351 </code></pre>
+  0.168   0.003   0.167 </code></pre>
 <pre class="r"><code>high_case$causal</code></pre>
 <pre><code>[1] 336 565</code></pre>
 <pre class="r"><code>high_case$summary</code></pre>
-<pre><code>          method selected_L nu0
-1 susieR with R0          4  NA
-2    SuSiE-relax          1  10
-                                               sigma2               gamma_hat
-1                                                  NA 336, 579, 697, 322, 405
-2 0.02877, 3.379e-09, 2.418e-09, 2.419e-09, 2.419e-09 336, 336, 336, 336, 336
+<pre><code>             method selected_L      nu0               gamma_hat
+1    susieR with R0          4       NA 336, 579, 697, 322, 405
+2 SuSiE-relax-prime          1 640.3914 336, 579, 579, 579, 579
                           top_alpha   causal_pip
 1 1.000, 1.000, 0.660, 0.991, 0.327 1.000, 0.000
-2 1.000, 0.001, 0.001, 0.001, 0.001 1.000, 0.004</code></pre>
+2 0.993, 0.002, 0.002, 0.002, 0.002 0.993, 0.008</code></pre>
 <pre class="r"><code>old_par &lt;- par(no.readonly = TRUE)
 par(mfrow = c(1, 2))
 plot_pip(
@@ -1214,101 +1019,27 @@ plot_pip(
   main = &quot;High mismatch: susieR with R0&quot;
 )
 plot_pip(
-  high_case$fit_relax,
+  high_case$fit_prime,
   high_case$Rbar,
   high_case$beta_true,
-  main = &quot;High mismatch: SuSiE-relax&quot;
+  main = &quot;High mismatch: SuSiE-relax-prime&quot;
 )</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/high-mismatch-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-high-mismatch-plots-1">
-Past versions of high-mismatch-plots-1.png
-</button>
-</p>
-<div id="fig-high-mismatch-plots-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/dodat-stats/susie-relax/blob/ca6d203dabbc4d851def8aea65d1bb47c44f2265/docs/figure/susie-relax-demonstrate.Rmd/high-mismatch-plots-1.png" target="_blank">ca6d203</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-21
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/high-mismatch-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>par(old_par)
 
-plot_convergence(high_case$fit_relax, &quot;High mismatch SuSiE-relax&quot;)</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/high-mismatch-plots-2.png" alt="" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-high-mismatch-plots-2">
-Past versions of high-mismatch-plots-2.png
-</button>
-</p>
-<div id="fig-high-mismatch-plots-2" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/dodat-stats/susie-relax/blob/ca6d203dabbc4d851def8aea65d1bb47c44f2265/docs/figure/susie-relax-demonstrate.Rmd/high-mismatch-plots-2.png" target="_blank">ca6d203</a>
-</td>
-<td>
-dodat-stats
-</td>
-<td>
-2026-06-21
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+plot_convergence(high_case$fit_prime, &quot;High mismatch SuSiE-relax-prime&quot;)</code></pre>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/high-mismatch-plots-2.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>data.frame(
-  effect = seq_len(nrow(high_case$fit_relax$alpha)),
-  top = apply(high_case$fit_relax$alpha, 1, which.max),
-  top_alpha = apply(high_case$fit_relax$alpha, 1, max)
+  effect = seq_len(nrow(high_case$fit_prime$alpha)),
+  top = apply(high_case$fit_prime$alpha, 1, which.max),
+  top_alpha = apply(high_case$fit_prime$alpha, 1, max)
 )</code></pre>
 <pre><code>        effect top   top_alpha
-effect1      1 336 1.000000000
-effect2      2 336 0.001005189
-effect3      3 336 0.001003710
-effect4      4 336 0.001003712
-effect5      5 336 0.001003713</code></pre>
+effect1      1 336 0.993323697
+effect2      2 579 0.002061356
+effect3      3 579 0.002064203
+effect4      4 579 0.002065487
+effect5      5 579 0.002063939</code></pre>
 </div>
 <div id="high-mismatch-case-due-to-difference-ancestry"
 class="section level1" number="4">
@@ -1321,12 +1052,15 @@ to difference ancestry)</h1>
 
   set.seed(seed)
 
+  # 1. Get Realistic Genetic Map from stdpopsim
   species &lt;- stdpopsim$get_species(&quot;HomSap&quot;)
   contig  &lt;- species$get_contig(chrom, left = as.integer(start), right = as.integer(end))
 
+  # 2. Get OutOfAfrica_3G09 Demography (YRI, CEU, CHB)
   demo_model &lt;- species$get_demographic_model(&quot;OutOfAfrica_3G09&quot;)
   demography &lt;- demo_model$model
 
+  # 3. Run Simulation
   ts &lt;- msprime$sim_ancestry(
     samples = reticulate::dict(CHB = as.integer(n_gwas), CEU = as.integer(n_ref)),
     demography = demography,
@@ -1336,6 +1070,7 @@ to difference ancestry)</h1>
 
   ts &lt;- msprime$sim_mutations(ts, rate = 1.29e-8, random_seed = as.integer(seed))
 
+  # 4. Extract Genotypes
   chb_id &lt;- NULL
   ceu_id &lt;- NULL
   for (p in reticulate::iterate(ts$populations())) {
@@ -1351,24 +1086,20 @@ to difference ancestry)</h1>
   to_diploid &lt;- function(hap_idx) {
     idx &lt;- as.integer(hap_idx) + 1
     g_hap &lt;- G_all[, idx, drop = FALSE]
-    g_dip &lt;- g_hap[, seq(1, ncol(g_hap), by = 2)] +
-      g_hap[, seq(2, ncol(g_hap), by = 2)]
-    t(g_dip)
+    g_dip &lt;- g_hap[, seq(1, ncol(g_hap), by = 2)] + g_hap[, seq(2, ncol(g_hap), by = 2)]
+    return(t(g_dip))
   }
 
   G_gwas &lt;- to_diploid(samples_gwas)
   G_ref  &lt;- to_diploid(samples_ref)
 
+  # 5. Filter for Common Variants (MAF &gt; 5%)
   maf_gwas &lt;- colMeans(G_gwas) / 2
   maf_ref  &lt;- colMeans(G_ref) / 2
 
-  common_mask &lt;- (maf_gwas &gt; 0.05) &amp; (maf_gwas &lt; 0.95) &amp;
-    (maf_ref &gt; 0.05) &amp; (maf_ref &lt; 0.95)
+  common_mask &lt;- (maf_gwas &gt; 0.05) &amp; (maf_gwas &lt; 0.95) &amp; (maf_ref &gt; 0.05) &amp; (maf_ref &lt; 0.95)
   n_common &lt;- sum(common_mask)
-  if (n_common &lt; J) {
-    stop(paste0(&quot;Only &quot;, n_common, &quot; common variants found but J = &quot;, J,
-                &quot;. Try a larger region.&quot;))
-  }
+  if (n_common &lt; J) stop(paste0(&quot;Only &quot;, n_common, &quot; common variants found but J = &quot;, J, &quot;. Try a larger region.&quot;))
   G_gwas &lt;- G_gwas[, common_mask, drop = FALSE]
   G_ref  &lt;- G_ref[, common_mask, drop = FALSE]
 
@@ -1379,6 +1110,7 @@ to difference ancestry)</h1>
   G  &lt;- G_gwas[, cols_to_keep, drop = FALSE]
   G0 &lt;- G_ref[, cols_to_keep, drop = FALSE]
 
+  # 6. Generate summary stats
   X &lt;- sweep(G, 2, colMeans(G), &quot;-&quot;)
   N &lt;- nrow(X)
 
@@ -1408,47 +1140,46 @@ to difference ancestry)</h1>
 
   v &lt;- (t(X) %*% y) / N
 
-  list(
+  return(list(
     v = as.vector(v),
     R = R,
     R0 = R0,
     beta_true = beta_true,
     causal_SNPs_loc = causal_SNPs_loc
-  )
+  ))
 }</code></pre>
-<pre class="r"><code>seed &lt;- 2
+<pre class="r"><code>seed = 2
 chrom &lt;- &quot;chr22&quot;
 start &lt;- 20e6
-end &lt;- 21e6
-N &lt;- 25000L
-N0 &lt;- 500L
-J &lt;- 500L
-h2 &lt;- 0.01
+end   &lt;- 21e6
+N     &lt;- 25000L
+N0 = 500L
+J     &lt;- 500L
+h2    &lt;- 0.01
 
-res &lt;- sim_asn_eur(
-  chrom, start, end,
-  n_gwas = N,
-  n_ref = N0,
-  J = J,
-  h2 = h2,
-  seed = seed
-)
+res &lt;- sim_asn_eur(chrom, start, end,
+                n_gwas = N,
+                n_ref = N0,
+                J = J,
+                h2 = h2,
+                seed = seed)
 
-v &lt;- res$v
-R &lt;- res$R
-R0 &lt;- res$R0
-beta_true &lt;- res$beta_true
+v               &lt;- res$v
+R               &lt;- res$R
+R0              &lt;- res$R0
+beta_true       &lt;- res$beta_true
 causal_SNPs_loc &lt;- res$causal_SNPs_loc
 
-d &lt;- 1 / sqrt(diag(R))
-v &lt;- d * v
-R &lt;- cov2cor(R)
-R0 &lt;- cov2cor(R0)
+## standardized
+d = 1 / sqrt(diag(R))
+v = d * v
+R = cov2cor(R)
+R0 = cov2cor(R0)
 
-x &lt;- v
+x = v
 plot(x, pch = 16)
 points(causal_SNPs_loc, x[causal_SNPs_loc], pch = 16, col = &quot;red&quot;)</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/ancestry-mismatch-simulate-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/unnamed-chunk-3-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>lambda &lt;- 0.1
 L &lt;- 5
 Rbar &lt;- make_rbar(R0, lambda = lambda)
@@ -1461,8 +1192,8 @@ fit_susie_out_asn_eur &lt;- susie_suff_stat(
   L = L
 )
 
-relax_fit_time_asn_eur &lt;- system.time({
-  fit_relax_asn_eur &lt;- fit_susie_relax(
+prime_fit_time_asn_eur &lt;- system.time({
+  fit_prime_asn_eur &lt;- fit_susie_relax_prime(
     x = x,
     Rbar = Rbar,
     N = N,
@@ -1470,23 +1201,20 @@ relax_fit_time_asn_eur &lt;- system.time({
     sigma2 = rep(0.3^2, L),
     nu0_init = 2000,
     estimate_nu0 = TRUE,
-    estimate_sigma2 = TRUE,
     warmup_iter = 5,
     max_iter = 3000,
     tol = 1e-7,
     verbose = FALSE,
     nu0_bounds = c(10, 10000),
-    sigma2_bounds = c(1e-12, 1),
     elbo_update_interval = 5,
     nu0_update_interval = 1,
-    sigma2_update_interval = 1,
     nu0_tol = 1e-4
   )
 })
 
-relax_fit_time_asn_eur</code></pre>
+prime_fit_time_asn_eur</code></pre>
 <pre><code>   user  system elapsed 
-  3.811   0.024   3.839 </code></pre>
+  0.034   0.001   0.034 </code></pre>
 <pre class="r"><code>causal_SNPs_loc</code></pre>
 <pre><code>[1] 341 399</code></pre>
 <pre class="r"><code>rbind(
@@ -1498,24 +1226,20 @@ relax_fit_time_asn_eur</code></pre>
     beta_true = beta_true
   ),
   summarize_fit(
-    label = &quot;SuSiE-relax&quot;,
-    alpha = fit_relax_asn_eur$alpha,
-    pip = fit_relax_asn_eur$pip,
+    label = &quot;SuSiE-relax-prime&quot;,
+    alpha = fit_prime_asn_eur$alpha,
+    pip = fit_prime_asn_eur$pip,
     R_for_cs = Rbar,
     beta_true = beta_true,
-    nu0 = fit_relax_asn_eur$nu0,
-    sigma2 = fit_relax_asn_eur$sigma2
+    nu0 = fit_prime_asn_eur$nu0
   )
 )</code></pre>
-<pre><code>          method selected_L     nu0
-1 susieR with R0          5      NA
-2    SuSiE-relax          1 26.6491
-                                               sigma2               gamma_hat
-1                                                  NA 341, 372, 406, 352, 358
-2 0.008185, 8.47e-09, 8.489e-09, 8.498e-09, 8.504e-09 341, 372, 372, 372, 372
+<pre><code>             method selected_L      nu0               gamma_hat
+1    susieR with R0          5       NA 341, 372, 406, 352, 358
+2 SuSiE-relax-prime          3 5101.026 341, 372, 406, 296, 296
                           top_alpha   causal_pip
 1 1.000, 0.716, 0.995, 1.000, 1.000 1.000, 0.000
-2 0.849, 0.002, 0.002, 0.002, 0.002 0.850, 0.008</code></pre>
+2 1.000, 1.000, 1.000, 0.017, 0.017 1.000, 0.005</code></pre>
 <pre class="r"><code>old_par &lt;- par(no.readonly = TRUE)
 par(mfrow = c(1, 2))
 plot_pip(
@@ -1525,30 +1249,30 @@ plot_pip(
   main = &quot;Ancestry mismatch: susieR with R0&quot;
 )
 plot_pip(
-  fit_relax_asn_eur,
+  fit_prime_asn_eur,
   Rbar,
   beta_true,
-  main = &quot;Ancestry mismatch: SuSiE-relax&quot;
+  main = &quot;Ancestry mismatch: SuSiE-relax-prime&quot;
 )</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/ancestry-mismatch-relax-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/ancestry-mismatch-prime-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>par(old_par)
 
 plot_convergence(
-  fit_relax_asn_eur,
-  &quot;Ancestry mismatch SuSiE-relax&quot;
+  fit_prime_asn_eur,
+  &quot;Ancestry mismatch SuSiE-relax-prime&quot;
 )</code></pre>
-<p><img src="figure/susie-relax-demonstrate.Rmd/ancestry-mismatch-relax-plots-2.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/susie-relax-prime-demonstrate.Rmd/ancestry-mismatch-prime-plots-2.png" alt="" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>data.frame(
-  effect = seq_len(nrow(fit_relax_asn_eur$alpha)),
-  top = apply(fit_relax_asn_eur$alpha, 1, which.max),
-  top_alpha = apply(fit_relax_asn_eur$alpha, 1, max)
+  effect = seq_len(nrow(fit_prime_asn_eur$alpha)),
+  top = apply(fit_prime_asn_eur$alpha, 1, which.max),
+  top_alpha = apply(fit_prime_asn_eur$alpha, 1, max)
 )</code></pre>
-<pre><code>        effect top   top_alpha
-effect1      1 341 0.848970121
-effect2      2 372 0.002000452
-effect3      3 372 0.002000453
-effect4      4 372 0.002000454
-effect5      5 372 0.002000454</code></pre>
+<pre><code>        effect top  top_alpha
+effect1      1 341 1.00000000
+effect2      2 372 0.99999523
+effect3      3 406 0.99999115
+effect4      4 296 0.01663114
+effect5      5 296 0.01662714</code></pre>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -1582,18 +1306,18 @@ loaded via a namespace (and not attached):
  [1] sass_0.4.10        generics_0.1.4     stringi_1.8.7      lattice_0.22-7    
  [5] digest_0.6.39      magrittr_2.0.4     evaluate_1.0.5     grid_4.5.2        
  [9] RColorBrewer_1.1-3 fastmap_1.2.0      rprojroot_2.1.1    workflowr_1.7.2   
-[13] plyr_1.8.9         jsonlite_2.0.0     Matrix_1.7-4       whisker_0.4.1     
-[17] reshape_0.8.10     mixsqp_0.3-54      promises_1.5.0     scales_1.4.0      
-[21] jquerylib_0.1.4    cli_3.6.6          rlang_1.2.0        crayon_1.5.3      
-[25] withr_3.0.2        cachem_1.1.0       yaml_2.3.12        otel_0.2.0        
-[29] tools_4.5.2        dplyr_1.2.0        ggplot2_4.0.2      httpuv_1.6.17     
-[33] reticulate_1.46.0  png_0.1-9          vctrs_0.7.1        R6_2.6.1          
-[37] matrixStats_1.5.0  lifecycle_1.0.5    git2r_0.36.2       stringr_1.6.0     
-[41] fs_2.1.0           irlba_2.3.7        pkgconfig_2.0.3    pillar_1.11.1     
-[45] bslib_0.10.0       later_1.4.8        gtable_0.3.6       glue_1.8.0        
-[49] Rcpp_1.1.1         xfun_0.56          tibble_3.3.1       tidyselect_1.2.1  
-[53] rstudioapi_0.18.0  knitr_1.51         farver_2.1.2       htmltools_0.5.9   
-[57] rmarkdown_2.30     compiler_4.5.2     S7_0.2.1          </code></pre>
+[13] plyr_1.8.9         jsonlite_2.0.0     Matrix_1.7-4       reshape_0.8.10    
+[17] mixsqp_0.3-54      promises_1.5.0     scales_1.4.0       jquerylib_0.1.4   
+[21] cli_3.6.6          rlang_1.2.0        crayon_1.5.3       withr_3.0.2       
+[25] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.5.2       
+[29] dplyr_1.2.0        ggplot2_4.0.2      httpuv_1.6.17      reticulate_1.46.0 
+[33] vctrs_0.7.1        R6_2.6.1           png_0.1-9          matrixStats_1.5.0 
+[37] lifecycle_1.0.5    git2r_0.36.2       stringr_1.6.0      fs_2.1.0          
+[41] irlba_2.3.7        pkgconfig_2.0.3    pillar_1.11.1      bslib_0.10.0      
+[45] later_1.4.8        gtable_0.3.6       glue_1.8.0         Rcpp_1.1.1        
+[49] xfun_0.56          tibble_3.3.1       tidyselect_1.2.1   rstudioapi_0.18.0 
+[53] knitr_1.51         farver_2.1.2       htmltools_0.5.9    rmarkdown_2.30    
+[57] compiler_4.5.2     S7_0.2.1          </code></pre>
 </div>
 </div>
 </div>

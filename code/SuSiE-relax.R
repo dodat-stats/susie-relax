@@ -208,6 +208,14 @@ update_susie_relax_nu0 <- function(effects, J, lower = 0.05, upper = 500) {
   min(max(nu0_hat, lower), upper)
 }
 
+update_susie_relax_sigma2 <- function(effects, lower = 1e-12, upper = Inf) {
+  vapply(effects, function(eff) {
+    beta2 <- eff$vbeta + eff$mbeta^2
+    sigma2_hat <- sum(eff$pi * beta2)
+    min(max(sigma2_hat, lower), upper)
+  }, numeric(1))
+}
+
 categorical_entropy <- function(pi) {
   pi <- as.numeric(pi)
   active <- pi > 0
@@ -253,11 +261,15 @@ susie_relax_elbo <- function(x, Rbar, N, sigma2, nu0, effects, pre) {
 
 fit_susie_relax <- function(x, Rbar, N, L = 2, sigma2 = 0.3^2,
                             nu0_init = 1000, estimate_nu0 = TRUE,
+                            estimate_sigma2 = FALSE,
                             warmup_iter = 5,
                             max_iter = 100, tol = 1e-6,
                             verbose = FALSE,
                             nu0_bounds = c(1, 2000),
+                            sigma2_bounds = c(1e-12, Inf),
+                            elbo_update_interval = 1,
                             nu0_update_interval = 1,
+                            sigma2_update_interval = 1,
                             nu0_tol = Inf) {
   x <- as.numeric(x)
   Rbar <- as.matrix(Rbar)
@@ -274,7 +286,12 @@ fit_susie_relax <- function(x, Rbar, N, L = 2, sigma2 = 0.3^2,
     length(nu0_bounds) == 2,
     nu0_bounds[1] > 0,
     nu0_bounds[2] > nu0_bounds[1],
-    nu0_update_interval >= 1
+    length(sigma2_bounds) == 2,
+    sigma2_bounds[1] > 0,
+    sigma2_bounds[2] >= sigma2_bounds[1],
+    elbo_update_interval >= 1,
+    nu0_update_interval >= 1,
+    sigma2_update_interval >= 1
   )
 
   pre <- make_susie_relax_precomp(Rbar)
@@ -286,11 +303,23 @@ fit_susie_relax <- function(x, Rbar, N, L = 2, sigma2 = 0.3^2,
 
   elbo <- numeric()
   nu0_trace <- numeric()
+  sigma2_trace <- matrix(NA_real_, nrow = max_iter, ncol = L)
+  colnames(sigma2_trace) <- paste0("effect", seq_len(L))
   for (iter in seq_len(max_iter)) {
     nu0_prev <- nu0
     effects <- update_susie_relax_effects_sweep(
       effects, x, Rbar, N, sigma2, nu0, pre
     )
+
+    can_update_sigma2 <- estimate_sigma2 && iter > warmup_iter &&
+      iter %% sigma2_update_interval == 0
+    if (can_update_sigma2) {
+      sigma2 <- update_susie_relax_sigma2(
+        effects,
+        lower = sigma2_bounds[1],
+        upper = sigma2_bounds[2]
+      )
+    }
 
     can_update_nu0 <- estimate_nu0 && iter > warmup_iter &&
       iter %% nu0_update_interval == 0
@@ -305,29 +334,44 @@ fit_susie_relax <- function(x, Rbar, N, L = 2, sigma2 = 0.3^2,
       }
     }
 
-    elbo[iter] <- susie_relax_elbo(x, Rbar, N, sigma2, nu0, effects, pre)
+    should_compute_elbo <- iter == 1 || iter %% elbo_update_interval == 0 ||
+      iter == max_iter
+    if (should_compute_elbo) {
+      elbo[iter] <- susie_relax_elbo(x, Rbar, N, sigma2, nu0, effects, pre)
+    } else {
+      elbo[iter] <- NA_real_
+    }
     nu0_trace[iter] <- nu0
+    sigma2_trace[iter, ] <- sigma2
 
     if (verbose && (iter == 1 || iter %% 10 == 0)) {
       tops <- vapply(effects, function(eff) which.max(eff$pi), integer(1))
       pips <- vapply(effects, function(eff) max(eff$pi), numeric(1))
+      elbo_text <- if (is.na(elbo[iter])) "NA" else sprintf("%.6f", elbo[iter])
       message(sprintf(
-        "iter=%d elbo=%.6f nu0=%.3f top=(%s) pip=(%s)",
-        iter, elbo[iter], nu0,
+        "iter=%d elbo=%s nu0=%.3f sigma2=(%s) top=(%s) pip=(%s)",
+        iter, elbo_text, nu0,
+        paste(sprintf("%.4g", sigma2), collapse = ","),
         paste(tops, collapse = ","),
         paste(sprintf("%.3f", pips), collapse = ",")
       ))
     }
 
-    if (iter > 1) {
-      elbo_diff <- abs(elbo[iter] - elbo[iter - 1])
+    previous_elbo_iter <- if (iter > 1) {
+      tail(which(!is.na(elbo[seq_len(iter - 1)])), 1)
+    } else {
+      integer(0)
+    }
+    if (should_compute_elbo && length(previous_elbo_iter) == 1) {
+      elbo_diff <- abs(elbo[iter] - elbo[previous_elbo_iter])
       nu0_diff <- abs(log(nu0) - log(nu0_prev))
       elbo_converged <- is.finite(elbo_diff) &&
-        elbo_diff < tol * (1 + abs(elbo[iter - 1]))
+        elbo_diff < tol * (1 + abs(elbo[previous_elbo_iter]))
       nu0_converged <- is.finite(nu0_diff) && nu0_diff < nu0_tol
       if (elbo_converged && nu0_converged) {
         elbo <- elbo[seq_len(iter)]
         nu0_trace <- nu0_trace[seq_len(iter)]
+        sigma2_trace <- sigma2_trace[seq_len(iter), , drop = FALSE]
         break
       }
     }
@@ -348,10 +392,12 @@ fit_susie_relax <- function(x, Rbar, N, L = 2, sigma2 = 0.3^2,
     effects = effects,
     elbo = elbo,
     sigma2 = sigma2,
+    sigma2_trace = sigma2_trace,
     N = N,
     Rbar = Rbar,
     x = x,
     warmup_iter = warmup_iter,
+    elbo_update_interval = elbo_update_interval,
     nu0_tol = nu0_tol
   )
 }

@@ -19,6 +19,12 @@ progression of the method:
 
 3. [SuSiE-relax Demonstration](susie-relax-demonstrate.html) - SuSiE extension of the SER model above.
 
-4. [Choosing lambda (low-mismatch case)](choose-lambda-low-mismatch.html) - How the ridge parameter $\lambda$ in $\bar R = (1-\lambda) R_0 + \lambda I$ affects the fine-mapping result, using the final ELBO to select $\lambda$.
+4. [SuSiE-relax-prime Demonstration](susie-relax-prime-demonstrate.html) - The same SuSiE demonstration using the prime latent contribution model.
 
-5. [Choosing lambda (high-mismatch case)](choose-lambda-high-mismatch.html) - The same $\lambda$ investigation in the high-mismatch regime, where the reference panel is small and susieR on $R_0$ overfits.
+6. [Choosing lambda (low-mismatch case)](choose-lambda-low-mismatch.html) - How the ridge parameter $\lambda$ in $\bar R = (1-\lambda) R_0 + \lambda I$ affects the fine-mapping result, using the final ELBO to select $\lambda$.
+
+7. [Choosing lambda (high-mismatch case)](choose-lambda-high-mismatch.html) - The same $\lambda$ investigation in the high-mismatch regime, where the reference panel is small and susieR on $R_0$ overfits.
+
+8. [Choosing lambda (different-ancestry case)](choose-lambda-diff-ancestry.html) - The same $\lambda$ investigation when the GWAS and reference panels are simulated from different ancestries.
+
+9. [Scale of q as lambda varies](q-vs-lambda.html) - How $q(\lambda)=x^\top \bar R(\lambda)^{-1}x$ changes with $\lambda$ in low-mismatch, small-reference high-mismatch, and different-ancestry settings.

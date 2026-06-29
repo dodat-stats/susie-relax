@@ -1,0 +1,509 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue]{hyperref}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\Om}{\Omega}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Unif}{\operatorname{Unif}}
+\newcommand{\IG}{\operatorname{IG}}
+\newcommand{\Gam}{\operatorname{Gamma}}
+\newcommand{\Normal}{\mathcal N}
+
+\newtheorem{lemma}{Lemma}
+
+\title{Susie-relax with the ``irrelevance of the null SNPs'' property}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{SER-relax-prime}
+Now we consider another approximation to truly achieve the ``irrelevance of the null SNPs'' property. It leads to another model that I call `SER-relax-prime'.
+
+Recall the SER-relax (conditional on $\gamma = 1$):
+
+\begin{equation}\label{eq:SER-gamma-1}
+x \mid \beta,\,\gamma=1 \;\sim\;
+\mathcal{N}\!\left(
+  \beta\begin{pmatrix}1\\\mu_1\end{pmatrix},\;
+  \frac{1}{N}\begin{pmatrix}1 & \mu_1^T \\ \mu_1 & \bar{R}_{-1,-1}+N\beta^2\tau^2 S_1\end{pmatrix}
+\right)
+\end{equation}
+\paragraph{Matthew + Gemini suggest} omitting $\beta^2$ (replacing $\beta^2$ by $1$) from the variance in the formula above. Similar to computation in PIP from the previous file, we have
+
+\begin{align}\label{eq:conditional-prob-x-given-beta-gamma-prime}
+p(x \mid \beta,\,\gamma=j)
+&= \frac{N^{J/2}}{(2\pi)^{J/2}\,|\bar{R}|^{1/2}\,(1+N\tau^2)^{(J-1)/2}}
+\exp\!\left(-\frac{N}{2(1+N\tau^2)}q\right) \nonumber \\
+&\quad\times
+\exp\!\left(-\frac{N^2\tau^2}{2(1+N\tau^2)}x_j^2\right)
+\exp\!\left(N\beta x_j - \frac{N}{2}\beta^2\right).
+\end{align}
+Integrating out $\beta \sim \mathcal{N}(0, \sigma_{0}^2)$, we have
+\begin{align}\label{eq:conditional-prob-x-given-gamma-prime}
+p(x \mid \gamma=j)
+&= \frac{N^{J/2}}{(2\pi)^{J/2}\,|\bar{R}|^{1/2}\,(1+N\tau^2)^{(J-1)/2}}
+\exp\!\left(-\frac{N}{2(1+N\tau^2)}q\right) \nonumber \\
+&\quad\times \sqrt{\dfrac{1}{1 + N\sigma_{0}^2}} \times \exp\left(\left(\dfrac{N \sigma_0^2}{1 + N \sigma_0^2} - \dfrac{N\tau^2}{1 + N \tau^2} \right) \dfrac{N x_j^2}{2} \right).
+\end{align}
+Leading to
+\begin{align}\label{eq:PIP-SER-prime-unit}
+p(\gamma=j | x) 
+\propto \exp\left(\left(\dfrac{N \sigma_0^2}{1 + N \sigma_0^2} - \dfrac{N\tau^2}{1 + N \tau^2} \right) \dfrac{N x_j^2}{2} \right).
+\end{align}
+So we truly have the desired property. However, something is not right about the formula above: The scalar in the exponential can turn into negative if $\sigma_0^2 < \tau^2$ (so that a smaller $Z$-score leads to a bigger PIP?). It is because we are replacing $\beta^2$ by $1$ in the variance of the likelihood of $p(x | \beta, \gamma = j)$. Maybe the approximation $\beta^2 \approx \sigma_0^2$ makes more sense.
+
+\paragraph{SER-relax-prime.} This model approximates $\beta^2$ in the variance of~\eqref{eq:SER-gamma-1} by $\sigma_{0}^2$. It leads to 
+\begin{equation}\label{eq:SER-prime-gamma-1}
+x \mid \beta,\,\gamma=1 \;\sim\;
+\mathcal{N}\!\left(
+  \beta\begin{pmatrix}1\\\mu_1\end{pmatrix},\;
+  \frac{1}{N}\begin{pmatrix}1 & \mu_1^T \\ \mu_1 & \bar{R}_{-1,-1}+N\sigma_0^2\tau^2 S_1\end{pmatrix}
+\right),
+\end{equation}
+and similarly for other $\gamma = j$ (recall $\mu_1 = \bar{R}_{-1, 1}$). The PIP in this model is:
+\begin{align}\label{eq:PIP-SER-prime}
+p(\gamma=j | x) 
+\propto \exp\left(\left(\dfrac{N \sigma_0^2}{1 + N \sigma_0^2} - \dfrac{N \sigma_0^2 \tau^2}{1 + N \sigma_0^2 \tau^2} \right) \dfrac{N x_j^2}{2} \right).
+\end{align}
+Note that $\tau^2 = 1 / (\nu_0 + 3) \leq 1/ 3 < 1$, so that $N \sigma_0^2 \tau^2 < N \sigma_0^2$, implying
+$$ \dfrac{N \sigma_0^2}{1 + N \sigma_0^2} - \dfrac{N \sigma_0^2 \tau^2}{1 + N \sigma_0^2 \tau^2} > 0.$$
+This quantity tends to $\dfrac{N \sigma_0^2}{1 + N \sigma_0^2}$ as $\tau^2 \to 0$ (recovering susie-rss). One interpretation of~\eqref{eq:PIP-SER-prime} is that PIP might be more a little more diffuse when we are more uncertain about the in-sample $R$ (which can be a bit funny when we think about it, because if $L = 1$ the LD does not matter and the PIP ideally should be similar to susie-rss. But I guess nothing is perfect, and this really shows how Susie-relax does ``relax'' the signal.) 
+
+However, one can show that this PIP retains some important properties:
+
+\begin{enumerate}
+\item PIP of SNP j is exponentially proportional to the Z-score square
+\item if two SNPs have similar Z-score, they will have the same PIP
+\item To compare this PIP with susie-rss, write
+\[
+t=N\sigma_0^2,\qquad s=\tau^2.
+\]
+The susie-rss coefficient in the exponent is
+\[
+a_{\mathrm{rss}}=\frac{t}{1+t},
+\]
+whereas the SER-relax-prime coefficient is
+\[
+a_{\mathrm{prime}}
+=
+\frac{t}{1+t}-\frac{ts}{1+ts}.
+\]
+Thus
+\[
+0\le a_{\mathrm{rss}}-a_{\mathrm{prime}}
+=
+\frac{ts}{1+ts}
+\le ts.
+\]
+If $\nu_0\ge 10$, then $s=\tau^2=1/(\nu_0+3)\le 1/13$, so
+\[
+a_{\mathrm{rss}}-a_{\mathrm{prime}}
+\le
+\frac{t}{13+t}
+\le
+\frac{t}{13}.
+\]
+Equivalently, for any two SNPs $j$ and $k$,
+\[
+\left|
+\log\frac{p_{\mathrm{prime}}(\gamma=j\mid x)}
+{p_{\mathrm{prime}}(\gamma=k\mid x)}
+-
+\log\frac{p_{\mathrm{rss}}(\gamma=j\mid x)}
+{p_{\mathrm{rss}}(\gamma=k\mid x)}
+\right|
+=
+\frac{N}{2}\frac{ts}{1+ts}|x_j^2-x_k^2|
+\le
+\frac{N}{2}\frac{t}{13+t}|x_j^2-x_k^2|.
+\]
+Hence, when $t=N\sigma_0^2$ is not too large, $\nu_0=10$ already gives only a
+small flattening of the susie-rss log-odds. The approximation becomes exact as
+$\nu_0\to\infty$.
+\end{enumerate}
+
+\paragraph{Posterior distribution of $\beta$ under SER-relax-prime.}
+Under~\eqref{eq:SER-prime-gamma-1}, the covariance no longer depends on $\beta$.
+Therefore, conditional on $\gamma=j$, the likelihood as a function of $\beta$ is
+\[
+p(x\mid \beta,\gamma=j)
+\propto
+\exp\!\left(N\beta x_j-\frac{N}{2}\beta^2\right),
+\]
+where all remaining terms are constant in $\beta$. Combining this likelihood
+with the prior $\beta\sim\mathcal N(0,\sigma_0^2)$ gives
+\begin{align}
+p(\beta\mid x,\gamma=j)
+&=
+\mathcal N(m_j,v),\\
+v&=\left(N+\sigma_0^{-2}\right)^{-1},\\
+m_j&=vNx_j.
+\end{align}
+Thus the conditional posterior variance is shared across coordinates, and the
+posterior mean depends on the data only through the active marginal statistic
+$x_j$. In particular, $p(\beta\mid x,\gamma=j)$ does not depend on
+$q=x^T\bar R^{-1}x$.
+
+\section{susie-relax-prime}
+How to extend~\eqref{eq:SER-prime-gamma-1} to the sum of a single-effect type of model? Ideally, each of the single-effect models should have the same noise model (like $\mathcal{N}(0, \bar R / N)$) to enable IBSS-like inference. I think it is cleanest to introduce a latent variable $\eta_{\ell}$ and an
+effect contribution vector $\theta_\ell$ for each single-effect component.
+For $\ell=1,\ldots,L$,
+\[
+\gamma_\ell\sim\Unif\{1,\ldots,J\},\qquad
+\beta_\ell\sim\mathcal N(0,\sigma_{0\ell}^2).
+\]
+Conditional on $\gamma_\ell=j$, define
+\[
+\theta_\ell=\beta_\ell\bar R_{\cdot j}+\eta_{\ell j},
+\]
+where $\eta_{\ell j,j}=0$ and
+\[
+\eta_{\ell j,-j}\sim\mathcal N(0,\sigma_{0\ell}^2\tau^2S_j).
+\]
+The observation model is
+\[
+x\mid \theta_1,\ldots,\theta_L
+\sim
+\mathcal N\!\left(
+\sum_{\ell=1}^L\theta_\ell,\frac{\bar R}{N}
+\right).
+\]
+This is a proper generative model. If we integrate out $\eta_{\ell j}$ for a
+single effect, we recover the SER-relax-prime covariance in
+\eqref{eq:SER-prime-gamma-1}, with $\sigma_0^2$ replaced by
+$\sigma_{0\ell}^2$.
+
+\paragraph{Variational family and ELBO.}
+Use the mean-field approximation
+\[
+q=
+\prod_{\ell=1}^L
+q_\ell(\gamma_\ell,\beta_\ell,\eta_\ell),
+\]
+with
+\[
+q_\ell(\gamma_\ell=j,\beta_\ell,\eta_{\ell j})
+=
+\alpha_{\ell j}
+q_{\ell j}(\beta_\ell)
+q_{\ell j}(\eta_{\ell j}).
+\]
+The ELBO is the standard variational objective
+\begin{align}
+\mathcal L(q)
+&=
+E_q\log p(x\mid \theta_1,\ldots,\theta_L)
++\sum_{\ell=1}^L E_q\log p(\gamma_\ell,\beta_\ell,\eta_\ell\mid\gamma_\ell)
+\nonumber\\
+&\quad
+-\sum_{\ell=1}^L E_q\log q_\ell(\gamma_\ell,\beta_\ell,\eta_\ell).
+\end{align}
+Holding all factors except $q_\ell$ fixed, the optimal coordinate update is
+\[
+\log q_\ell^*(\gamma_\ell,\beta_\ell,\eta_\ell)
+=
+E_{-\ell}\log p(x,\{\gamma_k,\beta_k,\eta_k\}_{k=1}^L)+\text{const}.
+\]
+Let
+\[
+\bar\theta_k=E_q(\theta_k),\qquad
+r_\ell=x-\sum_{k\ne\ell}\bar\theta_k.
+\]
+Then the $q_\ell$ update is exactly the single-effect SER-relax-prime posterior
+computed with $x$ replaced by $r_\ell$.
+
+\paragraph{Coordinate posterior.}
+For each effect define
+\[
+\kappa_\ell=\frac{N\sigma_{0\ell}^2}{1+N\sigma_{0\ell}^2},
+\qquad
+\rho_\ell=\frac{N\sigma_{0\ell}^2\tau^2}{1+N\sigma_{0\ell}^2\tau^2}.
+\]
+The coordinate weights are
+\begin{align}
+\alpha_{\ell j}
+&=
+\frac{\exp\!\left\{\dfrac{N}{2}(\kappa_\ell-\rho_\ell)r_{\ell j}^2\right\}}
+{\sum_{k=1}^J
+\exp\!\left\{\dfrac{N}{2}(\kappa_\ell-\rho_\ell)r_{\ell k}^2\right\}}.
+\end{align}
+The common factor involving
+$q_\ell^{\mathrm{quad}}=r_\ell^T\bar R^{-1}r_\ell$ cancels in this
+normalization. Conditional on $\gamma_\ell=j$,
+\begin{align}
+q_{\ell j}(\beta_\ell)
+&=
+\mathcal N(m_{\ell j},v_\ell),\\
+v_\ell&=\left(N+\sigma_{0\ell}^{-2}\right)^{-1},\\
+m_{\ell j}&=v_\ell N r_{\ell j}
+=\kappa_\ell r_{\ell j}.
+\end{align}
+The relaxed part also has a Gaussian posterior. Its nonzero block is
+\begin{align}
+q_{\ell j}(\eta_{\ell j,-j})
+&=
+\mathcal N(\bar\eta_{\ell j,-j},W_{\ell j}),\\
+\bar\eta_{\ell j,-j}
+&=
+\rho_\ell(r_{\ell,-j}-\mu_jr_{\ell j}),\\
+W_{\ell j}
+&=
+\frac{\sigma_{0\ell}^2\tau^2}{1+N\sigma_{0\ell}^2\tau^2}S_j.
+\end{align}
+Equivalently, as a $J$-vector,
+\[
+\bar\eta_{\ell j}
+=
+\rho_\ell(r_\ell-r_{\ell j}\bar R_{\cdot j}).
+\]
+
+\paragraph{Posterior mean contribution.}
+The posterior mean contribution of effect $\ell$ must include both the
+posterior mean of $\beta_\ell\bar R_{\cdot j}$ and the posterior mean of the
+relaxed component $\eta_{\ell j}$:
+\begin{align}
+\bar\theta_\ell
+&=
+\sum_{j=1}^J
+\alpha_{\ell j}
+\left[
+m_{\ell j}\bar R_{\cdot j}
++\rho_\ell(r_\ell-r_{\ell j}\bar R_{\cdot j})
+\right] \nonumber\\
+&=
+\bar R(\alpha_\ell\odot m_\ell)
++\rho_\ell r_\ell
+-\rho_\ell\bar R(\alpha_\ell\odot r_\ell).
+\end{align}
+This correction is what makes the residual update consistent with the
+variational posterior under the latent contribution model.
+
+\paragraph{ELBO computation.}
+Let $\Omega=\bar R^{-1}$ and
+\[
+C_x=-\frac{J}{2}\log(2\pi)-\frac12\log\left|\frac{\bar R}{N}\right|.
+\]
+For each $(\ell,j)$ define
+\[
+c_\ell
+=
+\frac{\sigma_{0\ell}^2\tau^2}
+{1+N\sigma_{0\ell}^2\tau^2},
+\qquad
+C_{\ell j}
+=
+(r_{\ell,-j}-\mu_jr_{\ell j})^TS_j^{-1}
+(r_{\ell,-j}-\mu_jr_{\ell j}).
+\]
+Using the block inverse identity,
+\[
+C_{\ell j}=r_\ell^T\Omega r_\ell-r_{\ell j}^2,
+\]
+so all $C_{\ell j}$ can be computed from the scalar
+$r_\ell^T\Omega r_\ell$ and the coordinate-wise residuals. The posterior
+second moments are
+\begin{align}
+B_{\ell j}
+&=
+E_q(\beta_\ell^2\mid\gamma_\ell=j)
+=m_{\ell j}^2+v_\ell,\\
+D_{\ell j}
+&=
+E_q(\eta_{\ell j,-j}^TS_j^{-1}\eta_{\ell j,-j})
+=
+\rho_\ell^2C_{\ell j}+(J-1)c_\ell.
+\end{align}
+Because $\bar R_{\cdot j}^T\Omega=e_j^T$ and $\eta_{\ell j,j}=0$, the cross
+term between $\beta_\ell\bar R_{\cdot j}$ and $\eta_{\ell j}$ is zero. Hence
+\[
+E_q(\theta_\ell^T\Omega\theta_\ell)
+=
+\sum_{j=1}^J\alpha_{\ell j}(B_{\ell j}+D_{\ell j}).
+\]
+
+Let $\bar\theta=\sum_{\ell=1}^L\bar\theta_\ell$. A fast way to compute the
+expected quadratic loss is
+\[
+E_q\left[
+(x-\sum_{\ell=1}^L\theta_\ell)^T
+\Omega
+(x-\sum_{\ell=1}^L\theta_\ell)
+\right]
+=
+(x-\bar\theta)^T\Omega(x-\bar\theta)
++\sum_{\ell=1}^L V_\ell,
+\]
+where
+\[
+V_\ell
+=
+\sum_{j=1}^J\alpha_{\ell j}(B_{\ell j}+D_{\ell j})
+-\bar\theta_\ell^T\Omega\bar\theta_\ell.
+\]
+Thus the expected log-likelihood is
+\[
+E_q\log p(x\mid\theta_1,\ldots,\theta_L)
+=
+C_x-\frac{N}{2}
+\left[
+(x-\bar\theta)^T\Omega(x-\bar\theta)
++\sum_{\ell=1}^L V_\ell
+\right].
+\]
+
+The remaining terms are most compactly written as KL divergences. Define
+\begin{align}
+\mathrm{KL}^{\beta}_{\ell j}\label{eq:KL_beta}
+&=
+\frac12
+\left[
+\log\frac{\sigma_{0\ell}^2}{v_\ell}
++\frac{B_{\ell j}}{\sigma_{0\ell}^2}
+-1
+\right],
+\end{align}
+and
+\begin{align}\label{eq:KL_eta}
+\mathrm{KL}^{\eta}_{\ell j}
+&=
+\frac12
+\left[
+(J-1)\log\frac{\sigma_{0\ell}^2\tau^2}{c_\ell}
++\frac{D_{\ell j}}{\sigma_{0\ell}^2\tau^2}
+-(J-1)
+\right] \nonumber\\
+&=
+\frac12
+\left[
+(J-1)\log(1+N\sigma_{0\ell}^2\tau^2)
++\frac{D_{\ell j}}{\sigma_{0\ell}^2\tau^2}
+-(J-1)
+\right].
+\end{align}
+The determinants $|S_j|$ cancel in $\mathrm{KL}^{\eta}_{\ell j}$ because
+$W_{\ell j}=c_\ell S_j$. The full ELBO is therefore
+\begin{align}\label{eq:full-ELBO}
+\mathcal L(q)
+&=
+C_x-\frac{N}{2}
+\left[
+(x-\bar\theta)^T\Omega(x-\bar\theta)
++\sum_{\ell=1}^L V_\ell
+\right] \nonumber\\
+&\quad
+-\sum_{\ell=1}^L\sum_{j=1}^J
+\alpha_{\ell j}
+\left[
+\log(J\alpha_{\ell j})
++\mathrm{KL}^{\beta}_{\ell j}
++\mathrm{KL}^{\eta}_{\ell j}
+\right].
+\end{align}
+This is the expression to use in code. It only requires:
+\begin{enumerate}[leftmargin=*]
+\item the fitted mean $\bar\theta$ and one quadratic
+$(x-\bar\theta)^T\Omega(x-\bar\theta)$;
+\item for each effect, $\bar\theta_\ell^T\Omega\bar\theta_\ell$;
+\item for each effect, $r_\ell^T\Omega r_\ell$, which gives all
+$C_{\ell j}=r_\ell^T\Omega r_\ell-r_{\ell j}^2$;
+\item coordinate-wise scalar operations for $B_{\ell j}$, $D_{\ell j}$, and the
+KL terms.
+\end{enumerate}
+No determinant of $S_j$ is needed, and no dense $W_{\ell j}$ matrix has to be
+formed.
+
+\paragraph{Variational empirical Bayes updates.}
+Holding the variational distribution fixed, maximize the ELBO over
+$\sigma_{0\ell}^2$ and $\tau^2$. Define the effect-level averages
+\[
+B_\ell=\sum_{j=1}^J\alpha_{\ell j}B_{\ell j},
+\qquad
+D_\ell=\sum_{j=1}^J\alpha_{\ell j}D_{\ell j}.
+\]
+The part of the ELBO that depends on $\sigma_{0\ell}^2$ is
+\[
+-\frac{J}{2}\log\sigma_{0\ell}^2
+-\frac{1}{2\sigma_{0\ell}^2}
+\left(B_\ell+\frac{D_\ell}{\tau^2}\right),
+\]
+so the closed-form VEB update is
+\[
+\hat\sigma_{0\ell}^2
+=
+\frac{1}{J}
+\left(B_\ell+\frac{D_\ell}{\tau^2}\right).
+\]
+This is the average posterior second moment of the latent effect: one degree of
+freedom comes from $\beta_\ell$, and $J-1$ degrees of freedom come from the
+relaxed LD-column perturbation after rescaling by $\tau^2$.
+
+Holding $\{\sigma_{0\ell}^2\}_{\ell=1}^L$ fixed, the $\tau^2$-dependent part of
+the ELBO is
+\[
+-\frac{L(J-1)}{2}\log\tau^2
+-\frac{1}{2\tau^2}
+\sum_{\ell=1}^L\frac{D_\ell}{\sigma_{0\ell}^2},
+\]
+so
+\[
+\hat\tau^2
+=
+\frac{1}{L(J-1)}
+\sum_{\ell=1}^L\frac{D_\ell}{\sigma_{0\ell}^2}.
+\]
+This update estimates the average standardized size of the relaxed LD-column
+perturbations. A small value means the posterior does not need much LD
+relaxation and the method approaches susie-rss; a large value means the data
+are being explained partly through LD-column uncertainty. In practice these EB
+updates can be alternated with the variational updates and bounded to avoid
+degenerate values.
+
+\paragraph{IBSS-like coordinate ascent.}
+The resulting algorithm is coordinate ascent on $\mathcal L(q)$:
+\begin{enumerate}[leftmargin=*]
+\item Initialize $\alpha_{\ell j}$, $m_{\ell j}$, $v_\ell$,
+$\bar\eta_{\ell j}$, and $\bar\theta_\ell$ for $\ell=1,\ldots,L$.
+\item For each effect $\ell$, form
+\[
+r_\ell=x-\sum_{k\ne\ell}\bar\theta_k.
+\]
+\item Compute $v_\ell=(N+\sigma_{0\ell}^{-2})^{-1}$,
+$m_{\ell j}=v_\ell Nr_{\ell j}$, and
+$\bar\eta_{\ell j}=\rho_\ell(r_\ell-r_{\ell j}\bar R_{\cdot j})$ for all $j$.
+\item Update the coordinate weights by
+\[
+\alpha_{\ell j}
+\propto
+\exp\!\left\{
+\frac{N}{2}(\kappa_\ell-\rho_\ell)r_{\ell j}^2
+\right\}.
+\]
+\item Recompute
+\[
+\bar\theta_\ell
+=
+\bar R(\alpha_\ell\odot m_\ell)
++\rho_\ell r_\ell
+-\rho_\ell\bar R(\alpha_\ell\odot r_\ell).
+\]
+\item Optionally update $\sigma_{0\ell}^2$ and $\tau^2$ using the VEB formulas,
+then refresh $\kappa_\ell$, $\rho_\ell$, $v_\ell$, and $W_{\ell j}$.
+\item Sweep over $\ell=1,\ldots,L$ until the ELBO or fitted mean
+$\sum_{\ell=1}^L\bar\theta_\ell$ stabilizes.
+\end{enumerate}
+
+\paragraph{Comment on the robustness.} We knew from the experiments that under LD mismatch, Susie-RSS's signal $R \bar{b}$ can't fit exactly to the data $x$ (previously denoted by $v$) and therefore needs more $L$. This model allow for some deviation from $R \bar{b}$ by additionally using $(\eta_{\ell})_{\ell = 1}^{L}$. Looking at the final ELBO~\eqref{eq:full-ELBO}, the choice of $L$ now is a battle between $\tau^2$ and $\sigma_{0\ell}^2$ in equations~\eqref{eq:KL_beta} and~\eqref{eq:KL_eta}: If introduce a little more $\tau^2$ can save us the cost of one more $\sigma_{0\ell}^2$, the model will rather set $\tau^2$ to slightly larger (allowing more deviation) and set that extra $\sigma_{0\ell}^2$ to 0, leading to more conservative behavior.
+\end{document}
