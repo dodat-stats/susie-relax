@@ -1,0 +1,487 @@
+---
+title: "SER-relax PIP vs Model B PIP"
+author: "Dat Do"
+date: "`r Sys.Date()`"
+output:
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+editor_options:
+  markdown:
+    wrap: 72
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 8,
+  fig.height = 4.8
+)
+```
+
+# Goal
+
+The goal is to compare the exact single-effect PIP weights from
+SER-relax with the closed-form PIP weights from Model B in
+`tex/susie-love-revisit-extension.tex`.
+
+Model B has the closed-form weight
+\[
+w_j^B
+\propto
+N\left(x_j;0,\sigma_0^2+\frac1N\right)
+\left(1+\frac{Nx_j^2}{\nu_0}\right)^{(\nu_0+3)/2}.
+\]
+
+For SER-relax, after integrating out \(z_j\), we get
+\[
+p(x\mid \gamma=j,\beta)
+=
+N\left(x_j;\beta,\frac1N\right)
+N_{J-1}\left(
+x_{-j};x_j\mu_j,
+\left\{\frac1N+\frac{\beta^2}{\kappa_z}\right\}S_j
+\right),
+\]
+Here we use the parameterization \(\kappa_z=\nu_0\), matching the
+comparison calculation in `tex/susie-love-revisit-extension.tex`.
+
+After integrating out \(\beta\),
+\[
+w_j^{\mathrm{relax}}
+\propto
+N\left(x_j;0,\sigma_0^2+\frac1N\right)
+E_{\beta\mid x_j}
+\left[
+c(\beta)^{-(J-1)/2}
+\exp\left\{-\frac{r_j^2}{2c(\beta)}\right\}
+\right],
+\]
+where
+\[
+c(\beta)=\frac1N+\frac{\beta^2}{\kappa_z},
+\qquad
+r_j^2=x^\top\bar R^{-1}x-x_j^2,
+\]
+and
+\[
+\beta\mid x_j
+\sim
+N\left(
+\frac{N}{N+\sigma_0^{-2}}x_j,
+\frac{1}{N+\sigma_0^{-2}}
+\right).
+\]
+
+The question is whether these normalized PIPs are actually close for
+representative values of \(\nu_0\).
+
+We also compare against the new shared-\(\omega\) model from
+`tex/susie-love-revisit-extension.tex`. Its single-effect model is
+\[
+x\mid \beta,\gamma=j,z_j,\omega_j
+\sim
+N_J\left(\beta u_j(z_j),\frac{\bar R}{N\omega_j}\right),
+\]
+\[
+z_j\mid\omega_j
+\sim
+N_{J-1}\left(\mu_j,\frac{S_j}{\nu_0\omega_j}\right),
+\qquad
+\omega_j\sim
+\operatorname{Gamma}\left(\frac{\nu_0+3}{2},\frac{\nu_0}{2}\right).
+\]
+For this model we compute PIPs using a local mean-field VI update for
+each candidate causal SNP.
+
+# Helper Functions
+
+```{r helpers}
+ar_correlation <- function(J, rho) {
+  idx <- seq_len(J)
+  rho ^ abs(outer(idx, idx, "-"))
+}
+
+softmax <- function(logw) {
+  z <- logw - max(logw)
+  ez <- exp(z)
+  ez / sum(ez)
+}
+
+logsumexp <- function(x) {
+  m <- max(x)
+  m + log(sum(exp(x - m)))
+}
+
+gauss_hermite <- function(n = 41) {
+  i <- seq_len(n - 1)
+  J <- matrix(0, n, n)
+  off <- sqrt(i / 2)
+  J[cbind(i, i + 1)] <- off
+  J[cbind(i + 1, i)] <- off
+  eg <- eigen(J, symmetric = TRUE)
+  o <- order(eg$values)
+  nodes <- eg$values[o]
+  weights <- sqrt(pi) * eg$vectors[1, o]^2
+  list(nodes = nodes, weights = weights)
+}
+
+model_b_pip <- function(x, N, sigma2, nu0) {
+  logw <- dnorm(x, 0, sqrt(sigma2 + 1 / N), log = TRUE) +
+    ((nu0 + 3) / 2) * log1p(N * x^2 / nu0)
+  softmax(logw)
+}
+
+ser_relax_exact_pip <- function(x, Rbar, N, sigma2, nu0,
+                                kappa_z = nu0,
+                                gh = gauss_hermite(41)) {
+  J <- length(x)
+  p <- J - 1
+  Omega_x <- solve(Rbar, x)
+  q <- as.numeric(crossprod(x, Omega_x))
+  r2 <- pmax(q - x^2, 0)
+
+  v_beta <- 1 / (N + 1 / sigma2)
+  m_beta <- (N / (N + 1 / sigma2)) * x
+  sd_beta <- sqrt(v_beta)
+
+  logw <- numeric(J)
+  log_gh_w <- log(gh$weights / sqrt(pi))
+  for (j in seq_len(J)) {
+    beta_nodes <- m_beta[j] + sqrt(2) * sd_beta * gh$nodes
+    c_nodes <- 1 / N + beta_nodes^2 / kappa_z
+    log_kernel <- -(p / 2) * log(c_nodes) - r2[j] / (2 * c_nodes)
+    log_expect <- logsumexp(log_gh_w + log_kernel)
+    logw[j] <- dnorm(x[j], 0, sqrt(sigma2 + 1 / N), log = TRUE) +
+      log_expect
+  }
+  softmax(logw)
+}
+
+shared_omega_vi_pip <- function(x, Rbar, N, sigma2, nu0,
+                                max_iter = 500, tol = 1e-10) {
+  J <- length(x)
+  p <- J - 1
+  Omega <- solve(Rbar)
+  logdet_Rbar <- as.numeric(determinant(Rbar, logarithm = TRUE)$modulus)
+  xOx <- as.numeric(crossprod(x, Omega %*% x))
+  C <- pmax(xOx - x^2, 0)
+
+  a0 <- (nu0 + 3) / 2
+  b0 <- nu0 / 2
+  a_omega <- a0 + (J + p) / 2
+
+  compute_abq <- function(j, z_scale, z_denom) {
+    Q <- p / z_denom + z_scale^2 * C[j]
+    A <- 1 + Q
+    B <- x[j] + z_scale * C[j]
+    list(A = A, B = B, Q = Q)
+  }
+
+  local_elbo <- function(j, state) {
+    eomega <- state$aomega / state$bomega
+    elogomega <- digamma(state$aomega) - log(state$bomega)
+    beta2 <- state$vbeta + state$mbeta^2
+    abq <- compute_abq(j, state$z_scale, state$z_denom)
+    Lquad <- xOx - 2 * state$mbeta * abq$B + beta2 * abq$A
+
+    eloglik <- -J / 2 * log(2 * pi) -
+      0.5 * (logdet_Rbar - J * log(N)) +
+      J / 2 * elogomega -
+      N / 2 * eomega * Lquad
+
+    elog_pbeta <- -0.5 * log(2 * pi * sigma2) - beta2 / (2 * sigma2)
+
+    elog_pz <- -p / 2 * log(2 * pi) -
+      0.5 * logdet_Rbar +
+      p / 2 * log(nu0) +
+      p / 2 * elogomega -
+      nu0 / 2 * eomega * abq$Q
+
+    elog_pomega <- a0 * log(b0) - lgamma(a0) +
+      (a0 - 1) * elogomega - b0 * eomega
+
+    elog_qbeta <- -0.5 * log(2 * pi * state$vbeta) - 0.5
+    logdet_vz <- logdet_Rbar - p * log(state$z_denom)
+    elog_qz <- -p / 2 * log(2 * pi) - 0.5 * logdet_vz - p / 2
+    elog_qomega <- state$aomega * log(state$bomega) -
+      lgamma(state$aomega) +
+      (state$aomega - 1) * elogomega -
+      state$bomega * eomega
+
+    -log(J) + eloglik + elog_pbeta + elog_pz + elog_pomega -
+      elog_qbeta - elog_qz - elog_qomega
+  }
+
+  fit_one <- function(j) {
+    eomega <- a0 / b0
+    z_scale <- 0
+    z_denom <- eomega * nu0
+    state <- list(
+      mbeta = 0,
+      vbeta = sigma2,
+      z_scale = z_scale,
+      z_denom = z_denom,
+      aomega = a_omega,
+      bomega = b0 + 0.5 * N * xOx
+    )
+
+    old_elbo <- -Inf
+    for (iter in seq_len(max_iter)) {
+      eomega <- state$aomega / state$bomega
+
+      abq <- compute_abq(j, state$z_scale, state$z_denom)
+      vbeta <- 1 / (1 / sigma2 + N * eomega * abq$A)
+      mbeta <- vbeta * N * eomega * abq$B
+      beta2 <- vbeta + mbeta^2
+
+      z_denom <- eomega * (N * beta2 + nu0)
+      z_scale <- N * mbeta / (N * beta2 + nu0)
+
+      abq <- compute_abq(j, z_scale, z_denom)
+      Lquad <- xOx - 2 * mbeta * abq$B + beta2 * abq$A
+      bomega <- b0 + N / 2 * Lquad + nu0 / 2 * abq$Q
+
+      state <- list(
+        mbeta = mbeta,
+        vbeta = vbeta,
+        z_scale = z_scale,
+        z_denom = z_denom,
+        aomega = a_omega,
+        bomega = bomega
+      )
+
+      elbo <- local_elbo(j, state)
+      if (is.finite(old_elbo) && abs(elbo - old_elbo) < tol * (1 + abs(old_elbo))) {
+        break
+      }
+      old_elbo <- elbo
+    }
+
+    list(state = state, elbo = local_elbo(j, state))
+  }
+
+  fits <- lapply(seq_len(J), fit_one)
+  local <- vapply(fits, `[[`, numeric(1), "elbo")
+  list(
+    pi = softmax(local),
+    local_elbo = local,
+    states = lapply(fits, `[[`, "state")
+  )
+}
+
+pip_metrics <- function(pip, reference, label, nu0, causal) {
+  data.frame(
+    method = label,
+    nu0 = nu0,
+    top_snp = which.max(pip),
+    top_pip = max(pip),
+    causal_pip = sum(pip[causal]),
+    max_abs_diff = max(abs(pip - reference)),
+    total_variation = 0.5 * sum(abs(pip - reference)),
+    corr_with_model_b = suppressWarnings(cor(pip, reference)),
+    model_b_top_pip_at_method_top = reference[which.max(pip)]
+  )
+}
+
+plot_compare <- function(pip_list, causal, main) {
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par), add = TRUE)
+  ymax <- max(unlist(pip_list))
+  par(mfrow = c(length(pip_list), 1), mar = c(3, 4, 2, 1))
+  for (nm in names(pip_list)) {
+    pip <- pip_list[[nm]]
+    plot(
+      seq_along(pip), pip,
+      type = "h",
+      lwd = 1.2,
+      ylim = c(0, ymax),
+      xlab = "SNP index",
+      ylab = "PIP",
+      main = paste(main, nm)
+    )
+    points(causal, pip[causal], pch = 19, col = "red")
+    rug(causal, col = "red", lwd = 2)
+    grid()
+  }
+}
+```
+
+# Simulation Setup
+
+This setup is deliberately simple and reproducible. We use an AR(1)
+reference LD matrix so that the comparison only tests the PIP formulas,
+not the coalescent simulator.
+
+```{r simulate}
+set.seed(1)
+
+J <- 200L
+N <- 20000L
+rho <- 0.9
+Rbar <- ar_correlation(J, rho)
+causal <- 95L
+beta_true <- 0.03
+sigma2 <- beta_true^2
+
+x <- as.numeric(beta_true * Rbar[, causal] +
+  drop(t(chol(Rbar / N)) %*% rnorm(J)))
+
+nu0_grid <- c(5, 10, 20, 50, 100, 500, 2000)
+
+data.frame(
+  J = J,
+  N = N,
+  rho = rho,
+  causal = causal,
+  beta_true = beta_true,
+  sigma2 = sigma2,
+  max_abs_x = max(abs(x)),
+  top_x_snp = which.max(abs(x))
+)
+```
+
+# PIP Comparison
+
+```{r compare-pips}
+gh <- gauss_hermite(51)
+
+all_results <- list()
+pip_examples <- list()
+
+for (nu0 in nu0_grid) {
+  pip_b <- model_b_pip(x, N, sigma2, nu0)
+
+  pip_ser_extension <- ser_relax_exact_pip(
+    x, Rbar, N, sigma2, nu0,
+    kappa_z = nu0,
+    gh = gh
+  )
+
+  fit_shared <- shared_omega_vi_pip(
+    x, Rbar, N, sigma2, nu0,
+    max_iter = 500,
+    tol = 1e-10
+  )
+  pip_shared_vi <- fit_shared$pi
+
+  all_results[[as.character(nu0)]] <- rbind(
+    pip_metrics(pip_b, pip_b, "Model B closed form", nu0, causal),
+    pip_metrics(pip_ser_extension, pip_b,
+                "SER-relax exact, kappa_z=nu0", nu0, causal),
+    pip_metrics(pip_shared_vi, pip_b,
+                "shared-omega SER-relax VI", nu0, causal)
+  )
+
+  if (nu0 %in% c(10, 100, 2000)) {
+    pip_examples[[paste0("nu0=", nu0, ", Model B")]] <- pip_b
+    pip_examples[[paste0("nu0=", nu0, ", SER kappa=nu0")]] <-
+      pip_ser_extension
+    pip_examples[[paste0("nu0=", nu0, ", shared omega VI")]] <-
+      pip_shared_vi
+  }
+}
+
+comparison <- do.call(rbind, all_results)
+row.names(comparison) <- NULL
+comparison
+```
+
+```{r plot-selected}
+plot_compare(
+  pip_examples[c("nu0=10, Model B",
+                 "nu0=10, SER kappa=nu0",
+                 "nu0=10, shared omega VI")],
+  causal,
+  main = ""
+)
+
+plot_compare(
+  pip_examples[c("nu0=100, Model B",
+                 "nu0=100, SER kappa=nu0",
+                 "nu0=100, shared omega VI")],
+  causal,
+  main = ""
+)
+```
+
+# Difference as a Function of \(\nu_0\)
+
+```{r plot-differences}
+ser_rows <- comparison[comparison$method != "Model B closed form", ]
+
+old_par <- par(no.readonly = TRUE)
+on.exit(par(old_par), add = TRUE)
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 1))
+
+plot(
+  NA,
+  xlim = range(nu0_grid),
+  ylim = range(ser_rows$total_variation),
+  log = "x",
+  xlab = expression(nu[0]),
+  ylab = "Total variation distance",
+  main = "PIP distance from Model B"
+)
+for (method in unique(ser_rows$method)) {
+  rows <- ser_rows[ser_rows$method == method, ]
+  lines(rows$nu0, rows$total_variation, type = "b", pch = 16)
+}
+legend("topright", legend = unique(ser_rows$method), lty = 1, pch = 16, bty = "n")
+grid()
+
+plot(
+  NA,
+  xlim = range(nu0_grid),
+  ylim = range(ser_rows$max_abs_diff),
+  log = "x",
+  xlab = expression(nu[0]),
+  ylab = "Maximum absolute PIP difference",
+  main = "Worst SNP-wise difference"
+)
+for (method in unique(ser_rows$method)) {
+  rows <- ser_rows[ser_rows$method == method, ]
+  lines(rows$nu0, rows$max_abs_diff, type = "b", pch = 16)
+}
+legend("topright", legend = unique(ser_rows$method), lty = 1, pch = 16, bty = "n")
+grid()
+par(old_par)
+```
+
+# Takeaway
+
+The comparison above answers the question empirically for this simple
+single-effect simulation.
+
+-   For large \(\nu_0\), all three PIPs become close because they reduce
+    to the same leading SER-RSS-style weight.
+-   For small or moderate \(\nu_0\), the original SER-relax exact PIP
+    need not be close to Model B. The SER-relax exact weight still
+    contains
+    \[
+    E_{\beta\mid x_j}
+    \left[
+    c(\beta)^{-(J-1)/2}
+    \exp\left\{-\frac{r_j^2}{2c(\beta)}\right\}
+    \right],
+    \]
+    so it can depend on the LD residual
+    \(r_j^2=x^\top\bar R^{-1}x-x_j^2\). Model B's closed-form PIP
+    cancels the corresponding \(x^\top\bar R^{-1}x\) term exactly and
+    depends only on \(x_j^2\).
+-   The shared-\(\omega\) model uses one scalar latent uncertainty in
+    both the residual noise and the relaxed LD column. Its VI PIP is
+    included to check whether this shared-scale construction moves the
+    approximation closer to Model B in finite-\(\nu_0\) regimes. In this
+    simulation it does: the shared-\(\omega\) total variation distance is
+    much smaller than original SER-relax for every \(\nu_0\) in the grid.
+
+So the answer is: original SER-relax is only asymptotically close to
+Model B as \(\nu_0\) gets large, but the shared-\(\omega\) construction
+is already a substantially better approximation at finite \(\nu_0\) in
+this example.
