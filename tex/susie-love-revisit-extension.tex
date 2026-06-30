@@ -787,818 +787,504 @@ x_1\mu_1,
 \end{cases}
 \end{align}
 
-\subsection{Try to achieve common noise}
+\section{Rewrite the model}
+Model A and B are very nice but they are hard to extend to a susie-like model due to the randomness in noise of $x$.
 
-I am thinking about another representation of model B~\eqref{eq:SER-model-B}
-that will be useful in extending it to a Susie-like model. In particular, it
-would be useful to have a model with a common noise among all choices of $\gamma = j$.
+My goal now is to introduce a few latent variables to achieve the noise like
+$\mathcal{N}(0,\bar R/N)$ for the model.
 
-\paragraph{An exact two-error view of model B.}
-For $\gamma=1$, model B can be viewed as a SER model with two additional
-errors, but the variance error is not an independent additive Gaussian error.
-Let $A_1=A_1(S_1)$ be any matrix such that
-\[
-A_1\bar S_1A_1^\top=S_1.
-\]
-Let
-\[
-e_1\sim\Normal\left(0,\frac{1}{N}\right),
-\qquad
-e_{-1}\sim\Normal_{J-1}\left(0,\frac{\bar S_1}{N}\right),
-\qquad
-h_1\sim\Normal_{J-1}\left(0,\frac{\bar S_1}{\nu_0}\right),
-\]
-mutually independent conditional on $S_1$, and set
-\begin{align}\label{eq:model-B-two-error-view}
+Let's start with the following latent-noise representation for $\gamma=1$:
+\begin{equation}
 \begin{cases}
-x_1=\beta+e_1,\\
-x_{-1}=x_1\mu_1+A_1e_{-1}+x_1A_1h_1,\\
-S_1\sim\mathcal{IW}(\nu_0\bar S_1,\nu_0+J+1),\\
-\beta\sim\Normal(0,\sigma_0^2).
+x = \beta \begin{pmatrix} 1 \\ z_1\end{pmatrix} + z_0\\
+z_0 \mid R \sim \mathcal{N}(0, R / N)\\
+z_1 = \dfrac{R_{-1, 1}}{R_{11}}\\
+R \sim \mathcal{IW}(\nu_0 \bar R, \nu_0 + J + 1)
 \end{cases}
-\end{align}
-The term $x_1A_1h_1$ is the error in the mean/LD column, because
-$A_1h_1\mid S_1\sim\Normal_{J-1}(0,S_1/\nu_0)$. The term $A_1e_{-1}$ is the
-variance error: it transforms the SER conditional noise
-$e_{-1}\sim\Normal_{J-1}(0,\bar S_1/N)$ into
-\[
-A_1e_{-1}\mid S_1\sim\Normal_{J-1}\left(0,\frac{S_1}{N}\right).
-\]
-Consequently, after integrating out $e_{-1}$ and $h_1$,
-\[
-x_{-1}\mid x_1,S_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-x_1\mu_1,
-\left(\frac{1}{N}+\frac{x_1^2}{\nu_0}\right)S_1
-\right),
-\]
-which is exactly \eqref{eq:model-B1} in block form.
+\end{equation}
+First, we note that when marginalizing out $R$, both $z_0$ and $z_1$ are
+multivariate-$t$ distributed. For the $z_0$ part, the useful normal--Gamma
+representation is
+\begin{equation}
+z_0 = \dfrac{\bar z_0}{\sqrt{\omega_0}},
+\quad
+\bar z_0 \sim \Normal\left(0,\frac{\bar R}{N}\right),
+\quad
+\omega_0 \sim \Gam\left(\frac{\nu_0 + 2}{2},\frac{\nu_0}{2}\right),
+\label{eq:z0-normal-gamma}
+\end{equation}
+using the shape--rate parameterization for the Gamma distribution. The square
+root is important: conditional on $\omega_0$, $z_0$ has covariance
+$\bar R/(N\omega_0)$, and integrating over $\omega_0$ gives the same marginal
+distribution as integrating $R$ out of $z_0\mid R$.
 
-Equivalently, if
-$x^{\mathrm{SER}}\mid\beta,\gamma=1\sim
-\Normal_J(\beta\bar R_{\cdot 1},\bar R/N)$, then the conditional SER residual
-in the non-causal coordinates is $e_{-1}=x_{-1}^{\mathrm{SER}}-x_1\mu_1$, and
+With this representation the observation equation becomes
 \[
 x
 =
-x^{\mathrm{SER}}
-+u_1\left\{(A_1-I)e_{-1}+x_1A_1h_1\right\}.
-\]
-This is the desired ``SER plus two errors'' picture. The caveat is that
-$(A_1-I)e_{-1}$ is coupled to the SER noise; it is not an independent
-additive Gaussian error. This coupling is what avoids the impossible
-requirement that $S_1-\bar S_1$ be positive semidefinite.
-
-What is the distribution of $A_1$? It is not unique unless we choose a
-particular square-root convention. If
-\[
-T_1=\bar S_1^{-1/2}S_1\bar S_1^{-1/2},
-\]
-then by affine equivariance of the inverse-Wishart distribution,
-\[
-T_1\sim
-\mathcal{IW}_{J-1}\left(\nu_0 I,\nu_0+J+1\right).
-\]
-Every valid $A_1$ can be written as
-\[
-A_1=\bar S_1^{1/2}B_1\bar S_1^{-1/2},
-\qquad
-B_1B_1^\top=T_1.
-\]
-Thus one canonical choice is
-\[
-B_1=T_1^{1/2},
-\qquad
-A_1=\bar S_1^{1/2}T_1^{1/2}\bar S_1^{-1/2}.
-\]
-Under this convention, $A_1$ has the distribution induced by the symmetric
-matrix square root of an isotropic inverse-Wishart random matrix. This does
-not have a simpler standard named form, but it is concentrated around $I$ as
-$\nu_0$ grows. Other choices, such as $B_1=T_1^{1/2}O_1$ for an orthogonal
-matrix $O_1$, give the same $S_1$ but a different distribution for $A_1$.
-
-\paragraph{Approximating the variance of $x_1$.}
-Starting from \eqref{eq:model-B3p}, try the approximation
-\[
-x_1\mid \beta,\omega_1,\gamma=1
-\sim
-\Normal\left(\beta,\frac{1}{N\omega_1}\right),
-\]
-while keeping the conditional model for $x_{-1}$ given $x_1$ and $\omega_1$:
-\begin{align}\label{eq:model-B3p-x1-scaled}
-\begin{cases}
-x_1\mid \beta,\omega_1,\gamma=1
-\sim
-\Normal\left(\beta,\dfrac{1}{N\omega_1}\right),\\
-x_{-1}\mid x_1,\omega_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-x_1\mu_1,
-\dfrac{1}{\omega_1}
-\left(\dfrac{1}{N}+\dfrac{x_1^2}{\nu_0}\right)\bar S_1
-\right),\\
-\omega_1\sim\Gam\left(\dfrac{\nu_0+3}{2},\dfrac{\nu_0}{2}\right),\\
-\beta\sim\Normal(0,\sigma_0^2).
-\end{cases}
-\end{align}
-This approximation has a clean whole-vector representation. Let
-\[
-\zeta_1\mid x_1,\omega_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-0,
-\dfrac{x_1^2}{\nu_0\omega_1}\bar S_1
-\right).
-\]
-Then \eqref{eq:model-B3p-x1-scaled} is equivalent to
-\begin{align}\label{eq:model-B3p-x1-scaled-vector}
-\begin{cases}
-x\mid \beta,\zeta_1,\omega_1,\gamma=1
-\sim
-\Normal_J\left(
-\beta\bar R_{\cdot 1}+u_1(\zeta_1),
-\dfrac{\bar R}{N\omega_1}
-\right),\\
-\zeta_1\mid x_1,\omega_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-0,
-\dfrac{x_1^2}{\nu_0\omega_1}\bar S_1
-\right),\\
-\omega_1\sim\Gam\left(\dfrac{\nu_0+3}{2},\dfrac{\nu_0}{2}\right),\\
-\beta\sim\Normal(0,\sigma_0^2).
-\end{cases}
-\end{align}
-Indeed, the conditional distribution induced by the common noise
-$\bar R/(N\omega_1)$ is
-\[
-x_1\mid \beta,\omega_1,\gamma=1
-\sim
-\Normal\left(\beta,\frac{1}{N\omega_1}\right),
-\qquad
-x_{-1}\mid x_1,\zeta_1,\omega_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-x_1\mu_1+\zeta_1,
-\frac{\bar S_1}{N\omega_1}
-\right).
-\]
-Integrating out $\zeta_1$ gives the second line of
-\eqref{eq:model-B3p-x1-scaled}.
-
-Thus this approximation achieves a common-noise representation with common
-noise $\bar R/(N\omega_1)$. This is not the same as fixed noise $\bar R/N$. However, if we are willing
-to use the random common-noise scale $\bar R/(N\omega_1)$, then
-\eqref{eq:model-B3p-x1-scaled-vector} is a valid representation.
-
-\paragraph{PIP under the random common-noise model.}
-For a general candidate SNP $j$, define
-\[
-\mu_j=\bar R_{-j,j},
-\qquad
-\bar S_j=\bar R_{-j,-j}-\mu_j\mu_j^\top,
-\qquad
-c_j=\frac{1}{N}+\frac{x_j^2}{\nu_0},
-\qquad
-q_R=x^\top\bar R^{-1}x.
-\]
-The block inverse formula gives
-\[
-(x_{-j}-x_j\mu_j)^\top\bar S_j^{-1}(x_{-j}-x_j\mu_j)
-=q_R-x_j^2.
-\]
-Under \eqref{eq:model-B3p-x1-scaled}, after integrating out $\beta$ but
-conditioning on $\omega_j$,
-\[
-x_j\mid \omega_j,\gamma=j
-\sim
-\Normal\left(0,\sigma_0^2+\frac{1}{N\omega_j}\right),
-\]
-and
-\[
-x_{-j}\mid x_j,\omega_j,\gamma=j
-\sim
-\Normal_{J-1}\left(
-x_j\mu_j,
-\frac{c_j}{\omega_j}\bar S_j
-\right).
-\]
-Therefore
-\begin{align}
-p(x\mid \gamma=j)
-=\;&
-\int_0^\infty
-\Normal\left(x_j;0,\sigma_0^2+\frac{1}{N\omega}\right)
-\Normal_{J-1}\left(
-x_{-j};x_j\mu_j,\frac{c_j}{\omega}\bar S_j
-\right)
-\notag\\
-&\qquad\qquad\times
-\frac{(\nu_0/2)^{(\nu_0+3)/2}}
-{\Gamma((\nu_0+3)/2)}
-\omega^{(\nu_0+3)/2-1}
-\exp\left(-\frac{\nu_0\omega}{2}\right)
-\;d\omega \notag\\
-=\;&
-(2\pi)^{-J/2}|\bar S_j|^{-1/2}
-c_j^{-(J-1)/2}
-\frac{(\nu_0/2)^{(\nu_0+3)/2}}
-{\Gamma((\nu_0+3)/2)}
-\notag\\
-&\times
-\int_0^\infty
-\left(\sigma_0^2+\frac{1}{N\omega}\right)^{-1/2}
-\omega^{(\nu_0+3)/2+(J-1)/2-1}
-\notag\\
-&\times
-\exp\left\{
--\frac{x_j^2}{2(\sigma_0^2+1/(N\omega))}
--\frac{\omega(q_R-x_j^2)}{2c_j}
--\frac{\nu_0\omega}{2}
-\right\}
-\;d\omega .
-\label{eq:common-noise-scaled-marginal}
-\end{align}
-Since $\bar R_{jj}=1$, $|\bar S_j|=|\bar R|$, so the determinant factor is
-common across SNPs. Dropping constants common in $j$, the PIP weights are
-\begin{align}\label{eq:PIP-common-noise-scaled}
-w_j^{\mathrm{scaled}}
-=\;&
-c_j^{-(J-1)/2}
-\int_0^\infty
-\left(\sigma_0^2+\frac{1}{N\omega}\right)^{-1/2}
-\omega^{(\nu_0+J)/2}
-\notag\\
-&\times
-\exp\left\{
--\frac{x_j^2}{2(\sigma_0^2+1/(N\omega))}
--\frac{\omega(q_R-x_j^2)}{2c_j}
--\frac{\nu_0\omega}{2}
-\right\}
-\;d\omega,
-\qquad
-\pi_j=\frac{w_j^{\mathrm{scaled}}}{\sum_{k=1}^Jw_k^{\mathrm{scaled}}}.
-\end{align}
-Thus the random common-noise model is computationally a one-dimensional
-integral per SNP, but it does not retain the exact irrelevance property. The
-common statistic $q_R=x^\top\bar R^{-1}x$ appears inside the integral with the
-SNP-specific coefficient $1/c_j$, so it cannot be factored out and cancelled
-in the PIP normalization.
-
-\paragraph{A variant that scales the mean of $x_1$.}
-Another possibility, closer in spirit to model A, is to replace the first line
-of \eqref{eq:model-B3p} by
-\[
-x_1\mid \beta,\omega_1,\gamma=1
-\sim
-\Normal\left(\frac{\beta}{\sqrt{\omega_1}},\frac{1}{N\omega_1}\right).
-\]
-Keeping the same conditional distribution of $x_{-1}$, the block model becomes
-\begin{align}\label{eq:model-B3p-x1-mean-scaled}
-\begin{cases}
-x_1\mid \beta,\omega_1,\gamma=1
-\sim
-\Normal\left(\dfrac{\beta}{\sqrt{\omega_1}},\dfrac{1}{N\omega_1}\right),\\
-x_{-1}\mid x_1,\omega_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-x_1\mu_1,
-\dfrac{1}{\omega_1}
-\left(\dfrac{1}{N}+\dfrac{x_1^2}{\nu_0}\right)\bar S_1
-\right),\\
-\omega_1\sim\Gam\left(\dfrac{\nu_0+3}{2},\dfrac{\nu_0}{2}\right),\\
-\beta\sim\Normal(0,\sigma_0^2).
-\end{cases}
-\end{align}
-This has the common-noise representation
-\begin{align}\label{eq:model-B3p-x1-mean-scaled-vector}
-\begin{cases}
-x\mid \beta,\zeta_1,\omega_1,\gamma=1
-\sim
-\Normal_J\left(
-\dfrac{\beta}{\sqrt{\omega_1}}\bar R_{\cdot 1}+u_1(\zeta_1),
-\dfrac{\bar R}{N\omega_1}
-\right),\\
-\zeta_1\mid x_1,\omega_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-0,
-\dfrac{x_1^2}{\nu_0\omega_1}\bar S_1
-\right),\\
-\omega_1\sim\Gam\left(\dfrac{\nu_0+3}{2},\dfrac{\nu_0}{2}\right),\\
-\beta\sim\Normal(0,\sigma_0^2).
-\end{cases}
-\end{align}
-The only difference from \eqref{eq:model-B3p-x1-scaled-vector} is that the
-effect mean is also divided by $\sqrt{\omega_1}$. If we define
-$\alpha_1=\beta/\sqrt{\omega_1}$, then
-\[
-\alpha_1\mid \omega_1\sim\Normal\left(0,\frac{\sigma_0^2}{\omega_1}\right),
-\]
-so the prior variance of the effective effect size has the same $1/\omega_1$
-scaling as the common noise. This is the useful feature of the
-$1/\sqrt{\omega_1}$ scaling.
-
-The PIP calculation is almost the same as above. Conditional on $\omega_j$ and
-after integrating out $\beta$,
-\[
-x_j\mid \omega_j,\gamma=j
-\sim
-\Normal\left(
-0,
-\frac{\sigma_0^2+1/N}{\omega_j}
-\right),
-\]
-whereas
-\[
-x_{-j}\mid x_j,\omega_j,\gamma=j
-\sim
-\Normal_{J-1}\left(
-x_j\mu_j,
-\frac{c_j}{\omega_j}\bar S_j
-\right)
-\]
-is unchanged. Let
-\[
-V_\beta=\sigma_0^2+\frac{1}{N},
-\qquad
-a=\frac{\nu_0+3}{2},
-\qquad
-b=\frac{\nu_0}{2}.
-\]
-Then
-\begin{align}
-p(x\mid \gamma=j)
-=\;&
-(2\pi)^{-J/2}|\bar S_j|^{-1/2}
-V_\beta^{-1/2}
-c_j^{-(J-1)/2}
-\frac{b^a}{\Gamma(a)}
-\notag\\
-&\times
-\int_0^\infty
-\omega^{a+J/2-1}
-\exp\left[
--\omega\left\{
-b+\frac{x_j^2}{2V_\beta}
-+\frac{q_R-x_j^2}{2c_j}
-\right\}
-\right]\;d\omega
-\notag\\
-=\;&
-(2\pi)^{-J/2}|\bar S_j|^{-1/2}
-V_\beta^{-1/2}
-c_j^{-(J-1)/2}
-\frac{b^a\Gamma(a+J/2)}{\Gamma(a)}
-\notag\\
-&\times
-\left\{
-b+\frac{x_j^2}{2V_\beta}
-+\frac{q_R-x_j^2}{2c_j}
-\right\}^{-(a+J/2)} .
-\label{eq:common-noise-sqrt-scaled-marginal}
-\end{align}
-Since $|\bar S_j|=|\bar R|$ is common across SNPs, the PIP weights are
-\begin{align}\label{eq:PIP-common-noise-mean-scaled}
-w_j^{\mathrm{sqrt\text{-}scaled}}
-=\;&
-c_j^{-(J-1)/2}
-\left\{
-\frac{\nu_0}{2}
-+\frac{x_j^2}{2(\sigma_0^2+1/N)}
-+\frac{q_R-x_j^2}{2c_j}
-\right\}^{-(\nu_0+J+3)/2},
-\notag\\
-\pi_j=\;&
-\frac{w_j^{\mathrm{sqrt\text{-}scaled}}}
-{\sum_{k=1}^Jw_k^{\mathrm{sqrt\text{-}scaled}}}.
-\end{align}
-This is better computationally: the integral over $\omega_j$ is now conjugate
-and has a closed form. It is also closer to model A in the sense that both the
-effective signal and the common noise share the same $1/\omega_j$ scale after
-marginalizing over $\beta$. However, it still does not recover the exact
-null-SNP irrelevance property, because the common statistic $q_R$ appears with
-the SNP-specific coefficient $1/c_j$ inside the final bracket.
-
-
-\section{Extension to susie}
-Now we try to extend model B into a Susie-like model, where we allow more than
-one non-zero effect. A natural extension is to keep the usual SuSiE additive
-decomposition, but replace each single-effect update by the model B
-single-effect calculation above.
-
-\subsection{A first proposed multi-effect model}
-Let there be $L$ single-effect components. For each component $\ell$, introduce
-a causal index $\gamma_\ell$, an effect size $\beta_\ell$, and a relaxed LD
-column $z_{\ell j}$ when $\gamma_\ell=j$. A direct extension of model B is
-\[
-x
-\mid
-\{\gamma_\ell,\beta_\ell,z_{\ell,\gamma_\ell},S_{\ell,\gamma_\ell}\}_{\ell=1}^L
-\sim
-\Normal_J\left(
-\sum_{\ell=1}^L \beta_\ell u_{\gamma_\ell}(z_{\ell,\gamma_\ell}),
-\frac{\bar R}{N}
-\right),
-\]
-where $u_j(z_j)$ is the vector with entry $1$ at coordinate $j$ and entries
-$z_j$ on the remaining coordinates. The priors are
-\[
-\gamma_\ell\sim\Unif\{1,\ldots,J\},
-\qquad
-\beta_\ell\sim\Normal(0,\sigma_0^2),
-\]
-and, conditional on $\gamma_\ell=j$,
-\[
-z_{\ell j}\mid S_{\ell j}
-\sim
-\Normal_{J-1}\left(\mu_j,\frac{S_{\ell j}}{\nu_0}\right),
-\qquad
-S_{\ell j}\sim\mathcal{IW}_{J-1}(\nu_0\bar S_j,\nu_0+J+1).
-\]
-This model gives each single-effect component its own relaxed active LD
-column. This is the closest analogue of SuSiE: multiple effects add in the
-mean, while each effect has a one-hot index and a scalar coefficient.
-
-\paragraph{Sanity check: the $L=1$ case.}
-This first proposed model is actually not the right extension of model B. The
-issue is already visible when $L=1$. Take $\gamma=1$. Under the proposed model,
-\[
-x\mid \beta,z_1,S_1,\gamma=1
-\sim
-\Normal_J\left(
-\beta\begin{pmatrix}1\\z_1\end{pmatrix},
-\frac{\bar R}{N}
-\right),
-\]
-so the covariance is fixed at $\bar R/N$ rather than using the
-$(z_1,S_1)$-dependent covariance in model B. Using the block form
-\[
-\bar R=
+\beta
 \begin{pmatrix}
-1 & \mu_1^\top\\
-\mu_1 & \bar S_1+\mu_1\mu_1^\top
+1\\ z_1
+\end{pmatrix}
++\frac{\bar z_0}{\sqrt{\omega_0}},
+\]
+or equivalently
+\begin{equation}\label{eq:fixed-noise-rewrite}
+\sqrt{\omega_0}x
+=
+\sqrt{\omega_0}\beta
+\begin{pmatrix}
+1\\ z_1
+\end{pmatrix}
++\bar z_0,
+\qquad
+\bar z_0\sim \Normal\left(0,\frac{\bar R}{N}\right).
+\end{equation}
+Thus, conditional on $\omega_0$, the likelihood can be written with the fixed
+noise covariance $\bar R/N$:
+\[
+p(x\mid \beta,z_1,\omega_0)
+=
+\omega_0^{J/2}
+\Normal_J\left(
+\sqrt{\omega_0}x
+\;\middle|\;
+\sqrt{\omega_0}\beta
+\begin{pmatrix}
+1\\ z_1
 \end{pmatrix},
+\frac{\bar R}{N}
+\right).
 \]
-we get
+
+Now we need the conditional distribution of $z_1$ after introducing
+$\bar z_0$. Since
 \[
-x_1\mid \beta,\gamma=1
+R\mid z_0
 \sim
-\Normal\left(\beta,\frac{1}{N}\right),
+\mathcal{IW}\left(
+\nu_0\bar R+Nz_0z_0^\top,\,
+\nu_0+J+2
+\right),
+\]
+we can write the updated inverse-Wishart scale matrix in terms of
+$(\bar z_0,\omega_0)$ as
+\[
+\Psi(\bar z_0,\omega_0)
+=
+\nu_0\bar R+\frac{N}{\omega_0}\bar z_0\bar z_0^\top.
+\]
+Partition
+\[
+\bar z_0=
+\begin{pmatrix}
+\bar z_{01}\\ \bar z_{0,-1}
+\end{pmatrix},
+\qquad
+\delta_1=\bar z_{0,-1}-\bar z_{01}\mu_1,
+\]
+and define
+\[
+\kappa_0
+=
+\nu_0+\frac{N}{\omega_0}\bar z_{01}^2.
+\]
+The relevant blocks of $\Psi$ are
+\[
+\Psi_{11}=\kappa_0,
+\qquad
+\Psi_{-1,1}
+=
+\nu_0\mu_1+\frac{N}{\omega_0}\bar z_{01}\bar z_{0,-1}.
+\]
+Therefore the conditional mean for the LD-column variable is
+\begin{equation}\label{eq:mu-Psi-bar-z0}
+\mu_1^\Psi
+=
+\frac{\Psi_{-1,1}}{\Psi_{11}}
+=
+\mu_1+\frac{N\bar z_{01}}{\omega_0\kappa_0}\delta_1.
+\end{equation}
+The Schur complement of $\Psi_{11}$ in $\Psi$ is
+\begin{equation}\label{eq:S-Psi-bar-z0}
+S_1^\Psi
+=
+\Psi_{-1,-1}-\frac{\Psi_{-1,1}\Psi_{1,-1}}{\Psi_{11}}
+=
+\nu_0\bar S_1
++\frac{\nu_0 N}{\omega_0\kappa_0}\delta_1\delta_1^\top.
+\end{equation}
+By the inverse-Wishart block decomposition,
+\begin{align}
+S_1\mid \bar z_0,\omega_0
+&\sim
+\mathcal{IW}\left(S_1^\Psi,\nu_0+J+2\right),
+\label{eq:S1-given-bar-z0}\\
+z_1\mid S_1,\bar z_0,\omega_0
+&\sim
+\Normal_{J-1}\left(
+\mu_1^\Psi,\frac{S_1}{\kappa_0}
+\right).
+\label{eq:z1-given-S1-bar-z0}
+\end{align}
+Equivalently, after integrating out $S_1$,
+\[
+z_1\mid \bar z_0,\omega_0
+\sim
+t_{J-1,\nu_0+4}\left(
+\mu_1^\Psi,\,
+\frac{S_1^\Psi}{\kappa_0(\nu_0+4)}
+\right),
+\]
+where the second argument is the multivariate-$t$ scale matrix.
+
+Introduce the normal--Gamma representation of this $t$ distribution:
+\begin{align}
+\omega_1
+&\sim
+\Gam\left(\frac{\nu_0+4}{2},\frac{\nu_0+4}{2}\right),
+\label{eq:omega1-gamma}\\
+z_1\mid \bar z_0,\omega_0,\omega_1
+&\sim
+\Normal_{J-1}\left(
+\mu_1^\Psi,\,
+\frac{S_1^\Psi}{\omega_1\kappa_0(\nu_0+4)}
+\right).
+\label{eq:z1-normal-gamma-bar-z0}
+\end{align}
+The mean shift in~\eqref{eq:mu-Psi-bar-z0} can be separated from the baseline
+LD column by writing
+\[
+z_1
+=
+\mu_1
++\frac{N\bar z_{01}}{\omega_0\kappa_0}\delta_1
++\varepsilon_1,
+\qquad
+\varepsilon_1\mid \bar z_0,\omega_0,\omega_1
+\sim
+\Normal_{J-1}\left(
+0,\frac{S_1^\Psi}{\omega_1\kappa_0(\nu_0+4)}
+\right).
+\]
+Hence the observation equation can be rewritten as
+\begin{align}
+x
+=\;&
+\beta
+\begin{pmatrix}
+1\\ \mu_1
+\end{pmatrix}
++\frac{\bar z_0}{\sqrt{\omega_0}}
++\beta
+\begin{pmatrix}
+0\\
+\dfrac{N\bar z_{01}}{\omega_0\kappa_0}\delta_1
+\end{pmatrix}
++\beta
+\begin{pmatrix}
+0\\ \varepsilon_1
+\end{pmatrix}.
+\label{eq:x-extract-delta-mean}
+\end{align}
+Thus the $\delta_1$ part of the conditional mean of $z_1$ has become an
+explicit additive noise term in the model for $x$.
+
+We can further extract the rank-one part of $S_1^\Psi$. Let
+\[
+\xi_1\sim\Normal_{J-1}(0,\nu_0\bar S_1),
+\qquad
+\zeta_1\sim\Normal(0,1),
+\]
+independently conditional on $(\bar z_0,\omega_0,\omega_1)$. Then
+\[
+\xi_1+
+\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}\,
+\zeta_1\delta_1
+\sim
+\Normal_{J-1}(0,S_1^\Psi),
+\]
+and therefore
+\[
+\varepsilon_1
+=
+\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\left\{
+\xi_1+
+\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}\,
+\zeta_1\delta_1
+\right\}.
+\]
+Plugging this into~\eqref{eq:x-extract-delta-mean} gives the fully extracted
+form
+\begin{align}
+x
+=\;&
+\beta
+\begin{pmatrix}
+1\\ \mu_1
+\end{pmatrix}
++\frac{\bar z_0}{\sqrt{\omega_0}}
++\beta
+\begin{pmatrix}
+0\\
+\dfrac{N\bar z_{01}}{\omega_0\kappa_0}\delta_1
+\end{pmatrix}
+\notag\\
+&+
+\frac{\beta}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\begin{pmatrix}
+0\\ \xi_1
+\end{pmatrix}
++\frac{\beta}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}\,
+\zeta_1
+\begin{pmatrix}
+0\\ \delta_1
+\end{pmatrix}.
+\label{eq:x-fully-extracted}
+\end{align}
+
+A cleaner way to write~\eqref{eq:x-fully-extracted} is to use the block-normal
+decomposition of $\bar z_0$. Define
+\[
+a_0=\frac{\bar z_{01}}{\sqrt{\omega_0}},
+\qquad
+r_0=\frac{\delta_1}{\sqrt{\omega_0}}.
+\]
+Conditional on $\omega_0$,
+\[
+a_0\sim \Normal\left(0,\frac{1}{N\omega_0}\right),
+\qquad
+r_0\sim \Normal_{J-1}\left(0,\frac{\bar S_1}{N\omega_0}\right),
+\qquad
+a_0\perp r_0,
 \]
 and
 \[
-x_{-1}\mid x_1,\beta,z_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-x_1\mu_1+\beta(z_1-\mu_1),
-\frac{\bar S_1}{N}
-\right).
+\kappa_0=\nu_0+Na_0^2.
 \]
-This is already different from model B, where the conditional mean is
-$x_1z_1$ and does not contain $\beta$.
-
-Now integrate over $z_1\mid S_1$. Since
-\[
-z_1\mid S_1\sim \Normal_{J-1}\left(\mu_1,\frac{S_1}{\nu_0}\right),
-\]
-we obtain
-\[
-x_{-1}\mid x_1,\beta,S_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-x_1\mu_1,
-\frac{\bar S_1}{N}+\frac{\beta^2}{\nu_0}S_1
-\right).
-\]
-Therefore
-\[
-\begin{aligned}
-p(x\mid \gamma=1)
-=\;&
-\Normal\left(x_1\mid 0,\frac{1}{N}+\sigma_0^2\right) \\
-&\times
-\E_{\beta\mid x_1}
-\E_{S_1}
+Then the extracted model becomes the simpler block system
+\begin{align}
+x_1
+&=
+\beta+a_0,
+\label{eq:x1-a0}\\
+x_{-1}
+&=
+\mu_1x_1
++\frac{\beta}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}\xi_1
+\notag\\
+&\quad+
 \left[
-\Normal_{J-1}\left(
-x_{-1}\mid x_1\mu_1,\,
-\frac{\bar S_1}{N}+\frac{\beta^2}{\nu_0}S_1
-\right)
-\right],
-\end{aligned}
-\]
-where
-\[
-\beta\mid x_1
-\sim
-\Normal\left(
-\frac{N}{N+\sigma_0^{-2}}x_1,\,
-\frac{1}{N+\sigma_0^{-2}}
-\right),
-\qquad
-S_1\sim\mathcal{IW}_{J-1}(\nu_0\bar S_1,\nu_0+J+1).
-\]
-Thus the PIP weight under this proposed model is
-\[
-\boxed{
-p(\gamma=j\mid x)
-\propto
-\Normal\left(x_j\mid 0,\frac{1}{N}+\sigma_0^2\right)
-\E_{\beta\mid x_j}
-\E_{S_j}
-\left[
-\Normal_{J-1}\left(
-x_{-j}\mid x_j\mu_j,\,
-\frac{\bar S_j}{N}+\frac{\beta^2}{\nu_0}S_j
-\right)
-\right].
-}
-\]
-This is not the model B PIP. In particular, it depends on $x_{-j}$ through the
-conditional residual $x_{-j}-x_j\mu_j$, and the integral is not conjugate
-because the covariance is a sum of the fixed matrix $\bar S_j/N$ and the
-random matrix $(\beta^2/\nu_0)S_j$. Therefore this first proposed
-multi-effect generative model does not preserve the single-effect
-irrelevance property we want.
-
-\subsection{Variational approximation}
-The failed $L=1$ check above means that we should not simply use the fixed
-noise covariance $\bar R/N$ and then plug in the model B single-effect weights.
-Still, it is useful to record what a SuSiE-like variational strategy would have
-to look like. As in SuSiE, the exact posterior is not tractable when $L>1$
-because the effects interact through the shared likelihood. A natural
-mean-field approximation is
-\[
-q\left(
-\{\gamma_\ell,\beta_\ell,z_{\ell,\gamma_\ell},S_{\ell,\gamma_\ell}\}_{\ell=1}^L
-\right)
-=
-\prod_{\ell=1}^L
-q_\ell(\gamma_\ell,\beta_\ell,z_{\ell,\gamma_\ell},S_{\ell,\gamma_\ell}).
-\]
-Each factor $q_\ell$ can be updated by holding the other components fixed in
-expectation. Define the expected contribution of component $k$ by
-\[
-\hat b_k
-=
-\E_{q_k}\{\beta_k u_{\gamma_k}(z_{k,\gamma_k})\},
-\]
-and define the residual for updating component $\ell$ as
-\[
-x^{(\ell)}
-=
-x-\sum_{k\ne \ell}\hat b_k.
-\]
-The tempting coordinate update would be to apply the single-effect model B
-formulas to $x^{(\ell)}$ in place of $x$. The sanity check above shows that
-this update is not justified by the first proposed generative model with fixed
-noise covariance $\bar R/N$. Instead, it should be viewed as a possible
-pseudo-likelihood or variational working update that deliberately preserves the
-model B single-effect behavior.
-
-In particular, for each candidate SNP $j$, let $x_j^{(\ell)}$ be the $j$th
-entry of the residual and let
-\[
-q_\ell^{R}
-=
-{x^{(\ell)}}^\top\bar R^{-1}x^{(\ell)}.
-\]
-The single-effect weight for component $\ell$ is
-\[
-w_{\ell j}
-\propto
-\left(
-1+\frac{N{x_j^{(\ell)}}^2}{\nu_0}
-\right)^{(\nu_0+3)/2}
-\Normal\left(
-x_j^{(\ell)}
-\mid
-0,\frac{1}{N}+\sigma_0^2
-\right),
-\]
-and the variational PIP for component $\ell$ is
-\[
-\alpha_{\ell j}
-=
-\frac{w_{\ell j}}{\sum_{k=1}^J w_{\ell k}}.
-\]
-Conditional on $\gamma_\ell=j$, the variational posteriors for
-$\beta_\ell,z_{\ell j},S_{\ell j}$ are exactly the model B posterior formulas
-with $x$ replaced by $x^{(\ell)}$.
-
-\subsection{Expected fitted effect}
-For the SuSiE-style coordinate ascent algorithm, we also need the expected
-fitted vector $\hat b_\ell$. Conditional on $\gamma_\ell=j$,
-\[
-\E(\beta_\ell\mid x^{(\ell)},\gamma_\ell=j)
-=
-\frac{N}{N+\sigma_0^{-2}}x_j^{(\ell)}.
-\]
-Also,
-\[
-\E(z_{\ell j}\mid x^{(\ell)},\gamma_\ell=j)
-=
-\frac{
-\nu_0\mu_j+N x_j^{(\ell)}x_{-j}^{(\ell)}
-}{
-\nu_0+N{x_j^{(\ell)}}^2
-}.
-\]
-Because $\beta_\ell$ and $(z_{\ell j},S_{\ell j})$ factorize conditional on
-$x^{(\ell)}$ and $\gamma_\ell=j$ in the single-effect update, we can use
-\[
-\E\{\beta_\ell u_j(z_{\ell j})\mid x^{(\ell)},\gamma_\ell=j\}
-=
-m_{\beta,\ell j}
-\begin{pmatrix}
-1\\
-m_{z,\ell j}
-\end{pmatrix}_{j},
-\]
-where
-\[
-m_{\beta,\ell j}
-=
-\frac{N}{N+\sigma_0^{-2}}x_j^{(\ell)},
-\qquad
-m_{z,\ell j}
-=
-\frac{
-\nu_0\mu_j+N x_j^{(\ell)}x_{-j}^{(\ell)}
-}{
-\nu_0+N{x_j^{(\ell)}}^2
-}.
-\]
-Here the subscript $j$ on the vector means that the scalar $1$ is placed in
-coordinate $j$ and $m_{z,\ell j}$ fills the remaining coordinates. Therefore
-\[
-\hat b_\ell
-=
-\sum_{j=1}^J
-\alpha_{\ell j}
-m_{\beta,\ell j}
-\begin{pmatrix}
-1\\
-m_{z,\ell j}
-\end{pmatrix}_{j}.
-\]
-
-\subsection{What is exact and what is approximate}
-For $L=1$, this reduces exactly to model B. For $L>1$, the coordinate update is
-a SuSiE-style variational approximation: each update treats the current
-residual as the data for one single-effect model. This is not the exact
-posterior under the full multi-effect model, but it preserves the key
-single-effect behavior. In particular, the candidate weight $w_{\ell j}$
-depends on the residual only through the marginal residual statistic
-$x_j^{(\ell)}$, so the update retains the desired null-SNP irrelevance
-property at the level of each single-effect regression.
-
-\subsection{Hyperparameter learning}
-The empirical Bayes updates for $\sigma_0^2$ and $\nu_0$ can also be lifted
-from the single-effect case by averaging over components. For example, the
-EM-style update for $\sigma_0^2$ becomes
-\[
-\sigma_{0,\mathrm{new}}^2
-=
-\frac{1}{L}
-\sum_{\ell=1}^L\sum_{j=1}^J
-\alpha_{\ell j}
-\left(m_{\beta,\ell j}^2+v_\beta\right),
-\qquad
-v_\beta=\frac{1}{N+\sigma_{0,\mathrm{old}}^{-2}}.
-\]
-For $\nu_0$, one can use the same scalar EM objective as in the single-effect
-case, replacing the sum over $j$ by a weighted sum over $(\ell,j)$ and using
-the residual $x^{(\ell)}$ in the definitions of $q_R$, $x_j$, and the posterior
-quantities. This gives a practical coordinate-ascent scheme: update the
-single-effect factors one at a time, update fitted effects and residuals, and
-periodically update $(\nu_0,\sigma_0^2)$ by empirical Bayes.
-
-\section{Other models}
-\subsection{Model C}
-\begin{align}\label{eq:model-C}
-\begin{cases}
-x_1\mid \beta,\gamma=1
-\sim
-\Normal\left(\beta,\dfrac{1}{N}\right),\\
-x_{-1}\mid x_1,z_1,\gamma=1
-\sim
-\Normal_{J-1}\left(
-x_1 z_1,
-\dfrac{1}{N} \bar S_1
-\right),\\
-z_1 | S_1 \sim \mathcal{N}\left(\mu_1, \dfrac{S_1}{\nu_0}\right),\\
-S_1\sim\mathcal{IW}(\nu_0\bar S_1,\nu_0+J+1),\\
-\beta\sim\Normal(0,\sigma_0^2).
-\end{cases}
+1+\frac{\beta Na_0}{\kappa_0}
++\frac{\beta}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\frac{\nu_0 N}{\kappa_0}}\zeta_1
+\right]r_0.
+\label{eq:x-minus-clean-block}
 \end{align}
-For a general causal SNP $j$, first integrate out $S_j$ from the prior on
-$z_j$. Since
+This is the nicest form of the last equation: the fixed-noise part has been
+split into a scalar noise $a_0$ in the active coordinate and an independent
+conditional residual $r_0$ in the null coordinates.
+
+This form also shows what can be integrated out. Since $x_1=\beta+a_0$, once
+we condition on $(x_1,\beta)$ we may replace
 \[
-z_j\mid S_j\sim \Normal_{J-1}\left(\mu_j,\frac{S_j}{\nu_0}\right),
+a_0=x_1-\beta,
 \qquad
-S_j\sim\mathcal{IW}(\nu_0\bar S_j,\nu_0+J+1),
+\kappa_0=\nu_0+N(x_1-\beta)^2.
 \]
-we have
-\[
-z_j\sim
-t_{J-1,\nu_0+3}\left(
-\mu_j,
-\frac{1}{\nu_0+3}\bar S_j
-\right).
-\]
-Equivalently, with the shape--rate convention,
-\[
-\lambda_j\sim\Gam\left(\frac{\nu_0+3}{2},\frac{1}{2}\right),
-\qquad
-z_j\mid \lambda_j
+Integrating out $r_0$ and $\xi_1$ conditional on
+$(x_1,\beta,\omega_0,\omega_1,\zeta_1)$ gives
+\begin{align}
+x_{-1}\mid x_1,\beta,\omega_0,\omega_1,\zeta_1
 \sim
 \Normal_{J-1}\left(
-\mu_j,
-\frac{1}{\lambda_j}\bar S_j
-\right).
-\]
-Therefore, conditional on $x_j$ and $\lambda_j$,
+\mu_1x_1,\,
+V_{-1}(x_1,\beta,\omega_0,\omega_1,\zeta_1)\bar S_1
+\right),
+\label{eq:x-minus-after-r0-xi-integrated}
+\end{align}
+where
+\begin{align}
+V_{-1}
+=\;&
+\frac{1}{N\omega_0}
+\left[
+1+\frac{\beta N(x_1-\beta)}{\kappa_0}
++\frac{\beta}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\frac{\nu_0 N}{\kappa_0}}\zeta_1
+\right]^2
+\notag\\
+&+
+\frac{\beta^2\nu_0}{\omega_1\kappa_0(\nu_0+4)}.
+\label{eq:V-minus-clean}
+\end{align}
+Together with
 \[
-x_{-j}\mid x_j,\lambda_j,\gamma=j
+x_1\mid \beta,\omega_0
 \sim
-\Normal_{J-1}\left(
-x_j\mu_j,
-\left\{
-\frac{1}{N}
-+\frac{x_j^2}{\lambda_j}
-\right\}\bar S_j
-\right).
+\Normal\left(\beta,\frac{1}{N\omega_0}\right),
 \]
-Let
+this integrates out the Gaussian pieces of $\bar z_0$ in closed form. What
+does not seem to simplify further is the integral over $\zeta_1$: the variance
+in~\eqref{eq:V-minus-clean} is quadratic in $\zeta_1$, so integrating
+$\zeta_1\sim\Normal(0,1)$ gives a one-dimensional normal scale mixture rather
+than another normal distribution. Thus $\bar z_0$ can be integrated out
+conditionally, but not in a way that keeps the final model as a simple
+fixed-noise Gaussian likelihood.
+
+
+\subsection{Clean equations}
+\begin{equation}
+\begin{cases}
+x = \beta \begin{pmatrix} 1 \\ z_1\end{pmatrix} + z_0\\
+z_0 \mid R \sim \mathcal{N}(0, R / N)\\
+z_1 = \dfrac{R_{-1, 1}}{R_{11}}\\
+R \sim \mathcal{IW}(\nu_0 \bar R, \nu_0 + J + 1)
+\end{cases}
+\end{equation}
+with
+\begin{equation}
+z_0 = \dfrac{\bar z_0}{\sqrt{\omega_0}},
+\quad
+\bar z_0 \sim \Normal\left(0,\frac{\bar R}{N}\right),
+\quad
+\omega_0 \sim \Gam\left(\frac{\nu_0 + 2}{2},\frac{\nu_0}{2}\right).
+\end{equation}
+Partition
 \[
-V_\beta=\sigma_0^2+\frac{1}{N},
+\bar z_0=
+\begin{pmatrix}
+\bar z_{01}\\ \bar z_{0,-1}
+\end{pmatrix},
 \qquad
-q_R=x^\top\bar R^{-1}x,
+\delta_1=\bar z_{0,-1}-\bar z_{01}\mu_1,
 \qquad
-r_j^2=q_R-x_j^2,
+\kappa_0=\nu_0+\frac{N}{\omega_0}\bar z_{01}^2.
 \]
-where the last equality uses the block inverse identity
+Then, with
 \[
-r_j^2
-=(x_{-j}-x_j\mu_j)^\top\bar S_j^{-1}(x_{-j}-x_j\mu_j).
+\omega_1\sim\Gam\left(\frac{\nu_0+4}{2},\frac{\nu_0+4}{2}\right),
+\qquad
+\xi_1\sim\Normal_{J-1}(0,\nu_0\bar S_1),
+\qquad
+\zeta_1\sim\Normal(0,1),
+\]
+we can write the relaxed LD column cleanly as
+\begin{equation}\label{eq:z1-clean-bar-z0}
+\boxed{
+z_1
+=
+\mu_1
++\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}\xi_1
++\left[
+\frac{N\bar z_{01}}{\omega_0\kappa_0}
++\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}\,
+\zeta_1
+\right]\delta_1.
+}
+\end{equation}
+Equivalently, conditional on $(\bar z_0,\omega_0,\omega_1,\zeta_1)$, the only
+remaining randomness in $z_1$ is the baseline Gaussian vector $\xi_1$.
+\paragraph{Intuition.}
+The last display makes it easy to see why the marginal scale of $z_1$ should
+be close to $\bar S_1/\nu_0$. The key observation is that, under
+$\bar z_0\sim\Normal(0,\bar R/N)$,
+\[
+\bar z_{01}\sim\Normal\left(0,\frac1N\right),
+\qquad
+\delta_1=\bar z_{0,-1}-\bar z_{01}\mu_1
+\sim
+\Normal_{J-1}\left(0,\frac{\bar S_1}{N}\right),
+\qquad
+\bar z_{01}\perp \delta_1.
+\]
+Thus both $\xi_1$ and $\delta_1$ have covariance matrices proportional to the
+same matrix $\bar S_1$:
+\[
+\xi_1\sim\Normal_{J-1}(0,\nu_0\bar S_1),
+\qquad
+\delta_1\sim\Normal_{J-1}\left(0,\frac{\bar S_1}{N}\right).
+\]
+For intuition, condition on the scalar variables
+$(\bar z_{01},\omega_0,\omega_1)$, but average over
+$(\xi_1,\delta_1,\zeta_1)$. Write
+\[
+A=\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}},
+\qquad
+B=\frac{N\bar z_{01}}{\omega_0\kappa_0},
+\qquad
+C=A\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}.
 \]
 Then
+\[
+z_1-\mu_1=A\xi_1+(B+C\zeta_1)\delta_1,
+\]
+so, using independence and $\E(\zeta_1^2)=1$,
 \begin{align}
-p(x\mid \gamma=j)
-=\;&
-\Normal(x_j;0,V_\beta)
-(2\pi)^{-(J-1)/2}|\bar S_j|^{-1/2}
-\notag\\
-&\times
-\int_0^\infty
+\Var(z_1\mid \bar z_{01},\omega_0,\omega_1)
+&=
 \left\{
-\frac{1}{N}
-+\frac{x_j^2}{\lambda}
-\right\}^{-(J-1)/2}
+A^2\nu_0+\frac{B^2+C^2}{N}
+\right\}\bar S_1
 \notag\\
-&\times
-\exp\left[
--\frac{r_j^2}
-{2\left\{1/N+x_j^2/\lambda\right\}}
-\right]\notag\\
-&\times
-\frac{\left(1/2\right)^{(\nu_0+3)/2}}
-{\Gamma((\nu_0+3)/2)}
-\lambda^{(\nu_0+3)/2-1}
-\exp\left\{-\frac{\lambda}{2}\right\}
-\;d\lambda .
-\label{eq:model-C-marginal}
-\end{align}
-Since $|\bar S_j|=|\bar R|$ is common across SNPs, the PIP weights are
-\begin{align}\label{eq:PIP-model-C}
-w_j^{C}
-=\;&
-\Normal(x_j;0,V_\beta)
-\int_0^\infty
+&=
 \left\{
-\frac{1}{N}
-+\frac{x_j^2}{\lambda}
-\right\}^{-(J-1)/2}
-\notag\\
-&\times
-\exp\left[
--\frac{q_R-x_j^2}
-{2\left\{1/N+x_j^2/\lambda\right\}}
-\right]
-\lambda^{(\nu_0+3)/2-1}
-\exp\left\{-\frac{\lambda}{2}\right\}
-\;d\lambda,
-\notag\\
-\pi_j^C
-=\;&
-\frac{w_j^C}{\sum_{k=1}^J w_k^C}.
+\frac{\nu_0}{\omega_1\kappa_0(\nu_0+4)}
++\frac{N\bar z_{01}^2}{\omega_0^2\kappa_0^2}
++\frac{\nu_0}{\omega_0\omega_1\kappa_0^2(\nu_0+4)}
+\right\}\bar S_1.
+\label{eq:z1-variance-intuition}
 \end{align}
-Thus model C has a one-dimensional integral per SNP. It does not preserve the
-exact null-SNP irrelevance property: the common statistic
-$q_R=x^\top\bar R^{-1}x$ appears inside an $x_j$-dependent integral, so it
-cannot be factored out and cancelled in the PIP normalization.
+Now typically $\omega_0\approx1$, $\omega_1\approx1$, and
+$N\bar z_{01}^2=O_p(1)$, so
+\[
+\kappa_0=\nu_0+\frac{N}{\omega_0}\bar z_{01}^2
+=\nu_0+O_p(1).
+\]
+Therefore the first term in braces in~\eqref{eq:z1-variance-intuition} is
+\[
+\frac{\nu_0}{\omega_1\kappa_0(\nu_0+4)}
+\approx
+\frac{1}{\nu_0},
+\]
+whereas the two extra terms are of order $O_p(\nu_0^{-2})$. Hence, to first
+order,
+\[
+\Var(z_1)\approx \frac{\bar S_1}{\nu_0}.
+\]
+This matches the original inverse-Wishart block intuition
+$z_1\mid S_1\sim\Normal(\mu_1,S_1/\nu_0)$ with $S_1$ concentrated near
+$\bar S_1$.
+
+This decomposition also clarifies how model B differs from SER-relax. The term
+\[
+\mu_1+\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}\xi_1
+\]
+is the SER-relax-like part: it is centered at the reference LD column
+$\mu_1$, and because
+\[
+\frac{\xi_1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\approx
+\Normal_{J-1}\left(0,\frac{\bar S_1}{\nu_0}\right),
+\]
+it behaves like a relaxed LD column with variance approximately
+$\bar S_1/\nu_0$. The remaining part,
+\[
+\left[
+\frac{N\bar z_{01}}{\omega_0\kappa_0}
++\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}\,
+\zeta_1
+\right]\delta_1,
+\]
+is the additional uncertainty carried by model B. It is tied to the realized
+noise vector $\bar z_0$ through the conditional residual
+$\delta_1=\bar z_{0,-1}-\bar z_{01}\mu_1$. This extra term is small to first
+order when $\nu_0$ is large, but it is precisely the part that couples the
+relaxed LD column to the noise realization in model B and is absent from a
+plain SER-relax-style column perturbation.
 
 \end{document}
