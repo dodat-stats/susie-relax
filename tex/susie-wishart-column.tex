@@ -1,0 +1,402 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue]{hyperref}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\Sbar}{\bar S}
+\newcommand{\Om}{\Omega}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Unif}{\operatorname{Unif}}
+\newcommand{\Gam}{\operatorname{Gamma}}
+\newcommand{\Wishart}{\mathcal W}
+\newcommand{\Normal}{\mathcal N}
+
+\newtheorem{lemma}{Lemma}
+
+\title{A Wishart-column alternative to the inverse-Wishart LD relaxation}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Setup}
+
+The notes in \texttt{susie-relax-report.tex} and
+\texttt{summary-susie-love-revisit.tex} use an inverse-Wishart prior on
+the latent LD matrix. This note considers the corresponding alternative
+\[
+R\sim \Wishart_J\left(\frac{\Rbar}{\nu_0},\nu_0\right),
+\]
+so that \(\E(R)=\Rbar\). Here \(\Wishart(V,\nu)\) denotes the Wishart
+distribution with scale matrix \(V\) and degrees of freedom \(\nu\).
+For a nonsingular \(J\times J\) Wishart distribution, we need
+\(\nu_0>J-1\). This is a practical difference from the inverse-Wishart
+parameterization, where \(\nu_0\) can be used more directly as a small
+positive relaxation parameter.
+
+Throughout, \(x\in\mathbb R^J\) is the vector of marginal summary
+statistics, \(N\) is the GWAS sample size, and \(\Rbar\) is a reference
+LD correlation matrix. For a fixed coordinate \(j\), write
+\[
+\mu_j=\Rbar_{-j,j},\qquad
+\Sbar_j=\Rbar_{-j,-j}-\mu_j\mu_j^\top,\qquad
+\Omega=\Rbar^{-1}.
+\]
+Let
+\[
+d_j=R_{jj},\qquad
+z_j=\frac{R_{-j,j}}{R_{jj}},\qquad
+S_j^R=R_{-j,-j}-R_{-j,j}R_{jj}^{-1}R_{j,-j}.
+\]
+The active column of \(R\) is \(d_j u_j(z_j)\), where \(u_j(z_j)\) is the
+vector with \(j\)-th entry equal to \(1\) and remaining entries equal to
+\(z_j\).
+
+\section{Wishart-induced column distribution}
+
+By the standard block decomposition of a Wishart random matrix, after
+permuting coordinate \(j\) to the first position,
+\begin{align}
+d_j
+&\sim
+\Gam\left(\frac{\nu_0}{2},\frac{\nu_0}{2}\right), \\
+z_j\mid d_j
+&\sim
+\Normal_{J-1}\left(
+\mu_j,\frac{\Sbar_j}{\nu_0 d_j}
+\right), \\
+S_j^R
+&\sim
+\Wishart_{J-1}\left(\frac{\Sbar_j}{\nu_0},\nu_0-1\right),
+\end{align}
+using the shape--rate parameterization for Gamma distributions. Moreover,
+\(S_j^R\) is independent of \((d_j,z_j)\). These facts imply
+\[
+\E(d_j)=1,\qquad
+\Var(d_j)=\frac{2}{\nu_0},\qquad
+\E(z_j\mid d_j)=\mu_j,\qquad
+\Var(z_j\mid d_j)=\frac{\Sbar_j}{\nu_0 d_j}.
+\]
+The mean of the Schur complement is
+\[
+\E(S_j^R)=\frac{\nu_0-1}{\nu_0}\Sbar_j.
+\]
+This is not equal to \(\Sbar_j\), but the full matrix still has
+\(\E(R)=\Rbar\), because
+\[
+\E\{d_j z_jz_j^\top\}
+=
+\mu_j\mu_j^\top+\frac{1}{\nu_0}\Sbar_j.
+\]
+
+\paragraph{Comparison with the inverse-Wishart column.}
+Under the inverse-Wishart model used in the earlier notes, \(d_j\) is
+inverse-gamma and the relaxed column direction has a normal scale tied to
+the random Schur complement. Under the Wishart model, \(d_j\) is gamma
+and
+\[
+z_j\mid d_j\sim
+\Normal_{J-1}\left(\mu_j,\frac{\Sbar_j}{\nu_0d_j}\right),
+\]
+so the column direction is tied to the reference Schur complement
+\(\Sbar_j\), not to \(S_j^R\). This changes the conjugacy structure.
+
+\section{Fixed-variance SER-relax with a Wishart column}
+
+The closest analogue of the prototype in
+\texttt{susie-relax-report.tex} keeps the observation covariance fixed at
+\(\Rbar/N\), but replaces the inverse-Wishart column prior by the
+Wishart-induced column prior:
+\begin{align}
+x\mid \beta,\gamma=j,d_j,z_j
+&\sim
+\Normal_J\left(\beta d_j u_j(z_j),\frac{\Rbar}{N}\right), \\
+\beta&\sim \Normal(0,\sigma_0^2), \\
+\gamma&\sim \Unif\{1,\ldots,J\}, \\
+d_j&\sim \Gam\left(\frac{\nu_0}{2},\frac{\nu_0}{2}\right), \\
+z_j\mid d_j
+&\sim
+\Normal_{J-1}\left(\mu_j,\frac{\Sbar_j}{\nu_0d_j}\right).
+\end{align}
+This model is computationally close to the inverse-Wishart prototype, but
+the factor \(q_j(d_j)\) changes because \(d_j\) appears in the likelihood
+and in the precision of the \(z_j\) prior.
+
+\paragraph{Integrating out \(z_1\).}
+For concreteness, take \(\gamma=1\) and write
+\[
+x=
+\begin{pmatrix}
+x_1\\x_{-1}
+\end{pmatrix},
+\qquad
+\Rbar=
+\begin{pmatrix}
+1 & \mu_1^\top\\
+\mu_1 & \Sbar_1+\mu_1\mu_1^\top
+\end{pmatrix}.
+\]
+Conditional on \((\beta,d_1)\), the only random part of the mean is
+\(\beta d_1z_1\), and
+\[
+z_1\mid d_1
+\sim
+\Normal_{J-1}\left(\mu_1,\frac{\Sbar_1}{\nu_0d_1}\right).
+\]
+Thus, after integrating over \(z_1\),
+\[
+x\mid \beta,d_1,\gamma=1
+\sim
+\Normal_J\left(
+\beta d_1
+\begin{pmatrix}
+1\\\mu_1
+\end{pmatrix},
+\frac{\Rbar}{N}
++\frac{\beta^2d_1}{\nu_0}
+\begin{pmatrix}
+0 & 0\\
+0 & \Sbar_1
+\end{pmatrix}
+\right).
+\]
+Equivalently, using the block normal conditional,
+\begin{align}
+p(x\mid \beta,d_1,\gamma=1)
+&=
+\Normal\left(x_1\mid \beta d_1,\frac{1}{N}\right)
+\nonumber\\
+&\quad\times
+\Normal_{J-1}\left(
+x_{-1}\mid x_1\mu_1,\,
+\left(\frac{1}{N}+\frac{\beta^2d_1}{\nu_0}\right)\Sbar_1
+\right).
+\end{align}
+This likelihood keeps the same conditional-mean simplification:
+after conditioning on \(x_1\), the mean of \(x_{-1}\) is \(x_1\mu_1\)
+and does not involve \(\beta\) or \(d_1\).
+
+Now write the same likelihood explicitly in terms of
+\[
+q=x^\top\Rbar^{-1}x,
+\qquad
+\zeta=\frac{N\beta^2d_1}{\nu_0}.
+\]
+The covariance matrix above is \(N^{-1}\widetilde R\), where
+\[
+\widetilde R
+=
+\Rbar+\zeta
+\begin{pmatrix}
+0 & 0\\
+0 & \Sbar_1
+\end{pmatrix}.
+\]
+By the block determinant identity,
+\[
+|\widetilde R|=(1+\zeta)^{J-1}|\Rbar|,
+\]
+and by the block inverse identity,
+\[
+x^\top\widetilde R^{-1}x
+=
+\frac{1}{1+\zeta}x^\top\Rbar^{-1}x
++\frac{\zeta}{1+\zeta}x_1^2.
+\]
+Also, since \((1,\mu_1^\top)^\top\) is the first column of
+\(\widetilde R\),
+\[
+\widetilde R^{-1}
+\begin{pmatrix}
+1\\\mu_1
+\end{pmatrix}
+=e_1.
+\]
+Therefore
+\begin{align}
+p(x\mid \beta,d_1,\gamma=1)
+&=
+\frac{N^{J/2}}
+{(2\pi)^{J/2}|\Rbar|^{1/2}(1+\zeta)^{(J-1)/2}}
+\nonumber\\
+&\quad\times
+\exp\left\{
+-\frac{N}{2}
+\left[
+\frac{q}{1+\zeta}
++\frac{\zeta}{1+\zeta}x_1^2
+-2\beta d_1x_1
++\beta^2d_1^2
+\right]
+\right\}.
+\end{align}
+Equivalently,
+\begin{align}
+p(x\mid \beta,d_1,\gamma=1)
+&\propto
+(1+\zeta)^{-(J-1)/2}
+\exp\left\{-\frac{Nq}{2(1+\zeta)}\right\}
+\nonumber\\
+&\quad\times
+\exp\left\{-\frac{N\zeta x_1^2}{2(1+\zeta)}\right\}
+\exp\left\{N\beta d_1x_1-\frac{N}{2}\beta^2d_1^2\right\},
+\end{align}
+where the omitted proportionality constant is common across coordinates.
+
+\subsection{Mean-field updates}
+
+Use
+\[
+q(\gamma=j,\beta,d_j,z_j)
+=
+\pi_jq_j(\beta)q_j(d_j)q_j(z_j),
+\]
+where
+\[
+q_j(\beta)=\Normal(m_{\beta j},v_{\beta j}),\qquad
+q_j(z_j)=\Normal_{J-1}(m_{zj},V_{zj}).
+\]
+Let
+\[
+\bar\beta_j=m_{\beta j},\qquad
+\overline{\beta^2}_j=v_{\beta j}+m_{\beta j}^2,\qquad
+\bar d_j=\E_j(d_j),\qquad
+\overline{d_j^2}=\E_j(d_j^2).
+\]
+Define
+\begin{align}
+A_j
+&=
+1+\tr(\Sbar_j^{-1}V_{zj})
++(m_{zj}-\mu_j)^\top \Sbar_j^{-1}(m_{zj}-\mu_j),\\
+B_j
+&=
+x_j+(m_{zj}-\mu_j)^\top
+\Sbar_j^{-1}(x_{-j}-\mu_jx_j),\\
+Q_j
+&=
+\tr(\Sbar_j^{-1}V_{zj})
++(m_{zj}-\mu_j)^\top \Sbar_j^{-1}(m_{zj}-\mu_j).
+\end{align}
+The Gaussian update for the effect size is
+\begin{align}
+v_{\beta j}
+&=
+\left(\sigma_0^{-2}+N\overline{d_j^2}A_j\right)^{-1},\\
+m_{\beta j}
+&=
+v_{\beta j}N\bar d_jB_j.
+\end{align}
+The Gaussian update for the column direction is
+\begin{align}
+V_{zj}
+&=
+\frac{\Sbar_j}
+{N\overline{\beta^2}_j\overline{d_j^2}+\nu_0\bar d_j},\\
+m_{zj}
+&=
+\mu_j+
+\frac{N\bar\beta_j\bar d_j}
+{N\overline{\beta^2}_j\overline{d_j^2}+\nu_0\bar d_j}
+(x_{-j}-\mu_jx_j).
+\end{align}
+The optimal density for \(d_j\) is non-standard:
+\[
+q_j(d_j)
+\propto
+d_j^{\nu_0/2-1+(J-1)/2}
+\exp\left\{
+-\left(\frac{\nu_0}{2}+\frac{\nu_0 Q_j}{2}\right)d_j
+-\frac{N}{2}\overline{\beta^2}_jA_jd_j^2
++N\bar\beta_jB_jd_j
+\right\},
+\qquad d_j>0.
+\]
+In terms of \(r_j=\log d_j\), including the Jacobian,
+\[
+\ell_j(r)
+=
+\left(\frac{\nu_0}{2}-1+\frac{J-1}{2}\right)r
+-\left(\frac{\nu_0}{2}+\frac{\nu_0 Q_j}{2}\right)e^r
+-\frac{N}{2}\overline{\beta^2}_jA_je^{2r}
++N\bar\beta_jB_je^r
++r.
+\]
+One-dimensional quadrature over \(r\) gives
+\(\E_j(d_j)\), \(\E_j(d_j^2)\), \(\E_j(\log d_j)\), and
+\(E_j\log q_j(d_j)\).
+
+\subsection{Expected log terms}
+
+The expected log-likelihood has the same form as in the inverse-Wishart
+prototype:
+\begin{align}
+E_j\log p(x\mid \beta,d_j,z_j,\gamma=j)
+&=
+-\frac{J}{2}\log(2\pi)
+-\frac12\log\left|\frac{\Rbar}{N}\right| \nonumber\\
+&\quad
+-\frac{N}{2}
+\left[
+x^\top\Omega x
+-2\bar\beta_j\bar d_jB_j
++\overline{\beta^2}_j\overline{d_j^2}A_j
+\right].
+\end{align}
+The Wishart-column prior contributions are
+\begin{align}
+E_j\log p(d_j\mid\nu_0)
+&=
+\frac{\nu_0}{2}\log\frac{\nu_0}{2}
+-\log\Gamma\left(\frac{\nu_0}{2}\right)
++\left(\frac{\nu_0}{2}-1\right)\E_j\log d_j
+-\frac{\nu_0}{2}\E_j d_j,\\
+E_j\log p(z_j\mid d_j,\nu_0)
+&=
+-\frac{J-1}{2}\log(2\pi)
+-\frac12\log|\Sbar_j|
++\frac{J-1}{2}\log\nu_0
++\frac{J-1}{2}\E_j\log d_j
+-\frac{\nu_0}{2}\E_jd_j\,Q_j.
+\end{align}
+These terms can be substituted into the usual local lower bound and used
+to update the coordinate probabilities \(\pi_j\).
+
+\section{Takeaways}
+
+\begin{enumerate}[leftmargin=*]
+\item A Wishart prior \(R\sim\Wishart(\Rbar/\nu_0,\nu_0)\) induces
+\[
+d_j\sim\Gam(\nu_0/2,\nu_0/2),\qquad
+z_j\mid d_j\sim
+\Normal_{J-1}(\mu_j,\Sbar_j/(\nu_0d_j)).
+\]
+\item In the fixed-variance SER-relax analogue, variational inference is
+nearly the same as the inverse-Wishart prototype, except \(q_j(d_j)\)
+has gamma-type behavior near zero and the \(z_j\) prior contributes
+\(\nu_0 d_j Q_j/2\).
+\item After integrating out \(z_1\) in the fixed-variance model, the
+likelihood factorizes as
+\[
+p(x\mid \beta,d_1,\gamma=1)
+=
+\Normal\left(x_1\mid \beta d_1,\frac{1}{N}\right)
+\Normal_{J-1}\left(
+x_{-1}\mid x_1\mu_1,\,
+\left(\frac{1}{N}+\frac{\beta^2d_1}{\nu_0}\right)\Sbar_1
+\right).
+\]
+\end{enumerate}
+
+\end{document}
