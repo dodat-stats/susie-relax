@@ -787,6 +787,23 @@ x_1\mu_1,
 \end{cases}
 \end{align}
 
+\subsection{A shared $\omega$ model}
+shared-\(\omega\) model
+\[
+x\mid \beta,\gamma=j,z_j,\omega_j
+\sim
+N_J\left(\beta u_j(z_j),\frac{\bar R}{N\omega_j}\right),
+\]
+\[
+z_j\mid\omega_j
+\sim
+N_{J-1}\left(\mu_j,\frac{\bar S_j}{\nu_0\omega_j}\right),
+\qquad
+\omega_j\sim
+\operatorname{Gamma}\left(\frac{\nu_0+3}{2},\frac{\nu_0}{2}\right).
+\]
+This model is somewhat between model B and SER-relax. PIP in this model does not satisfy the ``irrelevance of null SNPs'' property but it approximates Model B way better than SER-relax (whose PIP is more diffuse).  It might be easier to extend to a susie-like model as well?
+
 \section{Rewrite the model}
 Model A and B are very nice but they are hard to extend to a susie-like model due to the randomness in noise of $x$.
 
@@ -1287,4 +1304,263 @@ order when $\nu_0$ is large, but it is precisely the part that couples the
 relaxed LD column to the noise realization in model B and is absent from a
 plain SER-relax-style column perturbation.
 
+\paragraph{Calculating PIP from this hierarchical representation.} The hierarchy above is not exactly an equivalent representation of Model B, because the active-coordinate noise still contains the random diagonal of $R$. It is instead closer to the original inverse-Wishart model with a random active diagonal. Written for $\gamma=1$, the hierarchy is
+\begin{equation}\label{eq:almost-equivalent-B}
+\begin{cases}
+x = \beta \begin{pmatrix} 1 \\ z_1\end{pmatrix} + z_0\\
+z_0 = \dfrac{\bar z_0}{\sqrt{\omega_0}}\\
+\bar z_0 \sim \Normal\left(0,\frac{\bar R}{N}\right)\\
+\omega_0 \sim \Gam\left(\frac{\nu_0 + 2}{2},\frac{\nu_0}{2}\right)\\
+z_1 = \mu_1 +\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}\xi_1 +\left[
+\frac{N\bar z_{01}}{\omega_0\kappa_0}
++\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}\,\zeta_1\right]\delta_1 \\
+\omega_1\sim\Gam\left(\frac{\nu_0+4}{2},\frac{\nu_0+4}{2}\right)\\
+\xi_1\sim\Normal_{J-1}(0,\nu_0\bar S_1)\\
+\zeta_1\sim\Normal(0,1)
+\end{cases}
+\end{equation}
+where
+\[
+\bar z_0=
+\begin{pmatrix}
+\bar z_{01}\\ \bar z_{0,-1}
+\end{pmatrix},
+\qquad
+\delta_1=\bar z_{0,-1}-\bar z_{01}\mu_1,
+\qquad
+\kappa_0=\nu_0+\frac{N}{\omega_0}\bar z_{01}^2.
+\]
+My goal now is to find a sequence of marginalization so we get back to the appropriate PIP.  Note that $\bar z_{01}$ and $\delta_1$ are independent, and they are independent with $\xi_1$.
+
+\subsection{Adding the random diagonal to the latent-noise representation}
+The preceding issue suggests the right correction. If the noise is generated
+from the random in-sample LD matrix, then the mean should use the same random
+active column. For $\gamma=1$, the analogue of
+\eqref{eq:almost-equivalent-B} is
+\begin{equation}\label{eq:equivalent-A-like-almost-B}
+\begin{cases}
+x = \beta \begin{pmatrix} d_1 \\ d_1z_1\end{pmatrix} + z_0\\
+z_0 = \dfrac{\bar z_0}{\sqrt{\omega_0}}\\
+\bar z_0 \sim \Normal\left(0,\dfrac{\bar R}{N}\right)\\
+\omega_0 \sim \Gam\left(\dfrac{\nu_0 + 2}{2},\dfrac{\nu_0}{2}\right)\\
+d_1\mid \bar z_0,\omega_0
+\sim
+\IG\left(\dfrac{\nu_0+3}{2},\dfrac{\kappa_0}{2}\right)\\
+z_1 = \mu_1 +\dfrac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}\xi_1
++\left[
+\dfrac{N\bar z_{01}}{\omega_0\kappa_0}
++\dfrac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\dfrac{\nu_0 N}{\omega_0\kappa_0}}\,\zeta_1\right]\delta_1 \\
+\omega_1\sim\Gam\left(\dfrac{\nu_0+4}{2},\dfrac{\nu_0+4}{2}\right)\\
+\xi_1\sim\Normal_{J-1}(0,\nu_0\bar S_1)\\
+\zeta_1\sim\Normal(0,1),
+\end{cases}
+\end{equation}
+where
+\[
+\bar z_0=
+\begin{pmatrix}
+\bar z_{01}\\ \bar z_{0,-1}
+\end{pmatrix},
+\qquad
+\delta_1=\bar z_{0,-1}-\bar z_{01}\mu_1,
+\qquad
+\kappa_0=\nu_0+\frac{N}{\omega_0}\bar z_{01}^2.
+\]
+This is the same posterior-reversal construction as before, but now it also
+keeps the random diagonal $d_1$. The conditional inverse-gamma distribution for
+$d_1$ is part of this hierarchy, and its scale is determined by the active
+coordinate of the realized noise through
+$\kappa_0=\nu_0+N\bar z_{01}^2/\omega_0$.
+
+\paragraph{Directly integrating out $\xi_1$ and $\delta_1$.}
+This is a reasonable first marginalization. Write
+\[
+A=\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}},
+\qquad
+B=\frac{N\bar z_{01}}{\omega_0\kappa_0},
+\qquad
+C=A\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}},
+\]
+so that
+\[
+z_1=\mu_1+A\xi_1+(B+C\zeta_1)\delta_1.
+\]
+The observation equation in \eqref{eq:equivalent-A-like-almost-B} gives
+\[
+x_1=\beta d_1+\frac{\bar z_{01}}{\sqrt{\omega_0}},
+\]
+and
+\begin{align*}
+x_{-1}
+&=
+\beta d_1 z_1+\frac{\bar z_{0,-1}}{\sqrt{\omega_0}}\\
+&=
+\mu_1x_1
++\beta d_1 A\xi_1
++\left\{
+\frac1{\sqrt{\omega_0}}+\beta d_1(B+C\zeta_1)
+\right\}\delta_1.
+\end{align*}
+Because
+\[
+\xi_1\sim\Normal_{J-1}(0,\nu_0\bar S_1),
+\qquad
+\delta_1\sim\Normal_{J-1}\left(0,\frac{\bar S_1}{N}\right),
+\qquad
+\xi_1\perp\delta_1,
+\]
+integrating out $(\xi_1,\delta_1)$ conditional on the scalar variables gives
+\begin{equation}\label{eq:direct-xminus-after-xi-delta}
+x_{-1}\mid x_1,\beta,d_1,\bar z_{01},\omega_0,\omega_1,\zeta_1,\gamma=1
+\sim
+\Normal_{J-1}\left(
+\mu_1x_1,
+V_1\bar S_1
+\right),
+\end{equation}
+where
+\begin{align}
+V_1
+=\;&
+\frac{\beta^2d_1^2\nu_0}
+{\omega_1\kappa_0(\nu_0+4)}
+\notag\\
+&\quad+
+\frac1N
+\left\{
+\frac1{\sqrt{\omega_0}}
++\beta d_1\frac{N\bar z_{01}}{\omega_0\kappa_0}
++\beta d_1
+\frac{1}{\sqrt{\omega_1\kappa_0(\nu_0+4)}}
+\sqrt{\frac{\nu_0 N}{\omega_0\kappa_0}}\,
+\zeta_1
+\right\}^2 .
+\label{eq:direct-V1-before-x1-substitution}
+\end{align}
+Equivalently, after using the active-coordinate constraint
+\[
+a_1:=x_1-\beta d_1=\frac{\bar z_{01}}{\sqrt{\omega_0}},
+\qquad
+\kappa_0=\nu_0+Na_1^2,
+\]
+the variance factor becomes
+\begin{align}
+V_1
+=\;&
+\frac{1}{N\omega_0}
+\left[
+1+\frac{\beta d_1Na_1}{\kappa_0}
++\frac{\beta d_1}{\kappa_0}
+\sqrt{\frac{\nu_0 N}{\omega_1(\nu_0+4)}}\,\zeta_1
+\right]^2
+\notag\\
+&\quad+
+\frac{\beta^2d_1^2\nu_0}
+{\omega_1\kappa_0(\nu_0+4)}.
+\label{eq:direct-V1-after-x1-substitution}
+\end{align}
+Thus this first marginalization does stay entirely inside
+\eqref{eq:equivalent-A-like-almost-B}. It leaves a scalar normal-scale mixture:
+the remaining integral over
+$(\beta,d_1,\omega_0,\omega_1,\zeta_1)$ contains
+\[
+|\bar S_1|^{-1/2}
+V_1^{-(J-1)/2}
+\exp\left\{
+-\frac{
+(x_{-1}-\mu_1x_1)^\top\bar S_1^{-1}(x_{-1}-\mu_1x_1)
+}{2V_1}
+\right\}.
+\]
+This expression already shows that the null coordinates enter through one
+quadratic form. This leads to a direct PIP expression using only the latent
+variables in \eqref{eq:equivalent-A-like-almost-B}.
+
+\paragraph{Direct PIP expression.}
+For a general active SNP $j$, define
+\[
+\mu_j=\bar R_{-j,j},
+\qquad
+\bar S_j=\bar R_{-j,-j}-\mu_j\mu_j^\top,
+\qquad
+r_j=x_{-j}-x_j\mu_j,
+\]
+and
+\[
+s_j=r_j^\top\bar S_j^{-1}r_j.
+\]
+Using the block inverse formula for $\bar R$,
+\[
+s_j=x^\top\bar R^{-1}x-x_j^2.
+\]
+Let $p=J-1$, and for scalar integration variables
+$(\beta,d,\omega_0,\omega_1,\zeta)$ define
+\[
+a_j=x_j-\beta d,
+\qquad
+\kappa_j=\nu_0+Na_j^2,
+\]
+and
+\begin{align}
+V_j(\beta,d,\omega_0,\omega_1,\zeta)
+=\;&
+\frac{1}{N\omega_0}
+\left[
+1+\frac{\beta dNa_j}{\kappa_j}
++\frac{\beta d}{\kappa_j}
+\sqrt{\frac{\nu_0 N}{\omega_1(\nu_0+4)}}\,\zeta
+\right]^2
+\notag\\
+&\quad+
+\frac{\beta^2d^2\nu_0}
+{\omega_1\kappa_j(\nu_0+4)}.
+\label{eq:direct-Vj}
+\end{align}
+Then the marginal likelihood under $\gamma=j$ can be written, up to constants
+that do not depend on $j$, as
+\begin{align}
+m_j(x)
+=\;&
+|\bar S_j|^{-1/2}
+\int
+\Normal(\beta\mid 0,\sigma_0^2)
+\Gam\left(\omega_0;\frac{\nu_0+2}{2},\frac{\nu_0}{2}\right)
+\notag\\
+&\quad\times
+\omega_0^{1/2}
+\Normal\left(\sqrt{\omega_0}a_j\mid 0,\frac1N\right)
+\IG\left(d;\frac{\nu_0+3}{2},\frac{\kappa_j}{2}\right)
+\notag\\
+&\quad\times
+\Gam\left(\omega_1;\frac{\nu_0+4}{2},\frac{\nu_0+4}{2}\right)
+\Normal(\zeta\mid0,1)
+\notag\\
+&\quad\times
+V_j(\beta,d,\omega_0,\omega_1,\zeta)^{-p/2}
+\exp\left\{-\frac{s_j}{2V_j(\beta,d,\omega_0,\omega_1,\zeta)}\right\}
+\,
+d\beta\,dd\,d\omega_0\,d\omega_1\,d\zeta .
+\label{eq:direct-PIP-integral}
+\end{align}
+The factor $\omega_0^{1/2}$ is the Jacobian from substituting
+$\bar z_{0j}=\sqrt{\omega_0}(x_j-\beta d)$ using the active-coordinate
+equation. Finally,
+\begin{equation}\label{eq:direct-PIP}
+\boxed{
+\Pr(\gamma=j\mid x)
+=
+\frac{m_j(x)}{\sum_{k=1}^J m_k(x)}.
+}
+\end{equation}
+This is not as simple as the earlier one-dimensional integral, but it is
+derived directly from \eqref{eq:equivalent-A-like-almost-B}. It also shows the
+same qualitative irrelevance property: since $|\bar S_j|=|\bar R|$ when
+$\bar R_{jj}=1$, and since $s_j=x^\top\bar R^{-1}x-x_j^2$, all SNP-specific
+quantities in \eqref{eq:direct-PIP-integral} are functions of $x_j$ and the
+common scalar $x^\top\bar R^{-1}x$. By the symmetry
+$(x_j,\beta,\zeta)\mapsto(-x_j,-\beta,-\zeta)$, the weight is an even function
+of $x_j$. Thus, for fixed hyperparameters and fixed common $x^\top\bar R^{-1}x$,
+the direct latent-noise PIP weight depends on SNP $j$ through $x_j^2$.
 \end{document}

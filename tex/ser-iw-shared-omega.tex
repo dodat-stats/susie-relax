@@ -1,0 +1,757 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue]{hyperref}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\Om}{\Omega}
+\newcommand{\E}{\mathbb E}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Normal}{\mathcal N}
+\newcommand{\Unif}{\operatorname{Unif}}
+\newcommand{\IW}{\mathcal{IW}}
+\newcommand{\Gam}{\operatorname{Gamma}}
+
+\title{SER-IW and the Shared-\texorpdfstring{\(\omega\)}{omega} Approximation}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Goal}
+
+The purpose of this note is to separate two objects:
+\begin{enumerate}[leftmargin=*]
+\item the more principled single-effect inverse-Wishart model, called SER-IW
+here;
+\item a tractable approximation that leads to a fast shared-\(\omega\) SER
+variant.
+\end{enumerate}
+The shared-\(\omega\) approximation is not designed to make the SER PIP exactly
+ideal. Instead, the goal is to make the approximation explicit, fast, and
+amenable to later bounding of the SNP-specific PIP distortion.
+
+\section{SER-IW Model}
+
+Let \(x\in\mathbb R^J\) be the vector of marginal summary statistics,
+\(\Rbar\) be the reference LD matrix, and \(N\) be the GWAS sample size. The
+single-effect inverse-Wishart model is
+\[
+R\sim \IW(\nu_0\Rbar,\nu_0+J+1),
+\qquad
+\gamma\sim\Unif\{1,\ldots,J\},
+\qquad
+\beta\sim\Normal(0,\sigma_0^2),
+\]
+and
+\[
+x\mid R,\beta,\gamma=j
+\sim
+\Normal(\beta R_{\cdot j},R/N).
+\]
+This is the original natural model in which the same unknown in-sample LD
+matrix \(R\) appears in both the mean and the noise covariance.
+
+\subsection{Block decomposition}
+
+For a fixed active SNP \(j\), write
+\[
+d_j=R_{jj},
+\qquad
+z_j=\frac{R_{-j,j}}{d_j},
+\qquad
+S_j=R_{-j,-j}-d_jz_jz_j^\top.
+\]
+Then
+\[
+R=
+\begin{pmatrix}
+d_j & d_jz_j^\top\\
+d_jz_j & S_j+d_jz_jz_j^\top
+\end{pmatrix}.
+\]
+Let
+\[
+\mu_j=\Rbar_{-j,j},
+\qquad
+\bar S_j=\Rbar_{-j,-j}-\mu_j\mu_j^\top.
+\]
+The inverse-Wishart block identities give the working representation
+\[
+d_j\sim \operatorname{IG}\left(\frac{\nu_0+2}{2},\frac{\nu_0}{2}\right),
+\qquad
+z_j\mid S_j
+\sim
+\Normal\left(\mu_j,\frac{S_j}{\nu_0}\right),
+\]
+and
+\[
+S_j\sim \IW(\nu_0\bar S_j,\nu_0+J+1),
+\]
+using the same convention as in the earlier notes.
+
+\subsection{Useful likelihood factorization}
+
+Under the SER-IW likelihood,
+\[
+x_j\mid d_j,\beta,\gamma=j
+\sim
+\Normal(\beta d_j,d_j/N),
+\]
+and the Gaussian conditioning formula gives
+\[
+x_{-j}\mid x_j,z_j,S_j,\gamma=j
+\sim
+\Normal(x_jz_j,S_j/N).
+\]
+The important point is that the conditional distribution of \(x_{-j}\) given
+\(x_j\), \(z_j\), and \(S_j\) does not involve \(\beta\) or \(d_j\).
+
+If we fix \(d_j\equiv1\), as in the model-B simplification, this becomes
+\[
+x_j\mid \beta,\gamma=j
+\sim
+\Normal(\beta,1/N),
+\qquad
+x_{-j}\mid x_j,z_j,S_j,\gamma=j
+\sim
+\Normal(x_jz_j,S_j/N).
+\]
+This factorization is the source of the ideal-PIP behavior in the
+single-effect model: the active coordinate carries the \(\beta\)-evidence,
+whereas the nonactive coordinates learn the LD column.
+
+\subsection{\texorpdfstring{Exact conditional marginal under the \(d_j=1\) simplification}{Exact conditional marginal under the d-j equals 1 simplification}}
+
+Conditioning on \(S_j\), the prior and likelihood for \(z_j\) are conjugate:
+\[
+z_j\mid S_j
+\sim
+\Normal(\mu_j,S_j/\nu_0),
+\qquad
+x_{-j}\mid x_j,z_j,S_j
+\sim
+\Normal(x_jz_j,S_j/N).
+\]
+Integrating over \(z_j\) gives
+\[
+x_{-j}\mid x_j,S_j,\gamma=j
+\sim
+\Normal\left(
+x_j\mu_j,
+\left(\frac1N+\frac{x_j^2}{\nu_0}\right)S_j
+\right).
+\]
+After integrating over \(S_j\), this becomes a multivariate \(t\)-type
+conditional distribution centered at \(x_j\mu_j\). Equivalently, it can be
+represented using a normal--Gamma mixture:
+\[
+x_{-j}\mid x_j,\omega_j,\gamma=j
+\sim
+\Normal\left(
+x_j\mu_j,
+\frac{1}{\omega_j}
+\left(\frac1N+\frac{x_j^2}{\nu_0}\right)\bar S_j
+\right),
+\]
+\[
+\omega_j
+\sim
+\Gam\left(\frac{\nu_0+3}{2},\frac{\nu_0}{2}\right),
+\]
+up to the precise scale convention used for the multivariate \(t\). This
+conditional representation is close to ideal, but it is awkward to extend to
+IBSS because the conditional covariance depends on the observed active
+coordinate \(x_j\) and only describes \(x_{-j}\mid x_j\), not a common
+Gaussian residual model for the whole vector.
+
+\section{Approximation Leading to Shared-\texorpdfstring{\(\omega\)}{omega}}
+
+The shared-\(\omega\) approximation replaces the exact conditional
+matrix-valued uncertainty by a scalar local scale. For each candidate active
+SNP \(j\), introduce \(\omega_j\) and set
+\[
+\omega_j
+\sim
+\Gam(a_\omega,b_\omega),
+\qquad
+a_\omega=\frac{\nu_0+3}{2},
+\qquad
+b_\omega=\frac{\nu_0}{2}.
+\]
+The same \(\omega_j\) scales both the observation noise and the relaxed-column
+prior:
+\[
+x\mid \beta,\gamma=j,z_j,\omega_j
+\sim
+\Normal_J\left(
+\beta u_j(z_j),
+\frac{\Rbar}{N\omega_j}
+\right),
+\]
+\[
+z_j\mid \omega_j
+\sim
+\Normal_{J-1}\left(
+\mu_j,
+\frac{\bar S_j}{\nu_0\omega_j}
+\right).
+\]
+Here \(u_j(z_j)\) is the \(J\)-vector whose \(j\)-th entry is one and whose
+remaining entries are \(z_j\).
+
+This approximation makes three deliberate simplifications.
+
+\begin{enumerate}[leftmargin=*]
+\item The random Schur complement \(S_j\) is replaced by its reference value
+\(\bar S_j\), up to the scalar scale \(1/\omega_j\).
+\item The same scalar \(\omega_j\) controls uncertainty in both the noise and
+the LD column. This is what keeps the posterior update for \(\omega_j\)
+conjugate.
+\item The conditional model \(x_{-j}\mid x_j\) is replaced by a full-vector
+Gaussian likelihood with covariance \(\Rbar/(N\omega_j)\). This is less exact
+for SER PIPs, but much easier to embed in an IBSS residual algorithm.
+\end{enumerate}
+
+\subsection*{My attempt to justify the approximation}
+Write the model as 
+\begin{equation}
+x = \beta \begin{pmatrix} 1 \\ z_1 \end{pmatrix} + z_0,
+\end{equation}
+where
+\begin{equation}\label{eq:generative-z0-z1-by-R}
+\begin{cases}
+z_1 \mid S_1 \sim \Normal(\mu_1, S_1 / \nu_0) \\
+z_0 \sim \Normal(0,  R / N)\\
+S_1 \text{ is the Schur's complement of } R_{11} \text{ in } R
+\end{cases}
+\end{equation}
+Note that this induces:
+$$S_1 \sim \mathcal{IW}(\nu_0 \bar S_1, \nu_0 + J + 1).$$
+Our goal is to show that this generative distribution of $(z_0, z_1)$ approximates:
+\begin{equation}\label{eq:generative-z0-z1-by-omega}
+\begin{cases}
+z_1 \mid \omega \sim \Normal\left(\mu_1,  \dfrac{\bar S_1}{\omega \nu_0}\right) \\
+z_0 \mid \omega \sim \Normal \left(0,  \dfrac{\bar R}{\omega N}\right)\\
+\omega \sim \Gam((\nu_0 + 2)/ 2, \nu_0 / 2).
+\end{cases}
+\end{equation}
+
+\subsection*{Approach 0}
+
+We can easily show that the marginal distribution of $z_0$ is the same in both models. Can we show that $p(z_1 \mid z_0)$ from~\eqref{eq:generative-z0-z1-by-R} approximates $\tilde{p}(z_1 \mid z_0)$ from~\eqref{eq:generative-z0-z1-by-omega}?
+
+Write
+\[
+z_0=
+\begin{pmatrix}
+z_{01}\\ z_{0,-1}
+\end{pmatrix},
+\qquad
+\delta=z_{0,-1}-\mu_1z_{01},
+\qquad
+\kappa=\nu_0+Nz_{01}^2.
+\]
+Under the inverse-Wishart model,
+\[
+R\mid z_0
+\sim
+\mathcal{IW}\left(
+\nu_0\Rbar+Nz_0z_0^\top,\nu_0+J+2
+\right).
+\]
+Using the block inverse-Wishart identities,
+\[
+z_1\mid S_1,z_0
+\sim
+\Normal\left(
+\mu_1+\frac{Nz_{01}}{\kappa}\delta,
+\frac{S_1}{\kappa}
+\right),
+\]
+and
+\[
+S_1\mid z_0
+\sim
+\mathcal{IW}\left(
+\nu_0\bar S_1+
+\frac{\nu_0 N}{\kappa}\delta\delta^\top,
+\nu_0+J+2
+\right).
+\]
+Thus the exact conditional distribution \(p(z_1\mid z_0)\) is centered at
+\[
+\mu_1+\frac{Nz_{01}}{\nu_0+Nz_{01}^2}
+(z_{0,-1}-\mu_1z_{01}),
+\]
+not at \(\mu_1\). It also contains a rank-one update to the Schur complement
+scale through
+\[
+\frac{\nu_0 N}{\kappa}\delta\delta^\top.
+\]
+
+In the shared-\(\omega\) approximation,
+\[
+z_0\mid\omega
+\sim
+\Normal\left(0,\frac{\bar R}{N\omega}\right),
+\qquad
+z_1\mid\omega
+\sim
+\Normal\left(\mu_1,\frac{\bar S_1}{\nu_0\omega}\right),
+\]
+and \(z_0\) and \(z_1\) are conditionally independent given \(\omega\).
+Conditioning on \(z_0\) updates \(\omega\), but it does not shift the
+conditional mean of \(z_1\). Therefore
+\[
+\E_{\mathrm{shared}\text{-}\omega}(z_1\mid z_0)=\mu_1.
+\]
+
+This means that the shared-\(\omega\) approximation does not generally match
+the exact conditional distribution \(p(z_1\mid z_0)\). It ignores the
+\(z_0\)-dependent mean shift
+\[
+\frac{Nz_{01}}{\nu_0+Nz_{01}^2}
+(z_{0,-1}-\mu_1z_{01})
+\]
+and the rank-one covariance update
+\[
+\frac{\nu_0 N}{\nu_0+Nz_{01}^2}
+(z_{0,-1}-\mu_1z_{01})(z_{0,-1}-\mu_1z_{01})^\top.
+\]
+The approximation is most plausible when this conditional residual effect is
+small, for example when \(\nu_0\) is large, \(z_{01}\) is small, or
+\(z_{0,-1}-\mu_1z_{01}\) is small. This is a useful baseline comparison to
+return to later if we want to bound the approximation error more carefully.
+
+\subsection{Strategy 1}
+
+Strategy 1 starts from the normal--Gamma representation of the marginal prior
+for the LD column:
+\[
+z_1\mid \omega
+\sim
+\Normal_{J-1}\left(
+\mu_1,\frac{\bar S_1}{\nu_0\omega}
+\right),
+\qquad
+\omega\sim
+\Gam\left(\frac{\nu_0+3}{2},\frac{\nu_0}{2}\right).
+\]
+The question is whether, after introducing this \(\omega\), the noise vector
+\(z_0\) can be approximated by
+\[
+z_0\mid \omega
+\approx
+\Normal_J\left(0,\frac{\Rbar}{N\omega}\right).
+\]
+
+For clarity, work with the \(d_1=1\) version. Conditional on the LD column
+\(z_1\) and Schur complement \(S_1\), the covariance matrix is
+\[
+R=
+\begin{pmatrix}
+1 & z_1^\top\\
+z_1 & S_1+z_1z_1^\top
+\end{pmatrix}.
+\]
+Thus
+\[
+z_0\mid z_1,S_1
+\sim
+\Normal_J\left(
+0,
+\frac1N
+\begin{pmatrix}
+1 & z_1^\top\\
+z_1 & S_1+z_1z_1^\top
+\end{pmatrix}
+\right).
+\]
+Equivalently,
+\[
+z_{01}\sim\Normal(0,1/N),
+\qquad
+z_{0,-1}\mid z_{01},z_1,S_1
+\sim
+\Normal_{J-1}\left(z_{01}z_1,\frac{S_1}{N}\right).
+\]
+
+The column mixture above can be viewed as replacing the random Schur complement
+by the scalar approximation
+\[
+S_1\approx \frac{\bar S_1}{\omega}.
+\]
+Under this approximation,
+\[
+z_0\mid z_1,\omega
+\approx
+\Normal_J\left(
+0,
+\frac1N
+\begin{pmatrix}
+1 & z_1^\top\\
+z_1 & z_1z_1^\top+\bar S_1/\omega
+\end{pmatrix}
+\right).
+\]
+Equivalently,
+\[
+z_{01}\sim\Normal(0,1/N),
+\qquad
+z_{0,-1}\mid z_{01},z_1,\omega
+\sim
+\Normal_{J-1}\left(
+z_{01}z_1,\frac{\bar S_1}{N\omega}
+\right).
+\]
+
+This is the direct consequence of Strategy 1. It is not the same as
+\[
+\Normal_J\left(0,\frac{\Rbar}{N\omega}\right),
+\qquad
+\Rbar=
+\begin{pmatrix}
+1 & \mu_1^\top\\
+\mu_1 & \bar S_1+\mu_1\mu_1^\top
+\end{pmatrix}.
+\]
+The direct Strategy 1 covariance is
+\[
+\frac1N
+\begin{pmatrix}
+1 & z_1^\top\\
+z_1 & z_1z_1^\top+\bar S_1/\omega
+\end{pmatrix},
+\]
+whereas the desired shared-\(\omega\) covariance is
+\[
+\frac1{N\omega}
+\begin{pmatrix}
+1 & \mu_1^\top\\
+\mu_1 & \bar S_1+\mu_1\mu_1^\top
+\end{pmatrix}.
+\]
+Therefore, starting from the \(z_1\) mixture does not by itself justify scaling
+the entire noise covariance by \(1/\omega\). It justifies scaling the
+conditional Schur-complement noise \(S_1/N\) by \(1/\omega\).
+
+To reach the desired shared-\(\omega\) likelihood, we would need additional
+approximations, for example:
+\begin{enumerate}[leftmargin=*]
+\item replace \(z_1\) by its center \(\mu_1\) in the noise covariance;
+\item also scale the active-coordinate and rank-one parts of the covariance by
+\(1/\omega\).
+\end{enumerate}
+The first approximation is natural when LD-column uncertainty is small. The
+second is less directly implied by the column mixture. It may still be useful
+computationally, but it should be treated as an extra approximation rather
+than a consequence of the SER-IW block decomposition.
+
+This suggests an alternative Strategy 1 approximation:
+\[
+z_0\mid z_1,\omega
+\approx
+\Normal_J\left(
+0,
+\frac1N
+\begin{pmatrix}
+1 & z_1^\top\\
+z_1 & z_1z_1^\top+\bar S_1/\omega
+\end{pmatrix}
+\right),
+\]
+or a stabilized version replacing \(z_1\) by \(\mu_1\) only in the covariance.
+This is more faithful to the column-first derivation, but it is less convenient
+than the current shared-\(\omega\) model because the likelihood covariance
+depends on the active column.
+
+
+\subsection{Strategy 2}
+
+Strategy 2 starts from the normal--Gamma representation of the marginal noise
+vector:
+\[
+z_0\mid \omega
+\sim
+\Normal_J\left(0,\frac{\Rbar}{N\omega}\right),
+\qquad
+\omega\sim
+\Gam\left(\frac{\nu_0+2}{2},\frac{\nu_0}{2}\right).
+\]
+The question is whether, after introducing this \(\omega\), the LD column can
+be approximated by
+\[
+z_1\mid \omega
+\approx
+\Normal_{J-1}\left(
+\mu_1,\frac{\bar S_1}{\nu_0\omega}
+\right).
+\]
+
+Using the block form
+\[
+\Rbar=
+\begin{pmatrix}
+1 & \mu_1^\top\\
+\mu_1 & \bar S_1+\mu_1\mu_1^\top
+\end{pmatrix},
+\]
+the noise mixture implies
+\[
+z_{01}\mid \omega
+\sim
+\Normal\left(0,\frac{1}{N\omega}\right),
+\]
+and
+\[
+z_{0,-1}\mid z_{01},\omega
+\sim
+\Normal_{J-1}\left(
+\mu_1z_{01},
+\frac{\bar S_1}{N\omega}
+\right).
+\]
+Equivalently, the conditional noise residual
+\[
+\delta_0=z_{0,-1}-\mu_1z_{01}
+\]
+satisfies
+\[
+\delta_0\mid \omega
+\sim
+\Normal_{J-1}\left(
+0,\frac{\bar S_1}{N\omega}
+\right),
+\qquad
+\delta_0\perp z_{01}\mid\omega.
+\]
+
+Now use the observation equation
+\[
+x=
+\beta
+\begin{pmatrix}
+1\\ z_1
+\end{pmatrix}
++z_0.
+\]
+For \(\gamma=1\),
+\[
+x_1=\beta+z_{01},
+\qquad
+x_{-1}=\beta z_1+z_{0,-1}.
+\]
+Subtracting \(\mu_1x_1\) gives
+\[
+x_{-1}-\mu_1x_1
+=
+\beta(z_1-\mu_1)+\delta_0.
+\]
+Thus, conditional on \(\omega\),
+\[
+x_{-1}-\mu_1x_1
+\mid \beta,z_1,\omega
+\sim
+\Normal_{J-1}\left(
+\beta(z_1-\mu_1),
+\frac{\bar S_1}{N\omega}
+\right).
+\]
+
+If we now place the working prior
+\[
+z_1\mid\omega
+\sim
+\Normal_{J-1}\left(
+\mu_1,\frac{\bar S_1}{\nu_0\omega}
+\right),
+\]
+then the conditional residual has the marginal distribution
+\[
+x_{-1}-\mu_1x_1
+\mid \beta,\omega
+\sim
+\Normal_{J-1}\left(
+0,
+\frac{1}{\omega}
+\left(\frac1N+\frac{\beta^2}{\nu_0}\right)\bar S_1
+\right).
+\]
+This is close in form to the exact model-B conditional distribution, except
+that \(x_1^2\) is replaced by \(\beta^2\):
+\[
+x_{-1}-\mu_1x_1
+\mid x_1
+\quad\text{exactly has scale roughly}\quad
+\left(\frac1N+\frac{x_1^2}{\nu_0}\right)\bar S_1.
+\]
+Therefore Strategy 2 gives a coherent full-vector Gaussian model, but it
+changes the conditioning logic: the nonactive residual is explained through
+\(\beta(z_1-\mu_1)\), rather than through \(x_1(z_1-\mu_1)\).
+
+Compared with Strategy 1, Strategy 2 more naturally justifies scaling the
+entire observation-noise covariance by \(1/\omega\), because this is how the
+strategy starts. The additional approximation is instead in the LD-column
+prior: we attach the same noise scale \(\omega\) to \(z_1-\mu_1\), even though
+the exact inverse-Wishart dependence between \(z_0\) and \(z_1\) is more
+complicated.
+
+This strategy leads directly to the shared-\(\omega\) model:
+\[
+z_0\mid\omega
+\sim
+\Normal_J\left(0,\frac{\Rbar}{N\omega}\right),
+\qquad
+z_1\mid\omega
+\sim
+\Normal_{J-1}\left(
+\mu_1,\frac{\bar S_1}{\nu_0\omega}
+\right),
+\]
+\[
+x=\beta
+\begin{pmatrix}
+1\\z_1
+\end{pmatrix}
++z_0.
+\]
+In this sense, Strategy 2 is a more direct justification for the current
+shared-\(\omega\) likelihood, while Strategy 1 is a more direct justification
+for scaling the Schur-complement part of the LD uncertainty.
+
+
+\section{SER Variational Inference for Shared-\texorpdfstring{\(\omega\)}{omega}}
+
+Use the mean-field approximation
+\[
+q(\gamma=j,\beta,z_j,\omega_j)
+=
+\pi_jq_j(\beta)q_j(z_j)q_j(\omega_j),
+\]
+with
+\[
+q_j(\beta)=\Normal(m_{\beta j},v_{\beta j}),
+\qquad
+q_j(z_j)=\Normal(m_{zj},V_{zj}),
+\qquad
+q_j(\omega_j)=\Gam(\alpha_{\omega j},\beta_{\omega j}).
+\]
+Let
+\[
+\bar\omega_j=\E_j(\omega_j),
+\qquad
+\bar\beta_j=m_{\beta j},
+\qquad
+\overline{\beta^2}_j=v_{\beta j}+m_{\beta j}^2.
+\]
+Define
+\[
+\Om=\Rbar^{-1},
+\qquad
+C_j(x)=x^\top\Om x-x_j^2.
+\]
+For the current \(q_j(z_j)\), define
+\begin{align*}
+Q_j
+&=
+\tr(\bar S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)^\top\bar S_j^{-1}(m_{zj}-\mu_j),\\
+A_j&=1+Q_j,\\
+B_j
+&=
+x_j+(m_{zj}-\mu_j)^\top\bar S_j^{-1}
+(x_{-j}-\mu_jx_j).
+\end{align*}
+The beta update is
+\[
+v_{\beta j}
+=
+\left(\sigma_0^{-2}+N\bar\omega_jA_j\right)^{-1},
+\qquad
+m_{\beta j}
+=
+v_{\beta j}N\bar\omega_jB_j.
+\]
+The relaxed-column update is
+\[
+V_{zj}
+=
+\frac{\bar S_j}
+{\bar\omega_j(N\overline{\beta^2}_j+\nu_0)},
+\]
+\[
+m_{zj}
+=
+\mu_j+
+\frac{N\bar\beta_j}
+{N\overline{\beta^2}_j+\nu_0}
+(x_{-j}-\mu_jx_j).
+\]
+The Gamma update is
+\[
+\alpha_{\omega j}
+=
+a_\omega+\frac{J}{2}+\frac{J-1}{2},
+\]
+\[
+\beta_{\omega j}
+=
+b_\omega
++\frac12
+\left[
+N\left\{
+x^\top\Om x-2\bar\beta_jB_j+\overline{\beta^2}_jA_j
+\right\}
++\nu_0Q_j
+\right].
+\]
+The coordinate weights are
+\[
+\pi_j
+=
+\frac{\exp(\mathcal L_j)}
+{\sum_{k=1}^J\exp(\mathcal L_k)},
+\]
+where \(\mathcal L_j\) is the local variational lower bound including the
+likelihood, the priors for \(\beta,z_j,\omega_j\), and the entropies of
+\(q_j(\beta),q_j(z_j),q_j(\omega_j)\).
+
+\section{PIP Distortion View}
+
+The ideal SER weight has the form
+\[
+\ell_j^{\mathrm{ideal}}
+=
+\mathrm{const}
++
+\frac{N}{2}
+\frac{N\sigma_0^2}{1+N\sigma_0^2}
+x_j^2.
+\]
+The shared-\(\omega\) approximation produces some local weight
+\[
+\ell_j^{\mathrm{sh}\text{-}\omega}
+=
+\ell_j^{\mathrm{ideal}}+\delta_j.
+\]
+The goal is not necessarily to force \(\delta_j=0\). Instead, the useful target
+is to understand and bound the spread
+\[
+\Delta
+=
+\max_j\delta_j-\min_j\delta_j.
+\]
+If \(\Delta\) is small, then the approximate PIPs are uniformly close to the
+ideal PIPs in the sense that their odds are distorted by at most a factor
+\(\exp(\Delta)\). This gives a concrete way to judge whether the
+shared-\(\omega\) approximation is acceptable.
+
+\end{document}

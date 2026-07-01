@@ -1,0 +1,455 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue]{hyperref}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Normal}{\mathcal N}
+\newcommand{\Unif}{\operatorname{Unif}}
+\newcommand{\diag}{\operatorname{diag}}
+
+\title{Ideal-PIP Relaxed-Column Discussion}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Goal}
+
+We want a principled hierarchical model for fine-mapping with out-of-sample
+LD that has both of the following properties.
+\begin{enumerate}[leftmargin=*]
+\item When \(L=1\), the single-effect PIP is the ideal SER PIP. In particular,
+because the in-sample LD matrix has diagonal entries equal to one, the PIP for
+SNP \(j\) should depend on the active summary statistic \(x_j\), not on the
+unknown off-diagonal entries of the in-sample LD matrix.
+\item When \(L>1\), the off-diagonal LD values should still matter through the
+iterative residual updates. We want relaxed LD columns to help remove fitted
+effects when the reference LD \(\Rbar\) differs from the in-sample LD.
+\end{enumerate}
+
+The current SuSiE-relax idea has the second property, but its single-effect PIP
+is not exactly the ideal PIP. The prime variant makes the single-effect PIP
+closer to the desired form, but empirically the PIP can become too diffuse.
+The target here is to separate the two roles of LD uncertainty:
+\[
+\text{SNP selection evidence}
+\qquad\text{versus}\qquad
+\text{effect-shape estimation for residual removal}.
+\]
+
+\section{Shared-\texorpdfstring{\(R\)}{R} Model}
+
+A natural principled starting point is the original shared-\(R\) model, with
+\(R\) treated as the unknown in-sample correlation matrix:
+\[
+R\sim p(R\mid \Rbar),
+\qquad
+\diag(R)=1,
+\]
+\[
+\gamma_\ell\sim\Unif\{1,\ldots,J\},
+\qquad
+\beta_\ell\sim\Normal(0,\sigma_\ell^2),
+\qquad
+\ell=1,\ldots,L,
+\]
+and
+\[
+b=\sum_{\ell=1}^L\beta_\ell e_{\gamma_\ell},
+\qquad
+x\mid R,b
+\sim
+\Normal(Rb,R/N).
+\]
+This model is attractive because \(R\) appears in both the mean and the noise
+covariance. The same unknown LD matrix that shapes the signal also shapes the
+sampling noise.
+
+\section{Why the SER PIP Is Ideal}
+
+For \(L=1\), conditional on fixed \(R\), compare an active model
+\(\gamma=j\) to the null model. The likelihood ratio contribution involving
+\(\beta\) is
+\[
+\exp\left\{
+N\beta R_{\cdot j}^{\top}R^{-1}x
+-
+\frac{N}{2}\beta^2 R_{\cdot j}^{\top}R^{-1}R_{\cdot j}
+\right\}.
+\]
+Since
+\[
+R_{\cdot j}^{\top}R^{-1}x=x_j,
+\qquad
+R_{\cdot j}^{\top}R^{-1}R_{\cdot j}=R_{jj}=1,
+\]
+the likelihood ratio simplifies to
+\[
+\exp\left\{
+N\beta x_j-\frac{N}{2}\beta^2
+\right\}.
+\]
+Thus the active-SNP evidence depends on \(R\) only through the diagonal entry
+\(R_{jj}\), which is one. Integrating over
+\(\beta\sim\Normal(0,\sigma_0^2)\) gives the usual SER approximate Bayes
+factor:
+\[
+\operatorname{ABF}_j
+=
+(1+N\sigma_0^2)^{-1/2}
+\exp\left\{
+\frac{N}{2}
+\frac{N\sigma_0^2}{1+N\sigma_0^2}
+x_j^2
+\right\}.
+\]
+Therefore, after also integrating over the unknown \(R\),
+\[
+\Pr(\gamma=j\mid x)
+\propto
+\operatorname{ABF}_j.
+\]
+All off-diagonal LD uncertainty is common nuisance evidence for the
+single-effect PIP and cancels in the normalization over \(j\).
+
+\section{A useful decomposition}
+
+For any correlation matrix \(R\), define
+\[
+S_j=R_{-j,-j}-R_{-j,j}R_{j,-j}.
+\]
+Under the single-effect likelihood
+\[
+x\mid R,\beta,\gamma=j
+\sim
+\Normal(\beta R_{\cdot j},R/N),
+\]
+we have
+\[
+x_j\mid R,\beta,\gamma=j
+\sim
+\Normal(\beta,1/N),
+\]
+because \(R_{jj}=1\). Also, by the Gaussian conditioning formula,
+\begin{align*}
+x_{-j}\mid x_j,R,\beta,\gamma=j
+&\sim
+\Normal\left(
+\beta R_{-j,j}
++
+R_{-j,j}(x_j-\beta),
+\frac{1}{N}S_j
+\right)\\
+&=
+\Normal\left(
+x_jR_{-j,j},
+\frac{1}{N}S_j
+\right).
+\end{align*}
+Therefore
+\begin{equation}
+p(x\mid R,\beta,\gamma=j)
+=
+\Normal(x_j\mid \beta,1/N)
+\Normal\left(x_{-j}\mid x_jR_{-j,j},\frac{1}{N}S_j\right).
+\end{equation}
+This is the key decomposition: conditional on \(x_j\), the distribution of
+the nonactive coordinates does not involve \(\beta\).
+
+\section{Choice of distribution of correlation matrices}
+
+Can we have a distribution of correlation matrices that is concentrated around
+\(\Rbar\), with a parameter like \(\nu\) controlling the concentration? The
+ideal-PIP argument does not require a specific distribution for \(R\). It only
+requires
+\[
+R\in\mathcal C_J
+=
+\{R:R=R^\top,\ R\succ0,\ \diag(R)=1\},
+\]
+and a prior \(p(R\mid\Rbar)\) that does not depend on \(\gamma\) or \(\beta\).
+Therefore the main modeling problem is choosing a useful prior on
+\(\mathcal C_J\).
+
+The prior should satisfy the following desiderata.
+\begin{enumerate}[leftmargin=*]
+\item It should be centered near the reference LD matrix \(\Rbar\).
+\item It should have a scalar or low-dimensional concentration parameter,
+such as \(\nu\) or \(\nu_0\), controlling how much the in-sample LD can deviate
+from \(\Rbar\).
+\item It should allow tractable, or at least locally tractable, posterior
+updates for active LD columns.
+\end{enumerate}
+
+One thing we cannot have exactly is a nondegenerate distribution on
+\(\mathcal C_J\) with Gaussian column marginals
+\[
+R_{-j,j}\sim
+\Normal(\Rbar_{-j,j},\bar S_j/\nu)
+\]
+for all \(j\). A Gaussian vector has support on all of
+\(\mathbb R^{J-1}\), whereas a correlation column is bounded and constrained
+by positive definiteness. Thus Gaussian relaxed columns should be viewed as
+local approximations, not as exact prior marginals of a correlation-matrix
+distribution.
+
+Several candidate priors are worth considering.
+
+\paragraph{Standardized inverse-Wishart.}
+Draw a covariance matrix and standardize it:
+\[
+\tilde R\sim \mathcal{IW}(\nu_0R_0,\nu_0+J+1),
+\qquad
+R=\tilde D^{-1/2}\tilde R\tilde D^{-1/2},
+\qquad
+\tilde D=\diag(\tilde R).
+\]
+This is a rigorous prior on correlation matrices and is close to the
+inverse-Wishart calculations we have already used. For large \(\nu_0\), it
+should give approximately Gaussian local fluctuations around \(R_0\). However,
+the induced distribution of \(R\) is not inverse-Wishart, the column marginals
+are not exactly Gaussian, and \(E(R)\) is not necessarily exactly \(R_0\).
+Thus \(R_0=\Rbar\) should initially be interpreted as a centering matrix, not
+as an exact prior mean unless calibrated.
+
+\paragraph{LKJ-type prior centered at \(\Rbar\).}
+The LKJ prior is a native prior on correlation matrices, with a concentration
+parameter, but the standard form is centered at the identity matrix. One could
+consider a transformed or tilted LKJ-type prior centered near \(\Rbar\). This
+has clean support but may not lead to simple Schur-complement column updates.
+
+\paragraph{Partial-correlation or vine parameterization.}
+Correlation matrices can be parameterized by partial correlations. We could
+put shrinkage priors on those partial correlations, centered at the
+corresponding partial correlations of \(\Rbar\). This gives exact support and
+flexible local uncertainty. The drawback is that the induced distribution on
+ordinary LD columns \(R_{-j,j}\) may be algebraically awkward.
+
+\paragraph{Matrix-log or tangent-space prior.}
+Another possibility is to map correlation matrices into an unconstrained
+tangent-like space, put a Gaussian prior around a transform of \(\Rbar\), and
+map back to \(\mathcal C_J\). This is appealing for local perturbation theory,
+but the Jacobian and the induced column conditionals may be inconvenient for
+inference.
+
+\paragraph{Projected Gaussian perturbation.}
+We could perturb \(\Rbar\) by a Gaussian symmetric matrix and project the
+result back to \(\mathcal C_J\). This may be computationally convenient, but
+the projection creates a density and dependence structure that is hard to
+interpret as a clean hierarchical model.
+
+At this stage, the most promising strategy is:
+\begin{enumerate}[leftmargin=*]
+\item Use a proper distribution on \(\mathcal C_J\), such as standardized
+inverse-Wishart, to make the hierarchical model rigorous.
+\item Use the exact ideal-PIP identity, which is prior-agnostic as long as
+\(\diag(R)=1\).
+\item Use Gaussian Schur-complement column updates as local variational
+approximations for computation, rather than claiming the exact prior has
+Gaussian column marginals.
+\end{enumerate}
+
+\section{standardized IW}
+
+We consider
+\[
+\tilde R \sim \mathcal{IW}(\nu_0 \Rbar,\nu_0+J+1),
+\qquad
+R=\tilde D^{-1/2}\tilde R\tilde D^{-1/2},
+\qquad
+\tilde D=\diag(\tilde R).
+\]
+Let \(p_{\mathrm{SIW}}(R\mid\Rbar,\nu_0)\) denote the induced distribution on
+correlation matrices. Still consider the SER model:
+\[
+\gamma\sim\Unif\{1,\ldots,J\},
+\qquad
+\beta\sim\Normal(0,\sigma_0^2),
+\]
+\begin{equation}
+x\mid R,\beta,\gamma=j
+\sim
+\Normal(\beta R_{\cdot j},R/N).
+\end{equation}
+
+\subsection*{Exact posterior factorization}
+
+Let
+\[
+p_0(x\mid R)=\Normal(x\mid0,R/N).
+\]
+Using the likelihood-ratio identity from the ideal-PIP derivation,
+\[
+p(x\mid R,\beta,\gamma=j)
+=
+p_0(x\mid R)
+\exp\left\{
+N\beta x_j-\frac{N}{2}\beta^2
+\right\}.
+\]
+Therefore
+\[
+p(R,\beta\mid x,\gamma=j)
+\propto
+p_{\mathrm{SIW}}(R\mid\Rbar,\nu_0)p_0(x\mid R)
+\,
+p(\beta)
+\exp\left\{
+N\beta x_j-\frac{N}{2}\beta^2
+\right\}.
+\]
+Thus \(R\) and \(\beta\) factorize in the posterior conditional on
+\(\gamma=j\):
+\[
+p(R,\beta\mid x,\gamma=j)
+=
+p(R\mid x)\,p(\beta\mid x_j),
+\]
+where
+\[
+p(R\mid x)
+\propto
+p_{\mathrm{SIW}}(R\mid\Rbar,\nu_0)
+\Normal(x\mid0,R/N)
+\]
+is common for all \(j\), and
+\[
+\beta\mid x_j,\gamma=j
+\sim
+\Normal(m_j,v),
+\qquad
+v=(N+\sigma_0^{-2})^{-1},
+\qquad
+m_j=vNx_j
+=
+\frac{N\sigma_0^2}{1+N\sigma_0^2}x_j.
+\]
+
+\subsection*{PIP}
+
+Integrating out \(\beta\) gives the usual single-effect approximate Bayes
+factor
+\[
+\operatorname{ABF}_j
+=
+(1+N\sigma_0^2)^{-1/2}
+\exp\left\{
+\frac{N}{2}
+\frac{N\sigma_0^2}{1+N\sigma_0^2}
+x_j^2
+\right\}.
+\]
+The \(R\)-dependent factor
+\[
+\int
+p_{\mathrm{SIW}}(R\mid\Rbar,\nu_0)
+\Normal(x\mid0,R/N)\,dR
+\]
+is common across \(j\). Therefore
+\[
+\Pr(\gamma=j\mid x)
+=
+\frac{\operatorname{ABF}_j}
+{\sum_{k=1}^J\operatorname{ABF}_k}.
+\]
+Thus the standardized-IW prior preserves the ideal SER PIP exactly.
+
+\subsection*{Posterior of \(R\)}
+
+The posterior for \(R\) is rigorous but not conjugate in the standardized-IW
+parameterization. In terms of \(\tilde R\),
+\[
+p(\tilde R\mid x)
+\propto
+\mathcal{IW}(\tilde R;\nu_0\Rbar,\nu_0+J+1)
+|R(\tilde R)|^{-1/2}
+\exp\left\{
+-\frac{N}{2}x^\top R(\tilde R)^{-1}x
+\right\},
+\]
+where
+\[
+R(\tilde R)=\tilde D^{-1/2}\tilde R\tilde D^{-1/2}.
+\]
+Equivalently,
+\[
+|R(\tilde R)|
+=
+\frac{|\tilde R|}{\prod_{k=1}^J\tilde R_{kk}},
+\qquad
+R(\tilde R)^{-1}
+=
+\tilde D^{1/2}\tilde R^{-1}\tilde D^{1/2}.
+\]
+The dependence of \(\tilde D\) on \(\tilde R\) breaks inverse-Wishart
+conjugacy. Exact inference for \(R\) would therefore require numerical
+integration, MCMC, Laplace approximation, or another approximation.
+
+\subsection*{Column inference}
+
+For relaxed-column use, define
+\[
+z_j=R_{-j,j},
+\qquad
+S_j=R_{-j,-j}-z_jz_j^\top.
+\]
+Under the common posterior \(p(R\mid x)\), the marginal posterior for the
+\(j\)-th column can be written using the decomposition above:
+\[
+p(z_j,S_j\mid x)
+\propto
+p_{\mathrm{SIW},j}(z_j,S_j\mid\Rbar,\nu_0)
+\Normal\left(
+x_{-j}\mid x_jz_j,\frac{1}{N}S_j
+\right),
+\]
+where \(p_{\mathrm{SIW},j}\) is the marginal prior induced by standardized IW
+on the block variables \((z_j,S_j)\). The factor
+\(\Normal(x_j\mid0,1/N)\) is constant with respect to \((z_j,S_j)\) and has
+been dropped.
+
+This expression is exact, but \(p_{\mathrm{SIW},j}(z_j,S_j\mid\Rbar,\nu_0)\)
+does not have the same simple normal--inverse-Wishart form as the
+unstandardized inverse-Wishart prior. A practical local approximation is to use
+the familiar Schur-complement working prior
+\[
+z_j\mid S_j
+\approx
+\Normal(\mu_j,S_j/\nu_{\mathrm{eff}}),
+\qquad
+\mu_j=\Rbar_{-j,j},
+\]
+with \(\nu_{\mathrm{eff}}\) calibrated to the standardized-IW concentration.
+Then
+\[
+z_j\mid S_j,x
+\approx
+\Normal\left(
+\frac{\nu_{\mathrm{eff}}\mu_j+Nx_jx_{-j}}
+{\nu_{\mathrm{eff}}+Nx_j^2},
+\frac{S_j}{\nu_{\mathrm{eff}}+Nx_j^2}
+\right).
+\]
+Equivalently, the approximate posterior mean column is
+\[
+\E(z_j\mid x)
+\approx
+\mu_j+
+\frac{Nx_j}{\nu_{\mathrm{eff}}+Nx_j^2}
+(x_{-j}-x_j\mu_j).
+\]
+The exact model supplies the ideal PIP and a proper correlation-matrix prior;
+the Gaussian column update is then a local variational approximation used for
+computing relaxed effect shapes.
+
+
+
+\end{document}
