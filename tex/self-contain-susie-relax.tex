@@ -1,0 +1,315 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue]{hyperref}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\Om}{\Omega}
+\newcommand{\E}{\mathbb E}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Unif}{\operatorname{Unif}}
+\newcommand{\Normal}{\mathcal N}
+
+\title{A Self-Contained Derivation of SER-relax}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Model}
+
+Let \(x\in\mathbb R^J\) be the vector of marginal association
+statistics and let \(N\) be the GWAS sample size. Let
+\(\Rbar\in\mathbb R^{J\times J}\) be a positive definite reference LD
+correlation matrix, and write
+\[
+\Om=\Rbar^{-1}.
+\]
+For each candidate active coordinate \(j\), define the reference
+conditional mean and Schur complement
+\[
+\mu_j=\Rbar_{-j,j},
+\qquad
+S_j=\Rbar_{-j,-j}-\Rbar_{-j,j}\Rbar_{j,-j}.
+\]
+Because \(\Rbar\) is a correlation matrix, \(\Rbar_{jj}=1\). For
+\(z_j\in\mathbb R^{J-1}\), let \(u_j(z_j)\in\mathbb R^J\) denote the
+vector whose \(j\)-th entry is \(1\) and whose remaining entries are
+\(z_j\).
+
+SER-relax is a single-effect model that keeps the observation covariance
+fixed at \(\Rbar/N\), but allows the active LD column to move around the
+reference LD column. The model is
+\begin{align}
+\gamma &\sim \Unif\{1,\ldots,J\},\\
+\beta &\sim \Normal(0,\sigma_0^2),\\
+z_j\mid \gamma=j,\nu_0
+&\sim \Normal_{J-1}(\mu_j,\tau^2S_j),\\
+x\mid \beta,\gamma=j,z_j
+&\sim \Normal_J\left(\beta u_j(z_j),\frac{\Rbar}{N}\right),
+\end{align}
+where
+\[
+\tau^2=\frac{1}{\nu_0+3},
+\qquad
+\tau^{-2}=\nu_0+3.
+\]
+Large \(\nu_0\) makes \(z_j\) concentrate near the reference column
+\(\mu_j\). Small \(\nu_0\) allows more LD-column relaxation.
+
+\section{Useful Block Identities}
+
+The block inverse formula for \(\Rbar\) gives
+\[
+\Om_{-j,-j}=S_j^{-1},
+\qquad
+\Om_{-j,j}=-S_j^{-1}\mu_j.
+\]
+Therefore, for any \(z_j\), with
+\[
+\delta_j=x_{-j}-\mu_jx_j,
+\qquad
+y_j=z_j-\mu_j,
+\]
+we have
+\begin{align}
+u_j(z_j)^\top\Om u_j(z_j)
+&=1+y_j^\top S_j^{-1}y_j, \label{eq:u-Omega-u}\\
+u_j(z_j)^\top\Om x
+&=x_j+y_j^\top S_j^{-1}\delta_j. \label{eq:u-Omega-x}
+\end{align}
+These two identities are the algebraic core of the CAVI updates.
+
+\section{Variational Family}
+
+Use the mean-field approximation
+\[
+q(\gamma=j,\beta,z_j)=\pi_jq_j(\beta)q_j(z_j),
+\]
+where
+\[
+q_j(\beta)=\Normal(m_{\beta j},v_{\beta j}),
+\qquad
+q_j(z_j)=\Normal_{J-1}(m_{zj},V_{zj}).
+\]
+Write
+\[
+\bar\beta_j=m_{\beta j},
+\qquad
+\overline{\beta^2}_j=v_{\beta j}+m_{\beta j}^2.
+\]
+For the current \(q_j(z_j)\), define
+\begin{align}
+Q_j
+&=
+\tr(S_j^{-1}V_{zj})
++(m_{zj}-\mu_j)^\top S_j^{-1}(m_{zj}-\mu_j),\\
+A_j&=1+Q_j,\\
+B_j
+&=
+x_j+(m_{zj}-\mu_j)^\top S_j^{-1}\delta_j.
+\end{align}
+Here \(Q_j=\E_j[y_j^\top S_j^{-1}y_j]\),
+\(A_j=\E_j[u_j(z_j)^\top\Om u_j(z_j)]\), and
+\(B_j=\E_j[u_j(z_j)^\top\Om x]\).
+
+\section{CAVI Derivation}
+
+Conditional on \(\gamma=j\), the log joint density, up to constants that
+do not depend on \(\beta\) or \(z_j\), is
+\begin{align}
+\log p(x,\beta,z_j,\gamma=j)
+&=
+\log(1/J)
+-\frac{N}{2}\{x-\beta u_j(z_j)\}^\top
+\Om
+\{x-\beta u_j(z_j)\} \nonumber\\
+&\quad
+-\frac{\beta^2}{2\sigma_0^2}
+-\frac{\tau^{-2}}{2}(z_j-\mu_j)^\top S_j^{-1}(z_j-\mu_j).
+\label{eq:log-joint}
+\end{align}
+
+\subsection{Update for \texorpdfstring{\(q_j(\beta)\)}{qj(beta)}}
+
+The optimal coordinate update satisfies
+\[
+\log q_j^*(\beta)
+=
+\E_{q_j(z_j)}\log p(x,\beta,z_j,\gamma=j)+\mathrm{const}.
+\]
+Keeping only the terms that depend on \(\beta\), using
+\eqref{eq:u-Omega-u}--\eqref{eq:u-Omega-x},
+\begin{align}
+\log q_j^*(\beta)
+&=
+N\beta B_j
+-\frac12\left(\sigma_0^{-2}+NA_j\right)\beta^2
++\mathrm{const}.
+\end{align}
+Thus the update is Gaussian:
+\begin{align}
+v_{\beta j}
+&=
+\left(\sigma_0^{-2}+NA_j\right)^{-1},\\
+m_{\beta j}
+&=
+v_{\beta j}NB_j.
+\end{align}
+
+\subsection{Update for \texorpdfstring{\(q_j(z_j)\)}{qj(zj)}}
+
+The optimal relaxed-column update satisfies
+\[
+\log q_j^*(z_j)
+=
+\E_{q_j(\beta)}\log p(x,\beta,z_j,\gamma=j)+\mathrm{const}.
+\]
+Let \(y_j=z_j-\mu_j\). The terms depending on \(y_j\) are
+\begin{align}
+\log q_j^*(z_j)
+&=
+N\bar\beta_j y_j^\top S_j^{-1}\delta_j
+-\frac12
+\left(N\overline{\beta^2}_j+\tau^{-2}\right)
+y_j^\top S_j^{-1}y_j
++\mathrm{const}.
+\end{align}
+Completing the square gives
+\begin{align}
+V_{zj}
+&=
+\frac{S_j}{N\overline{\beta^2}_j+\tau^{-2}},\\
+m_{zj}
+&=
+\mu_j+
+\frac{N\bar\beta_j}
+{N\overline{\beta^2}_j+\tau^{-2}}
+\delta_j.
+\end{align}
+
+\subsection{Update for \texorpdfstring{\(\pi_j\)}{pi j}}
+
+The optimal categorical probabilities are proportional to the local
+variational lower bounds:
+\[
+\pi_j
+=
+\frac{\exp(\mathcal L_j)}
+{\sum_{k=1}^J\exp(\mathcal L_k)}.
+\]
+For SER-relax,
+\begin{align}
+\mathcal L_j
+&=
+\log(1/J)
++\E_j\log p(x\mid\beta,z_j,\gamma=j)
++\E_j\log p(\beta)
++\E_j\log p(z_j\mid\nu_0) \nonumber\\
+&\quad
+-\E_j\log q_j(\beta)
+-\E_j\log q_j(z_j).
+\end{align}
+The expected log likelihood is
+\begin{align}
+\E_j\log p(x\mid\beta,z_j,\gamma=j)
+&=
+-\frac{J}{2}\log(2\pi)
+-\frac12\log\left|\frac{\Rbar}{N}\right| \nonumber\\
+&\quad
+-\frac{N}{2}
+\left[
+x^\top\Om x
+-2\bar\beta_jB_j
++\overline{\beta^2}_jA_j
+\right].
+\end{align}
+The Gaussian prior and entropy terms are
+\begin{align}
+\E_j\log p(\beta)
+&=
+-\frac12\log(2\pi\sigma_0^2)
+-\frac{\overline{\beta^2}_j}{2\sigma_0^2},\\
+\E_j\log p(z_j\mid\nu_0)
+&=
+-\frac{J-1}{2}\log(2\pi)
+-\frac12\log|S_j|
++\frac{J-1}{2}\log\tau^{-2}
+-\frac{\tau^{-2}}{2}Q_j,\\
+-\E_j\log q_j(\beta)
+&=
+\frac12\log(2\pi e\,v_{\beta j}),\\
+-\E_j\log q_j(z_j)
+&=
+\frac12\log\left\{(2\pi e)^{J-1}|V_{zj}|\right\}.
+\end{align}
+These expressions define a numerically stable coordinate update by
+computing \(\mathcal L_j\) for all \(j\) and applying a softmax after
+subtracting \(\max_j\mathcal L_j\).
+
+\section{Equivalent Scalar Form}
+
+For implementation, one can avoid explicitly forming each \(S_j^{-1}\).
+For any vector \(r\in\mathbb R^J\), define
+\[
+C_j(r)
+=
+(r_{-j}-\mu_jr_j)^\top S_j^{-1}(r_{-j}-\mu_jr_j).
+\]
+The block inverse identity implies
+\[
+C_j(r)=r^\top\Om r-r_j^2.
+\]
+When \(r=x\), set
+\[
+z_{\mathrm{denom},j}
+=
+N\overline{\beta^2}_j+\tau^{-2},
+\qquad
+z_{\mathrm{scale},j}
+=
+\frac{N\bar\beta_j}{z_{\mathrm{denom},j}}.
+\]
+After the \(q_j(z_j)\) update,
+\begin{align}
+Q_j
+&=
+\frac{J-1}{z_{\mathrm{denom},j}}
++z_{\mathrm{scale},j}^2C_j(x),\\
+A_j&=1+Q_j,\\
+B_j&=x_j+z_{\mathrm{scale},j}C_j(x).
+\end{align}
+This representation reduces the coordinate-specific calculations to
+scalar operations once \(x^\top\Om x\) is available.
+
+\section{Optional Empirical Bayes Update for \texorpdfstring{\(\nu_0\)}{nu0}}
+
+Holding the variational distribution fixed, the \(\nu_0\)-dependent part
+of the SER-relax ELBO is, up to constants,
+\[
+M(\nu_0)
+=
+\sum_{j=1}^J\pi_j
+\left\{
+\frac{J-1}{2}\log\tau^{-2}
+-\frac{\tau^{-2}}{2}Q_j
+\right\}.
+\]
+Because \(\sum_j\pi_j=1\), maximizing over \(\tau^2\) gives
+\[
+\hat\tau^2
+=
+\frac{\sum_{j=1}^J\pi_jQ_j}{J-1},
+\qquad
+\hat\nu_0=\frac{1}{\hat\tau^2}-3.
+\]
+In practice \(\nu_0\) should be constrained to be positive and bounded
+away from numerically extreme values.
+
+\end{document}
