@@ -1,0 +1,487 @@
+---
+title: "PIP Comparison: SuSiE-relax vs Collapsed-R"
+author: "Dat Do"
+date: "`r Sys.Date()`"
+output:
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 7,
+  fig.height = 4.5
+)
+
+library(susieR)
+
+source("analysis/compare-collapse-vs-relax-diff-ancestry.R")
+source("code/plot.R")
+```
+
+# Goal
+
+This report compares the posterior inclusion probabilities from SuSiE-relax and
+the collapsed-\(R\) shared-\(q(\omega)\) method for one different-ancestry
+simulation seed at a time. The main diagnostic question is whether
+collapsed-\(R\) is losing power because its PIP is too diffuse.
+
+Change `seed_to_plot` in the settings chunk below, run the single-seed fitting
+chunk, and re-render the report.
+
+```{r settings}
+output_prefix <- "analysis/compare-pip-relax-vs-collapse-diff-ancestry"
+
+# Change this one number to inspect another simulated dataset.
+seed_to_plot <- 1
+
+# The report runs only this seed if its cached result is missing. Set
+# force_refit_selected_seed <- TRUE to recompute the same seed after changing
+# fitting settings.
+fit_selected_seed_if_missing <- TRUE
+force_refit_selected_seed <- FALSE
+
+selected_seed_prefix <- sprintf("%s-seed-%s", output_prefix, seed_to_plot)
+selected_seed_rds <- paste0(selected_seed_prefix, "-diagnostics.rds")
+
+lambda_grid <- c(1e-4, 1e-3, 1e-2, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5)
+collapse_nu0_grid <- c(10, 25, 50, 100, 200, 500, 1000, 2000, 5000)
+```
+
+# Diagnostic Helpers
+
+```{r diagnostic-helpers}
+pip_entropy <- function(pip) {
+  s <- sum(pip)
+  if (!is.finite(s) || s <= 0) {
+    return(NA_real_)
+  }
+  pp <- pip / s
+  pp <- pp[pp > 0]
+  -sum(pp * log(pp))
+}
+
+summarize_pip_fit <- function(seed, method, fit, beta_true, R_for_cs,
+                              lambda, fit_seconds) {
+  pip <- as.numeric(fit$pip)
+  causal <- which(beta_true != 0)
+  noncausal <- setdiff(seq_along(pip), causal)
+  pip_rank <- rank(-pip, ties.method = "min")
+  pip_norm <- pip / sum(pip)
+  entropy <- pip_entropy(pip)
+
+  data.frame(
+    seed = seed,
+    method = method,
+    lambda = lambda,
+    nu0 = fit$nu0,
+    selected_L = count_selected_cs(fit$alpha, R = R_for_cs),
+    total_pip = sum(pip),
+    causal_pip_sum = sum(pip[causal]),
+    causal_pip_min = min(pip[causal]),
+    causal_pip_max = max(pip[causal]),
+    causal_rank_best = min(pip_rank[causal]),
+    causal_rank_worst = max(pip_rank[causal]),
+    false_pip_sum = sum(pip[noncausal]),
+    max_false_pip = max(pip[noncausal]),
+    top1_pip = max(pip),
+    top5_pip_sum = sum(sort(pip, decreasing = TRUE)[seq_len(min(5, length(pip)))]),
+    top10_pip_sum = sum(sort(pip, decreasing = TRUE)[seq_len(min(10, length(pip)))]),
+    n_pip_gt_001 = sum(pip > 0.01),
+    n_pip_gt_005 = sum(pip > 0.05),
+    n_pip_gt_010 = sum(pip > 0.10),
+    n_pip_gt_050 = sum(pip > 0.50),
+    effective_snps_entropy = exp(entropy),
+    effective_snps_hhi = 1 / sum(pip_norm^2),
+    sigma2 = paste(sprintf("%.4g", fit$sigma2), collapse = ", "),
+    fit_seconds = fit_seconds
+  )
+}
+
+make_pip_rows <- function(seed, method, fit, beta_true) {
+  pip <- as.numeric(fit$pip)
+  data.frame(
+    seed = seed,
+    method = method,
+    snp = seq_along(pip),
+    pip = pip,
+    is_causal = seq_along(pip) %in% which(beta_true != 0)
+  )
+}
+
+make_top_pip_rows <- function(seed, method, fit, beta_true, n_top = 20) {
+  pip <- as.numeric(fit$pip)
+  ord <- order(pip, decreasing = TRUE)
+  ord <- ord[seq_len(min(n_top, length(ord)))]
+  data.frame(
+    seed = seed,
+    method = method,
+    rank = seq_along(ord),
+    snp = ord,
+    pip = pip[ord],
+    is_causal = ord %in% which(beta_true != 0)
+  )
+}
+
+fit_one_seed_for_pip <- function(seed, chrom = "chr22", start = 20e6,
+                                 end = 21e6, N = 25000L, N0 = 500L,
+                                 J = 500L, h2 = 0.01, L = 5,
+                                 lambda_grid = c(1e-4, 1e-3, 1e-2, 0.05,
+                                                 0.1, 0.15, 0.2, 0.3, 0.4,
+                                                 0.5),
+                                 collapse_nu0_grid = c(10, 25, 50, 100, 200,
+                                                       500, 1000, 2000, 5000),
+                                 relax_max_iter = 3000,
+                                 collapse_max_iter = 200,
+                                 verbose = TRUE) {
+  if (verbose) {
+    message(sprintf("seed %d: simulate", seed))
+  }
+  sim_time <- system.time({
+    res <- sim_asn_eur(
+      chrom = chrom,
+      start = start,
+      end = end,
+      n_gwas = N,
+      n_ref = N0,
+      J = J,
+      h2 = h2,
+      seed = seed
+    )
+    res <- standardize_diff_ancestry_sim(res)
+  })
+
+  x <- res$v
+  R0 <- res$R0
+  beta_true <- res$beta_true
+
+  if (verbose) {
+    message(sprintf("seed %d: fit SuSiE-relax lambda grid", seed))
+  }
+  relax <- fit_relax_lambda_grid(
+    x = x,
+    R0 = R0,
+    N = N,
+    L = L,
+    beta_true = beta_true,
+    lambda_grid = lambda_grid,
+    max_iter = relax_max_iter
+  )
+
+  if (verbose) {
+    message(sprintf("seed %d: fit collapsed-R lambda grid", seed))
+  }
+  collapse <- fit_collapse_lambda_grid(
+    x = x,
+    R0 = R0,
+    N = N,
+    L = L,
+    beta_true = beta_true,
+    lambda_grid = lambda_grid,
+    nu0_grid = collapse_nu0_grid,
+    max_iter = collapse_max_iter
+  )
+
+  relax_rbar <- make_rbar(R0, relax$best_lambda)
+  collapse_rbar <- make_rbar(R0, collapse$best_lambda)
+
+  metrics <- rbind(
+    summarize_pip_fit(
+      seed = seed,
+      method = "relax",
+      fit = relax$best_fit,
+      beta_true = beta_true,
+      R_for_cs = relax_rbar,
+      lambda = relax$best_lambda,
+      fit_seconds = relax$fit_seconds
+    ),
+    summarize_pip_fit(
+      seed = seed,
+      method = "collapse_shared",
+      fit = collapse$best_fit,
+      beta_true = beta_true,
+      R_for_cs = collapse_rbar,
+      lambda = collapse$best_lambda,
+      fit_seconds = collapse$fit_seconds
+    )
+  )
+  metrics$causal <- paste(which(beta_true != 0), collapse = ", ")
+  metrics$sim_seconds <- unname(sim_time["elapsed"])
+
+  pips <- rbind(
+    make_pip_rows(seed, "relax", relax$best_fit, beta_true),
+    make_pip_rows(seed, "collapse_shared", collapse$best_fit, beta_true)
+  )
+
+  top_pips <- rbind(
+    make_top_pip_rows(seed, "relax", relax$best_fit, beta_true),
+    make_top_pip_rows(seed, "collapse_shared", collapse$best_fit, beta_true)
+  )
+
+  best <- rbind(
+    transform(relax$profile[relax$best_idx, ], seed = seed),
+    transform(collapse$profile[collapse$best_idx, ], seed = seed)
+  )
+
+  list(
+    seed = seed,
+    metrics = metrics,
+    pips = pips,
+    top_pips = top_pips,
+    best = best,
+    profiles = rbind(
+      transform(relax$profile, seed = seed),
+      transform(collapse$profile, seed = seed)
+    )
+  )
+}
+
+combine_pip_runs <- function(runs) {
+  list(
+    metrics = do.call(rbind, lapply(runs, `[[`, "metrics")),
+    pips = do.call(rbind, lapply(runs, `[[`, "pips")),
+    top_pips = do.call(rbind, lapply(runs, `[[`, "top_pips")),
+    best = do.call(rbind, lapply(runs, `[[`, "best")),
+    profiles = do.call(rbind, lapply(runs, `[[`, "profiles")),
+    runs = runs
+  )
+}
+
+run_pip_diagnostics <- function(seeds = seed_to_plot,
+                                output_prefix =
+                                  "analysis/compare-pip-relax-vs-collapse-diff-ancestry",
+                                ...) {
+  dir.create(dirname(output_prefix), recursive = TRUE, showWarnings = FALSE)
+
+  runs <- vector("list", length(seeds))
+  names(runs) <- paste0("seed", seeds)
+
+  for (i in seq_along(seeds)) {
+    runs[[i]] <- fit_one_seed_for_pip(seed = seeds[i], ...)
+    partial <- combine_pip_runs(runs[seq_len(i)])
+    saveRDS(partial, paste0(output_prefix, "-diagnostics.rds"))
+    utils::write.csv(
+      partial$metrics,
+      paste0(output_prefix, "-metrics.csv"),
+      row.names = FALSE
+    )
+    utils::write.csv(
+      partial$top_pips,
+      paste0(output_prefix, "-top-pips.csv"),
+      row.names = FALSE
+    )
+    utils::write.csv(
+      partial$pips,
+      paste0(output_prefix, "-pips.csv"),
+      row.names = FALSE
+    )
+  }
+
+  combine_pip_runs(runs)
+}
+
+load_pip_diagnostics <- function(path = selected_seed_rds) {
+  if (file.exists(path)) {
+    readRDS(path)
+  } else {
+    list(
+      metrics = data.frame(),
+      pips = data.frame(),
+      top_pips = data.frame(),
+      best = data.frame(),
+      profiles = data.frame(),
+      runs = list()
+    )
+  }
+}
+
+plot_missing_diagnostics <- function() {
+  plot.new()
+  text(
+    0.5, 0.5,
+    paste(
+      sprintf("No cached diagnostics found for seed %s.", seed_to_plot),
+      "Run the single-seed fitting chunk first.",
+      sep = "\n"
+    )
+  )
+}
+```
+
+# Fit Or Load Selected Seed
+
+This chunk fits only `seed_to_plot` if the cached RDS for that seed is missing.
+To inspect another dataset, change `seed_to_plot` in the settings chunk and
+re-knit.
+
+```{r fit-or-load-selected-seed}
+if (force_refit_selected_seed ||
+    (!file.exists(selected_seed_rds) && fit_selected_seed_if_missing)) {
+  pip_diag <- run_pip_diagnostics(
+    seeds = seed_to_plot,
+    output_prefix = selected_seed_prefix,
+    lambda_grid = lambda_grid,
+    collapse_nu0_grid = collapse_nu0_grid
+  )
+} else {
+  pip_diag <- load_pip_diagnostics()
+}
+
+have_diagnostics <- nrow(pip_diag$metrics) > 0
+have_diagnostics
+```
+
+For a faster exploratory view, set smaller iteration limits in the call above,
+for example `relax_max_iter = 500` and `collapse_max_iter = 50`.
+
+# Selected Seed Summary
+
+```{r selected-seed-summary}
+if (have_diagnostics) {
+  pip_diag$metrics[
+    ,
+    c(
+      "seed", "method", "lambda", "nu0", "selected_L", "total_pip",
+      "causal_pip_sum", "false_pip_sum", "max_false_pip",
+      "effective_snps_entropy", "effective_snps_hhi", "n_pip_gt_001",
+      "n_pip_gt_005", "n_pip_gt_010", "causal"
+    )
+  ]
+} else {
+  cat("No cached diagnostics yet.\n")
+}
+```
+
+```{r lambda-profile}
+if (have_diagnostics) {
+  pip_diag$profiles[
+    order(pip_diag$profiles$method, pip_diag$profiles$lambda),
+    c("seed", "method", "lambda", "final_elbo", "n_iter", "nu0",
+      "selected_L", "causal_pip", "top", "top_alpha")
+  ]
+} else {
+  cat("No cached diagnostics yet.\n")
+}
+```
+
+# PIP Plots
+
+The red points and rug marks are the two true causal SNPs.
+
+```{r selected-seed-pip-plots}
+if (have_diagnostics) {
+  pip_seed <- pip_diag$pips[pip_diag$pips$seed == seed_to_plot, ]
+  y_max <- max(pip_seed$pip)
+
+  old_par <- par(no.readonly = TRUE)
+  par(mfrow = c(2, 1), mar = c(4, 4, 3, 1))
+
+  for (method_i in c("relax", "collapse_shared")) {
+    d <- pip_seed[pip_seed$method == method_i, ]
+    metric_i <- pip_diag$metrics[pip_diag$metrics$method == method_i, ]
+    plot(
+      d$snp, d$pip,
+      pch = 16,
+      cex = 0.7,
+      ylim = c(0, y_max),
+      xlab = "SNP",
+      ylab = "PIP",
+      main = sprintf(
+        "Seed %d: %s, lambda=%g, nu0=%.3g, selected L=%d",
+        seed_to_plot,
+        method_i,
+        metric_i$lambda,
+        metric_i$nu0,
+        metric_i$selected_L
+      )
+    )
+    points(d$snp[d$is_causal], d$pip[d$is_causal], col = 2, pch = 16)
+    rug(d$snp[d$is_causal], col = 2, lwd = 1.5)
+    grid()
+  }
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}
+```
+
+# Diffusion View
+
+If collapsed-\(R\) is too diffuse, it should have more small nonzero PIPs and a
+larger effective number of SNPs.
+
+```{r sorted-pip-plots}
+if (have_diagnostics) {
+  pip_seed <- pip_diag$pips[pip_diag$pips$seed == seed_to_plot, ]
+
+  old_par <- par(no.readonly = TRUE)
+  par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+
+  for (method_i in c("relax", "collapse_shared")) {
+    d <- pip_seed[pip_seed$method == method_i, ]
+    sorted_pip <- sort(d$pip, decreasing = TRUE)
+    plot(
+      seq_along(sorted_pip),
+      sorted_pip,
+      type = "l",
+      lwd = 2,
+      log = "y",
+      xlab = "PIP rank",
+      ylab = "PIP",
+      main = sprintf("Seed %d: sorted PIP, %s", seed_to_plot, method_i)
+    )
+    grid()
+  }
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}
+```
+
+```{r top-pip-table}
+if (have_diagnostics) {
+  pip_diag$top_pips
+} else {
+  cat("No cached diagnostics yet.\n")
+}
+```
+
+# PIP Threshold Counts
+
+```{r pip-threshold-barplot}
+if (have_diagnostics) {
+  old_par <- par(no.readonly = TRUE)
+
+  threshold_counts <- pip_diag$metrics[
+    ,
+    c("method", "n_pip_gt_001", "n_pip_gt_005", "n_pip_gt_010", "n_pip_gt_050")
+  ]
+  rownames(threshold_counts) <- threshold_counts$method
+  count_matrix <- t(as.matrix(threshold_counts[, -1]))
+
+  barplot(
+    count_matrix,
+    beside = TRUE,
+    legend.text = rownames(count_matrix),
+    args.legend = list(bty = "n", x = "topright"),
+    ylab = "# SNPs",
+    main = sprintf("Seed %d: number of SNPs above PIP thresholds", seed_to_plot)
+  )
+  grid()
+  threshold_counts
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}
+```

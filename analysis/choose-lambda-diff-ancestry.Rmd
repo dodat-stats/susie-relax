@@ -253,12 +253,12 @@ sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
 ```
 
 ```{r ancestry-mismatch-simulate}
-seed <- 2
+seed <- 7
 chrom <- "chr22"
 start <- 20e6
 end <- 21e6
 N <- 25000L
-N0 <- 500L
+N0 <- 1000L
 J <- 500L
 L <- 5L
 h2 <- 0.01

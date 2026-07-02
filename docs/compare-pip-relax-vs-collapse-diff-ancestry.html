@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Dat Do" />
+
+<meta name="date" content="2026-07-02" />
+
+<title>PIP Comparison: SuSiE-relax vs Collapsed-R</title>
+
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">susie-relax</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/dodat-stats/susie-relax">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">PIP Comparison: SuSiE-relax vs
+Collapsed-R</h1>
+<h4 class="author">Dat Do</h4>
+<h4 class="date">2026-07-02</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2026-07-02
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 5
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 2
+</p>
+<p>
+<strong>Knit directory:</strong> <code>susie-relax/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.2). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
+changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R
+Markdown file created these results, you’ll want to first commit it to
+the Git repo. If you’re still working on the analysis, you can ignore
+this warning. When you’re finished, you can run
+<code>wflow_publish</code> to commit the R Markdown file and build the
+HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongobjectspresent">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>Environment:</strong> objects present
+</a>
+</p>
+</div>
+<div id="strongEnvironmentstrongobjectspresent"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+The global environment had objects present when the code in the R
+Markdown file was run. These objects can affect the analysis in your R
+Markdown file in unknown ways. For reproduciblity it’s best to always
+run the code in an empty environment. Use <code>wflow_publish</code> or
+<code>wflow_build</code> to ensure that the code is always run in an
+empty environment.
+</p>
+<p>
+The following objects were defined in the global environment when these
+results were created:
+</p>
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th style="text-align:left;">
+Name
+</th>
+<th style="text-align:left;">
+Class
+</th>
+<th style="text-align:left;">
+Size
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+rstudio_pandoc
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+232 bytes
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20260621code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20260621)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20260621code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20260621)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree6e0cefb05af3ed3145ef00580fb86e75268ea712targetblank6e0cefba">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/dodat-stats/susie-relax/tree/6e0cefb05af3ed3145ef00580fb86e75268ea712" target="_blank">6e0cefb</a>
+</a>
+</p>
+</div>
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree6e0cefb05af3ed3145ef00580fb86e75268ea712targetblank6e0cefba"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version
+<a href="https://github.com/dodat-stats/susie-relax/tree/6e0cefb05af3ed3145ef00580fb86e75268ea712" target="_blank">6e0cefb</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/ser-relax-vs-model-b-pip.html
+    Ignored:    code/.Rhistory
+
+Untracked files:
+    Untracked:  analysis/SER-collapse-R-demonstrate.Rmd
+    Untracked:  analysis/SuSiE-collapse-R-shared-omega-demonstrate.Rmd
+    Untracked:  analysis/compare-collapse-vs-relax-diff-ancestry-best.csv
+    Untracked:  analysis/compare-collapse-vs-relax-diff-ancestry-profiles.csv
+    Untracked:  analysis/compare-collapse-vs-relax-diff-ancestry-runs.rds
+    Untracked:  analysis/compare-collapse-vs-relax-diff-ancestry-summary.rds
+    Untracked:  analysis/compare-collapse-vs-relax-diff-ancestry.R
+    Untracked:  analysis/compare-pip-relax-vs-collapse-diff-ancestry.Rmd
+    Untracked:  code/SER-collapse-R.R
+    Untracked:  code/SuSiE-collapse-R-shared-omega.R
+    Untracked:  tex/collapse-R-approach.aux
+    Untracked:  tex/collapse-R-approach.log
+    Untracked:  tex/collapse-R-approach.pdf
+    Untracked:  tex/collapse-R-approach.synctex.gz
+    Untracked:  tex/collapse-R-approach.tex
+
+Unstaged changes:
+    Modified:   analysis/choose-lambda-diff-ancestry.Rmd
+    Modified:   analysis/index.Rmd
+    Modified:   analysis/susie-relax-demonstrate.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with
+<code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<pre class="r"><code>knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 7,
+  fig.height = 4.5
+)
+
+library(susieR)
+
+source(&quot;analysis/compare-collapse-vs-relax-diff-ancestry.R&quot;)
+source(&quot;code/plot.R&quot;)</code></pre>
+<div id="goal" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Goal</h1>
+<p>This report compares the posterior inclusion probabilities from
+SuSiE-relax and the collapsed-<span class="math inline">\(R\)</span>
+shared-<span class="math inline">\(q(\omega)\)</span> method in the
+different-ancestry simulation. The main diagnostic question is whether
+collapsed-<span class="math inline">\(R\)</span> is losing power because
+its PIP is too diffuse.</p>
+<p>The expensive fitting chunk is disabled by default. Run it once to
+create the cached diagnostic files, then re-render this report.</p>
+<pre class="r"><code>output_prefix &lt;- &quot;analysis/compare-pip-relax-vs-collapse-diff-ancestry&quot;
+diagnostic_rds &lt;- paste0(output_prefix, &quot;-diagnostics.rds&quot;)
+
+diagnostic_seeds &lt;- 1:25
+lambda_grid &lt;- c(1e-4, 1e-3, 1e-2, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5)
+collapse_nu0_grid &lt;- c(10, 25, 50, 100, 200, 500, 1000, 2000, 5000)</code></pre>
+</div>
+<div id="diagnostic-helpers" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Diagnostic Helpers</h1>
+<pre class="r"><code>pip_entropy &lt;- function(pip) {
+  s &lt;- sum(pip)
+  if (!is.finite(s) || s &lt;= 0) {
+    return(NA_real_)
+  }
+  pp &lt;- pip / s
+  pp &lt;- pp[pp &gt; 0]
+  -sum(pp * log(pp))
+}
+
+summarize_pip_fit &lt;- function(seed, method, fit, beta_true, R_for_cs,
+                              lambda, fit_seconds) {
+  pip &lt;- as.numeric(fit$pip)
+  causal &lt;- which(beta_true != 0)
+  noncausal &lt;- setdiff(seq_along(pip), causal)
+  pip_rank &lt;- rank(-pip, ties.method = &quot;min&quot;)
+  pip_norm &lt;- pip / sum(pip)
+  entropy &lt;- pip_entropy(pip)
+
+  data.frame(
+    seed = seed,
+    method = method,
+    lambda = lambda,
+    nu0 = fit$nu0,
+    selected_L = count_selected_cs(fit$alpha, R = R_for_cs),
+    total_pip = sum(pip),
+    causal_pip_sum = sum(pip[causal]),
+    causal_pip_min = min(pip[causal]),
+    causal_pip_max = max(pip[causal]),
+    causal_rank_best = min(pip_rank[causal]),
+    causal_rank_worst = max(pip_rank[causal]),
+    false_pip_sum = sum(pip[noncausal]),
+    max_false_pip = max(pip[noncausal]),
+    top1_pip = max(pip),
+    top5_pip_sum = sum(sort(pip, decreasing = TRUE)[seq_len(min(5, length(pip)))]),
+    top10_pip_sum = sum(sort(pip, decreasing = TRUE)[seq_len(min(10, length(pip)))]),
+    n_pip_gt_001 = sum(pip &gt; 0.01),
+    n_pip_gt_005 = sum(pip &gt; 0.05),
+    n_pip_gt_010 = sum(pip &gt; 0.10),
+    n_pip_gt_050 = sum(pip &gt; 0.50),
+    effective_snps_entropy = exp(entropy),
+    effective_snps_hhi = 1 / sum(pip_norm^2),
+    sigma2 = paste(sprintf(&quot;%.4g&quot;, fit$sigma2), collapse = &quot;, &quot;),
+    fit_seconds = fit_seconds
+  )
+}
+
+make_pip_rows &lt;- function(seed, method, fit, beta_true) {
+  pip &lt;- as.numeric(fit$pip)
+  data.frame(
+    seed = seed,
+    method = method,
+    snp = seq_along(pip),
+    pip = pip,
+    is_causal = seq_along(pip) %in% which(beta_true != 0)
+  )
+}
+
+make_top_pip_rows &lt;- function(seed, method, fit, beta_true, n_top = 20) {
+  pip &lt;- as.numeric(fit$pip)
+  ord &lt;- order(pip, decreasing = TRUE)
+  ord &lt;- ord[seq_len(min(n_top, length(ord)))]
+  data.frame(
+    seed = seed,
+    method = method,
+    rank = seq_along(ord),
+    snp = ord,
+    pip = pip[ord],
+    is_causal = ord %in% which(beta_true != 0)
+  )
+}
+
+fit_one_seed_for_pip &lt;- function(seed, chrom = &quot;chr22&quot;, start = 20e6,
+                                 end = 21e6, N = 25000L, N0 = 500L,
+                                 J = 500L, h2 = 0.01, L = 5,
+                                 lambda_grid = c(1e-4, 1e-3, 1e-2, 0.05,
+                                                 0.1, 0.15, 0.2, 0.3, 0.4,
+                                                 0.5),
+                                 collapse_nu0_grid = c(10, 25, 50, 100, 200,
+                                                       500, 1000, 2000, 5000),
+                                 relax_max_iter = 3000,
+                                 collapse_max_iter = 200,
+                                 verbose = TRUE) {
+  if (verbose) {
+    message(sprintf(&quot;seed %d: simulate&quot;, seed))
+  }
+  sim_time &lt;- system.time({
+    res &lt;- sim_asn_eur(
+      chrom = chrom,
+      start = start,
+      end = end,
+      n_gwas = N,
+      n_ref = N0,
+      J = J,
+      h2 = h2,
+      seed = seed
+    )
+    res &lt;- standardize_diff_ancestry_sim(res)
+  })
+
+  x &lt;- res$v
+  R0 &lt;- res$R0
+  beta_true &lt;- res$beta_true
+
+  if (verbose) {
+    message(sprintf(&quot;seed %d: fit SuSiE-relax lambda grid&quot;, seed))
+  }
+  relax &lt;- fit_relax_lambda_grid(
+    x = x,
+    R0 = R0,
+    N = N,
+    L = L,
+    beta_true = beta_true,
+    lambda_grid = lambda_grid,
+    max_iter = relax_max_iter
+  )
+
+  if (verbose) {
+    message(sprintf(&quot;seed %d: fit collapsed-R lambda grid&quot;, seed))
+  }
+  collapse &lt;- fit_collapse_lambda_grid(
+    x = x,
+    R0 = R0,
+    N = N,
+    L = L,
+    beta_true = beta_true,
+    lambda_grid = lambda_grid,
+    nu0_grid = collapse_nu0_grid,
+    max_iter = collapse_max_iter
+  )
+
+  relax_rbar &lt;- make_rbar(R0, relax$best_lambda)
+  collapse_rbar &lt;- make_rbar(R0, collapse$best_lambda)
+
+  metrics &lt;- rbind(
+    summarize_pip_fit(
+      seed = seed,
+      method = &quot;relax&quot;,
+      fit = relax$best_fit,
+      beta_true = beta_true,
+      R_for_cs = relax_rbar,
+      lambda = relax$best_lambda,
+      fit_seconds = relax$fit_seconds
+    ),
+    summarize_pip_fit(
+      seed = seed,
+      method = &quot;collapse_shared&quot;,
+      fit = collapse$best_fit,
+      beta_true = beta_true,
+      R_for_cs = collapse_rbar,
+      lambda = collapse$best_lambda,
+      fit_seconds = collapse$fit_seconds
+    )
+  )
+  metrics$causal &lt;- paste(which(beta_true != 0), collapse = &quot;, &quot;)
+  metrics$sim_seconds &lt;- unname(sim_time[&quot;elapsed&quot;])
+
+  pips &lt;- rbind(
+    make_pip_rows(seed, &quot;relax&quot;, relax$best_fit, beta_true),
+    make_pip_rows(seed, &quot;collapse_shared&quot;, collapse$best_fit, beta_true)
+  )
+
+  top_pips &lt;- rbind(
+    make_top_pip_rows(seed, &quot;relax&quot;, relax$best_fit, beta_true),
+    make_top_pip_rows(seed, &quot;collapse_shared&quot;, collapse$best_fit, beta_true)
+  )
+
+  best &lt;- rbind(
+    transform(relax$profile[relax$best_idx, ], seed = seed),
+    transform(collapse$profile[collapse$best_idx, ], seed = seed)
+  )
+
+  list(
+    seed = seed,
+    metrics = metrics,
+    pips = pips,
+    top_pips = top_pips,
+    best = best,
+    profiles = rbind(
+      transform(relax$profile, seed = seed),
+      transform(collapse$profile, seed = seed)
+    )
+  )
+}
+
+combine_pip_runs &lt;- function(runs) {
+  list(
+    metrics = do.call(rbind, lapply(runs, `[[`, &quot;metrics&quot;)),
+    pips = do.call(rbind, lapply(runs, `[[`, &quot;pips&quot;)),
+    top_pips = do.call(rbind, lapply(runs, `[[`, &quot;top_pips&quot;)),
+    best = do.call(rbind, lapply(runs, `[[`, &quot;best&quot;)),
+    profiles = do.call(rbind, lapply(runs, `[[`, &quot;profiles&quot;)),
+    runs = runs
+  )
+}
+
+run_pip_diagnostics &lt;- function(seeds = diagnostic_seeds,
+                                output_prefix =
+                                  &quot;analysis/compare-pip-relax-vs-collapse-diff-ancestry&quot;,
+                                ...) {
+  dir.create(dirname(output_prefix), recursive = TRUE, showWarnings = FALSE)
+
+  runs &lt;- vector(&quot;list&quot;, length(seeds))
+  names(runs) &lt;- paste0(&quot;seed&quot;, seeds)
+
+  for (i in seq_along(seeds)) {
+    runs[[i]] &lt;- fit_one_seed_for_pip(seed = seeds[i], ...)
+    partial &lt;- combine_pip_runs(runs[seq_len(i)])
+    saveRDS(partial, paste0(output_prefix, &quot;-diagnostics.rds&quot;))
+    utils::write.csv(
+      partial$metrics,
+      paste0(output_prefix, &quot;-metrics.csv&quot;),
+      row.names = FALSE
+    )
+    utils::write.csv(
+      partial$top_pips,
+      paste0(output_prefix, &quot;-top-pips.csv&quot;),
+      row.names = FALSE
+    )
+    utils::write.csv(
+      partial$pips,
+      paste0(output_prefix, &quot;-pips.csv&quot;),
+      row.names = FALSE
+    )
+  }
+
+  combine_pip_runs(runs)
+}
+
+load_pip_diagnostics &lt;- function(path = diagnostic_rds) {
+  if (file.exists(path)) {
+    readRDS(path)
+  } else {
+    list(
+      metrics = data.frame(),
+      pips = data.frame(),
+      top_pips = data.frame(),
+      best = data.frame(),
+      profiles = data.frame(),
+      runs = list()
+    )
+  }
+}
+
+plot_missing_diagnostics &lt;- function() {
+  plot.new()
+  text(
+    0.5, 0.5,
+    paste(
+      &quot;No cached PIP diagnostics found.&quot;,
+      &quot;Run the disabled fitting chunk first.&quot;,
+      sep = &quot;\n&quot;
+    )
+  )
+}</code></pre>
+</div>
+<div id="run-fits" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Run Fits</h1>
+<p>This chunk is intentionally disabled because it runs the full lambda
+grid for both methods across all seeds.</p>
+<pre class="r"><code>pip_diag &lt;- run_pip_diagnostics(
+  seeds = diagnostic_seeds,
+  output_prefix = output_prefix,
+  lambda_grid = lambda_grid,
+  collapse_nu0_grid = collapse_nu0_grid
+)</code></pre>
+<p>For a quick smoke test, use fewer seeds and smaller iteration
+limits:</p>
+<pre class="r"><code>pip_diag_smoke &lt;- run_pip_diagnostics(
+  seeds = 1,
+  output_prefix = &quot;analysis/tmp-compare-pip-smoke&quot;,
+  lambda_grid = lambda_grid,
+  collapse_nu0_grid = collapse_nu0_grid,
+  relax_max_iter = 500,
+  collapse_max_iter = 50
+)</code></pre>
+<pre class="r"><code>pip_diag &lt;- load_pip_diagnostics()
+have_diagnostics &lt;- nrow(pip_diag$metrics) &gt; 0
+have_diagnostics</code></pre>
+<pre><code>[1] FALSE</code></pre>
+</div>
+<div id="summary" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Summary</h1>
+<pre class="r"><code>if (have_diagnostics) {
+  as.data.frame.matrix(table(pip_diag$metrics$method, pip_diag$metrics$selected_L))
+} else {
+  cat(&quot;No cached diagnostics yet.\n&quot;)
+}</code></pre>
+<pre><code>No cached diagnostics yet.</code></pre>
+<pre class="r"><code>if (have_diagnostics) {
+  summary_metrics &lt;- c(
+    &quot;selected_L&quot;,
+    &quot;total_pip&quot;,
+    &quot;causal_pip_sum&quot;,
+    &quot;false_pip_sum&quot;,
+    &quot;max_false_pip&quot;,
+    &quot;effective_snps_entropy&quot;,
+    &quot;effective_snps_hhi&quot;,
+    &quot;n_pip_gt_001&quot;,
+    &quot;n_pip_gt_005&quot;,
+    &quot;n_pip_gt_010&quot;
+  )
+
+  do.call(rbind, lapply(summary_metrics, function(metric) {
+    aggregate(
+      pip_diag$metrics[[metric]],
+      by = list(method = pip_diag$metrics$method),
+      FUN = function(z) {
+        c(mean = mean(z), median = stats::median(z), q25 = stats::quantile(z, 0.25),
+          q75 = stats::quantile(z, 0.75))
+      }
+    ) |&gt;
+      transform(metric = metric)
+  }))
+} else {
+  cat(&quot;No cached diagnostics yet.\n&quot;)
+}</code></pre>
+<pre><code>No cached diagnostics yet.</code></pre>
+</div>
+<div id="pip-diffusion-metrics" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> PIP Diffusion
+Metrics</h1>
+<p>If collapsed-<span class="math inline">\(R\)</span> is too diffuse,
+we expect larger effective SNP counts, larger total false PIP, and more
+SNPs with small-to-moderate PIP.</p>
+<pre class="r"><code>if (have_diagnostics) {
+  old_par &lt;- par(no.readonly = TRUE)
+  par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
+
+  boxplot(effective_snps_entropy ~ method, data = pip_diag$metrics,
+          ylab = &quot;effective SNPs&quot;, main = &quot;Entropy effective SNPs&quot;)
+  boxplot(effective_snps_hhi ~ method, data = pip_diag$metrics,
+          ylab = &quot;effective SNPs&quot;, main = &quot;HHI effective SNPs&quot;)
+  boxplot(false_pip_sum ~ method, data = pip_diag$metrics,
+          ylab = &quot;sum false PIP&quot;, main = &quot;False PIP mass&quot;)
+  boxplot(n_pip_gt_001 ~ method, data = pip_diag$metrics,
+          ylab = &quot;# SNPs&quot;, main = &quot;PIP &gt; 0.01&quot;)
+  boxplot(n_pip_gt_005 ~ method, data = pip_diag$metrics,
+          ylab = &quot;# SNPs&quot;, main = &quot;PIP &gt; 0.05&quot;)
+  boxplot(n_pip_gt_010 ~ method, data = pip_diag$metrics,
+          ylab = &quot;# SNPs&quot;, main = &quot;PIP &gt; 0.10&quot;)
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}</code></pre>
+<p><img src="figure/compare-pip-relax-vs-collapse-diff-ancestry.Rmd/diffusion-boxplots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>if (have_diagnostics) {
+  old_par &lt;- par(no.readonly = TRUE)
+  par(mfrow = c(1, 3), mar = c(4, 4, 3, 1))
+
+  boxplot(causal_pip_sum ~ method, data = pip_diag$metrics,
+          ylab = &quot;sum causal PIP&quot;, main = &quot;Causal PIP mass&quot;)
+  boxplot(causal_pip_max ~ method, data = pip_diag$metrics,
+          ylab = &quot;max causal PIP&quot;, main = &quot;Best causal SNP&quot;)
+  boxplot(causal_rank_best ~ method, data = pip_diag$metrics,
+          ylab = &quot;best causal rank&quot;, main = &quot;Causal rank&quot;)
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}</code></pre>
+<p><img src="figure/compare-pip-relax-vs-collapse-diff-ancestry.Rmd/causal-pip-boxplots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="paired-comparisons" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Paired Comparisons</h1>
+<pre class="r"><code>paired_metric &lt;- function(metrics, metric) {
+  wide &lt;- reshape(
+    metrics[, c(&quot;seed&quot;, &quot;method&quot;, metric)],
+    idvar = &quot;seed&quot;,
+    timevar = &quot;method&quot;,
+    direction = &quot;wide&quot;
+  )
+  names(wide) &lt;- sub(paste0(&quot;^&quot;, metric, &quot;\\.&quot;), &quot;&quot;, names(wide))
+  wide
+}
+
+plot_paired_metric &lt;- function(metrics, metric, ylab, main) {
+  wide &lt;- paired_metric(metrics, metric)
+  x &lt;- wide$relax
+  y &lt;- wide$collapse_shared
+  lim &lt;- range(c(x, y), finite = TRUE)
+  plot(x, y, pch = 16, xlab = &quot;SuSiE-relax&quot;, ylab = &quot;Collapsed-R&quot;,
+       main = main, xlim = lim, ylim = lim)
+  abline(0, 1, col = &quot;gray60&quot;, lwd = 2)
+  text(x, y, labels = wide$seed, pos = 3, cex = 0.7)
+  grid()
+}</code></pre>
+<pre class="r"><code>if (have_diagnostics) {
+  old_par &lt;- par(no.readonly = TRUE)
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+
+  plot_paired_metric(
+    pip_diag$metrics,
+    &quot;effective_snps_entropy&quot;,
+    &quot;Collapsed-R effective SNPs&quot;,
+    &quot;Effective SNP count&quot;
+  )
+  plot_paired_metric(
+    pip_diag$metrics,
+    &quot;false_pip_sum&quot;,
+    &quot;Collapsed-R false PIP sum&quot;,
+    &quot;False PIP mass&quot;
+  )
+  plot_paired_metric(
+    pip_diag$metrics,
+    &quot;causal_pip_sum&quot;,
+    &quot;Collapsed-R causal PIP sum&quot;,
+    &quot;Causal PIP mass&quot;
+  )
+  plot_paired_metric(
+    pip_diag$metrics,
+    &quot;max_false_pip&quot;,
+    &quot;Collapsed-R max false PIP&quot;,
+    &quot;Largest false PIP&quot;
+  )
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}</code></pre>
+<p><img src="figure/compare-pip-relax-vs-collapse-diff-ancestry.Rmd/paired-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="representative-seeds" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Representative
+Seeds</h1>
+<p>These rows rank seeds by how much more diffuse collapsed-<span
+class="math inline">\(R\)</span> is compared with SuSiE-relax.</p>
+<pre class="r"><code>if (have_diagnostics) {
+  e_entropy &lt;- paired_metric(pip_diag$metrics, &quot;effective_snps_entropy&quot;)
+  e_false &lt;- paired_metric(pip_diag$metrics, &quot;false_pip_sum&quot;)
+  e_causal &lt;- paired_metric(pip_diag$metrics, &quot;causal_pip_sum&quot;)
+  e_selected &lt;- paired_metric(pip_diag$metrics, &quot;selected_L&quot;)
+
+  seed_summary &lt;- Reduce(
+    function(x, y) merge(x, y, by = &quot;seed&quot;),
+    list(
+      e_entropy[, c(&quot;seed&quot;, &quot;relax&quot;, &quot;collapse_shared&quot;)],
+      e_false[, c(&quot;seed&quot;, &quot;relax&quot;, &quot;collapse_shared&quot;)],
+      e_causal[, c(&quot;seed&quot;, &quot;relax&quot;, &quot;collapse_shared&quot;)],
+      e_selected[, c(&quot;seed&quot;, &quot;relax&quot;, &quot;collapse_shared&quot;)]
+    )
+  )
+
+  names(seed_summary) &lt;- c(
+    &quot;seed&quot;,
+    &quot;eff_relax&quot;, &quot;eff_collapse&quot;,
+    &quot;false_relax&quot;, &quot;false_collapse&quot;,
+    &quot;causal_relax&quot;, &quot;causal_collapse&quot;,
+    &quot;selected_L_relax&quot;, &quot;selected_L_collapse&quot;
+  )
+  seed_summary$delta_eff &lt;- seed_summary$eff_collapse - seed_summary$eff_relax
+  seed_summary$delta_false &lt;- seed_summary$false_collapse - seed_summary$false_relax
+  seed_summary$delta_causal &lt;- seed_summary$causal_collapse - seed_summary$causal_relax
+
+  seed_summary &lt;- seed_summary[order(-seed_summary$delta_eff), ]
+  head(seed_summary, 10)
+} else {
+  cat(&quot;No cached diagnostics yet.\n&quot;)
+}</code></pre>
+<pre><code>No cached diagnostics yet.</code></pre>
+<pre class="r"><code>if (have_diagnostics) {
+  seed_to_plot &lt;- seed_summary$seed[1]
+  pip_seed &lt;- pip_diag$pips[pip_diag$pips$seed == seed_to_plot, ]
+  y_max &lt;- max(pip_seed$pip)
+
+  old_par &lt;- par(no.readonly = TRUE)
+  par(mfrow = c(2, 1), mar = c(4, 4, 3, 1))
+
+  for (method_i in c(&quot;relax&quot;, &quot;collapse_shared&quot;)) {
+    d &lt;- pip_seed[pip_seed$method == method_i, ]
+    plot(d$snp, d$pip, pch = 16, cex = 0.7, ylim = c(0, y_max),
+         xlab = &quot;SNP&quot;, ylab = &quot;PIP&quot;,
+         main = sprintf(&quot;Seed %d: %s&quot;, seed_to_plot, method_i))
+    points(d$snp[d$is_causal], d$pip[d$is_causal], col = 2, pch = 16)
+    rug(d$snp[d$is_causal], col = 2, lwd = 1.5)
+    grid()
+  }
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}</code></pre>
+<p><img src="figure/compare-pip-relax-vs-collapse-diff-ancestry.Rmd/representative-pip-plots-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>if (have_diagnostics) {
+  pip_diag$top_pips[pip_diag$top_pips$seed == seed_to_plot, ]
+} else {
+  cat(&quot;No cached diagnostics yet.\n&quot;)
+}</code></pre>
+<pre><code>No cached diagnostics yet.</code></pre>
+</div>
+<div id="lambda-and-nu0" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Lambda and Nu0</h1>
+<pre class="r"><code>if (have_diagnostics) {
+  old_par &lt;- par(no.readonly = TRUE)
+  par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+
+  plot(
+    pip_diag$metrics$nu0,
+    pip_diag$metrics$effective_snps_entropy,
+    log = &quot;x&quot;,
+    pch = 16,
+    col = ifelse(pip_diag$metrics$method == &quot;relax&quot;, 4, 2),
+    xlab = expression(hat(nu)[0]),
+    ylab = &quot;effective SNPs&quot;,
+    main = expression(hat(nu)[0] ~ &quot;vs diffusion&quot;)
+  )
+  legend(&quot;topright&quot;, legend = c(&quot;relax&quot;, &quot;collapse_shared&quot;),
+         col = c(4, 2), pch = 16, bty = &quot;n&quot;)
+  grid()
+
+  plot(
+    pip_diag$metrics$lambda,
+    pip_diag$metrics$effective_snps_entropy,
+    log = &quot;x&quot;,
+    pch = 16,
+    col = ifelse(pip_diag$metrics$method == &quot;relax&quot;, 4, 2),
+    xlab = expression(lambda),
+    ylab = &quot;effective SNPs&quot;,
+    main = expression(lambda ~ &quot;vs diffusion&quot;)
+  )
+  legend(&quot;topright&quot;, legend = c(&quot;relax&quot;, &quot;collapse_shared&quot;),
+         col = c(4, 2), pch = 16, bty = &quot;n&quot;)
+  grid()
+
+  par(old_par)
+} else {
+  plot_missing_diagnostics()
+}</code></pre>
+<p><img src="figure/compare-pip-relax-vs-collapse-diff-ancestry.Rmd/lambda-nu0-vs-diffusion-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS Tahoe 26.5.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] susieR_0.14.2   workflowr_1.7.2
+
+loaded via a namespace (and not attached):
+ [1] sass_0.4.10        generics_0.1.4     stringi_1.8.7      lattice_0.22-7    
+ [5] digest_0.6.39      magrittr_2.0.4     evaluate_1.0.5     grid_4.5.2        
+ [9] RColorBrewer_1.1-3 fastmap_1.2.0      plyr_1.8.9         rprojroot_2.1.1   
+[13] jsonlite_2.0.0     Matrix_1.7-4       processx_3.8.6     whisker_0.4.1     
+[17] reshape_0.8.10     mixsqp_0.3-54      ps_1.9.1           promises_1.5.0    
+[21] httr_1.4.8         scales_1.4.0       jquerylib_0.1.4    cli_3.6.6         
+[25] rlang_1.2.0        crayon_1.5.3       cachem_1.1.0       yaml_2.3.12       
+[29] otel_0.2.0         tools_4.5.2        dplyr_1.2.0        ggplot2_4.0.2     
+[33] httpuv_1.6.17      vctrs_0.7.1        R6_2.6.1           matrixStats_1.5.0 
+[37] lifecycle_1.0.5    git2r_0.36.2       stringr_1.6.0      fs_2.1.0          
+[41] irlba_2.3.7        pkgconfig_2.0.3    callr_3.8.0        pillar_1.11.1     
+[45] bslib_0.10.0       later_1.4.8        gtable_0.3.6       glue_1.8.0        
+[49] Rcpp_1.1.1         xfun_0.56          tibble_3.3.1       tidyselect_1.2.1  
+[53] rstudioapi_0.18.0  knitr_1.51         farver_2.1.2       htmltools_0.5.9   
+[57] rmarkdown_2.30     compiler_4.5.2     getPass_0.2-4      S7_0.2.1          </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

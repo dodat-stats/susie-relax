@@ -1,0 +1,494 @@
+---
+title: "SER-collapse-R Demonstration"
+author: "Dat Do"
+date: "`r Sys.Date()`"
+output:
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+editor_options:
+  markdown:
+    wrap: 72
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6.5,
+  fig.height = 4.5
+)
+
+source("code/SER-collapse-R.R")
+source("code/sim_2pop.R")
+source("code/plot.R")
+
+plot_pip <- function(fit, R_for_cs, beta_true, main) {
+  susie_plot_alpha(
+    fit,
+    R = R_for_cs,
+    b = beta_true,
+    main = main,
+    coverage = 0.95,
+    min_abs_corr = 0.5
+  )
+  grid()
+}
+
+as_susie_single_effect <- function(fit) {
+  list(
+    alpha = matrix(fit$pi, nrow = 1),
+    pip = as.numeric(fit$pi)
+  )
+}
+```
+
+# Overview
+
+This page tests the collapsed-\(R\) single-effect approach derived in
+`tex/collapse-R-approach.tex`. The model integrates out the latent LD
+matrix \(R\) under
+$$
+R \sim IW_J(\nu_0\bar R,\nu_0+J+1)
+$$
+and then fits a single-effect model
+$$
+b=\beta e_\gamma,
+\qquad
+\beta\sim N(0,\sigma_0^2).
+$$
+
+For a candidate causal SNP \(j\), define
+$$
+a_j(\nu_0)=\nu_0\bar R_{jj}+Nx_j^2.
+$$
+The collapsed likelihood contains the one-dimensional expectation
+$$
+E_{\omega\sim\chi^2_{\nu_0+3}}
+\left[
+\exp\left\{
+-\frac{N a_j(\nu_0)\beta^2}{2\omega}
+\right\}
+\right].
+$$
+
+The code implements three approximations to this term:
+
+-   `local`: use one local variational distribution \(q_j(\omega)\) for
+    each candidate SNP.
+-   `shared`: use one global variational distribution \(q(\omega)\)
+    shared across all candidate SNPs.
+-   `plugin`: replace \(\omega\) by its prior mean \(\nu_0+3\).
+
+For each candidate value of \(\nu_0\), the algorithm optimizes the
+corresponding coordinate updates and then chooses the \(\nu_0\) value
+with the largest optimized lower bound or plug-in objective.
+
+# Simulation Design
+
+This mirrors `analysis/SER-relax-demonstrate.Rmd`, except that the
+fitting function is `fit_ser_collapse_r()`.
+
+1.  Generate a realistic reference LD matrix \(R_0\) using `sim_2pop()`.
+2.  Set
+    $$
+    \bar R = 0.99R_0+0.01I.
+    $$
+3.  For each true \(\nu_0\), generate
+    $$
+    R^{\mathrm{true}}\sim IW_J(\nu_0\bar R,\nu_0+J+1),
+    \qquad
+    x\sim N_J(\beta R^{\mathrm{true}}_{\cdot j},\bar R/N).
+    $$
+4.  Fit the collapsed-\(R\) single-effect model under the three
+    variants.
+
+The summary statistic is simulated with one true causal SNP, located at
+the middle SNP in the region.
+
+```{r experiment-settings}
+nu0_grid <- c(50, 200, 1000)
+variants <- c("local", "shared", "plugin")
+
+N <- 20000L
+N01 <- 1L
+N0 <- 2000L
+J <- 500L
+
+n_rep <- 3
+sigma0 <- 0.2
+beta <- 0.2
+gamma <- ceiling(J / 2)
+max_iter <- 300
+tol <- 1e-5
+seed <- 100
+
+fit_nu0_grid <- sort(unique(c(
+  exp(seq(log(5), log(5000), length.out = 41)),
+  nu0_grid,
+  10
+)))
+```
+
+```{r experiment-helper}
+run_ser_collapse_r_recovery_demo <- function(
+    nu0_grid,
+    variant,
+    n_rep,
+    N,
+    J,
+    sigma0,
+    beta,
+    gamma,
+    fit_nu0_grid,
+    max_iter,
+    tol,
+    seed,
+    Rbar,
+    verbose = FALSE) {
+  out <- vector("list", length(nu0_grid) * n_rep)
+  i <- 0
+
+  for (nu0_true in nu0_grid) {
+    for (rep_id in seq_len(n_rep)) {
+      i <- i + 1
+      sim_seed <- seed + i
+      set.seed(sim_seed)
+
+      iw_time <- system.time({
+        R_true <- sample_inverse_wishart(
+          df = nu0_true + J + 1,
+          scale = nu0_true * Rbar
+        )
+      })
+      ## standardize this: this does not match the model but it is more realistic for real application
+      # R_true = cov2cor(R_true)
+      mean_x <- beta * R_true[, gamma]
+
+      x_time <- system.time({
+        x <- as.numeric(MASS::mvrnorm(1, mu = mean_x, Sigma = Rbar / N))
+      })
+
+      fit_time <- system.time({
+        fit <- fit_ser_collapse_r(
+          x = x,
+          Rbar = Rbar,
+          N = N,
+          sigma0 = sigma0,
+          nu0_grid = fit_nu0_grid,
+          variant = variant,
+          max_iter = max_iter,
+          tol = tol,
+          verbose = verbose
+        )
+      })
+
+      out[[i]] <- data.frame(
+        nu0_true = nu0_true,
+        nu0_hat = fit$nu0,
+        rep = rep_id,
+        gamma_true = gamma,
+        gamma_hat = unname(fit$gamma_hat),
+        top_pi = unname(max(fit$pi)),
+        beta = beta,
+        variant = variant,
+        converged_iter = length(fit$elbo),
+        iw_seconds = unname(iw_time["elapsed"]),
+        x_seconds = unname(x_time["elapsed"]),
+        fit_seconds = unname(fit_time["elapsed"])
+      )
+    }
+  }
+
+  results <- do.call(rbind, out)
+  list(
+    results = results,
+    fit_nu0_grid = fit_nu0_grid
+  )
+}
+```
+
+# Generate Reference LD
+
+```{r generate-rbar}
+rbar_time <- system.time({
+  coalescent <- sim_2pop(
+    chrom = "chr22",
+    start = 20e6,
+    end = 21e6,
+    T_split = 20,
+    n_gwas = N01,
+    n_ref = N0,
+    J = J,
+    h2 = 0.01,
+    seed = 1
+  )
+
+  R0 <- cov2cor(coalescent$R0)
+  Rbar <- 0.99 * R0 + 0.01 * diag(1, J)
+  Rbar <- cov2cor(Rbar)
+})
+
+range(eigen(Rbar, symmetric = TRUE, only.values = TRUE)$values)
+rbar_time
+```
+
+# Run Recovery Grid
+
+The same \(R^{\mathrm{true}}\) and \(x\) draws are used for all three
+variants because the same `Rbar` and simulation seeds are reused.
+
+```{r run-grid}
+variant_runs <- vector("list", length(variants))
+names(variant_runs) <- variants
+
+for (variant in variants) {
+  variant_runs[[variant]] <- run_ser_collapse_r_recovery_demo(
+    nu0_grid = nu0_grid,
+    variant = variant,
+    n_rep = n_rep,
+    N = N,
+    J = J,
+    sigma0 = sigma0,
+    beta = beta,
+    gamma = gamma,
+    fit_nu0_grid = fit_nu0_grid,
+    max_iter = max_iter,
+    tol = tol,
+    seed = seed,
+    Rbar = Rbar,
+    verbose = FALSE
+  )
+}
+
+nu0_results <- do.call(rbind, lapply(variant_runs, `[[`, "results"))
+row.names(nu0_results) <- NULL
+
+nu0_results
+```
+
+# Summaries
+
+```{r summarize-grid}
+nu0_summary <- aggregate(
+  cbind(nu0_hat, top_pi, converged_iter, iw_seconds, x_seconds, fit_seconds) ~
+    variant + nu0_true,
+  data = nu0_results,
+  FUN = mean
+)
+
+nu0_summary
+```
+
+```{r timing}
+aggregate(
+  cbind(iw_seconds, x_seconds, fit_seconds) ~ variant,
+  data = nu0_results,
+  FUN = sum
+)
+```
+
+# Plots
+
+```{r plot-raw}
+variant_cols <- c(local = "steelblue", shared = "darkorange", plugin = "firebrick")
+variant_pch <- c(local = 19, shared = 17, plugin = 15)
+
+plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  type = "n",
+  xlab = expression("true " * nu[0]),
+  ylab = expression("estimated " * nu[0]),
+  main = expression("SER-collapse-R " * nu[0] * " recovery")
+)
+abline(0, 1, lty = 2, col = "gray40")
+
+for (variant in variants) {
+  idx <- nu0_results$variant == variant
+  points(
+    nu0_results$nu0_true[idx],
+    nu0_results$nu0_hat[idx],
+    pch = variant_pch[variant],
+    col = variant_cols[variant]
+  )
+
+  sid <- nu0_summary$variant == variant
+  lines(
+    nu0_summary$nu0_true[sid],
+    nu0_summary$nu0_hat[sid],
+    type = "b",
+    pch = variant_pch[variant],
+    col = variant_cols[variant],
+    lwd = 2
+  )
+}
+
+legend(
+  "topleft",
+  legend = variants,
+  col = variant_cols[variants],
+  pch = variant_pch[variants],
+  lwd = 2,
+  bty = "n"
+)
+grid()
+```
+
+```{r plot-loglog}
+plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  log = "xy",
+  type = "n",
+  xlab = expression("true " * nu[0] * " (log scale)"),
+  ylab = expression("estimated " * nu[0] * " (log scale)"),
+  main = expression("SER-collapse-R " * nu[0] * " recovery, log-log")
+)
+abline(0, 1, lty = 2, col = "gray40")
+
+for (variant in variants) {
+  idx <- nu0_results$variant == variant
+  points(
+    nu0_results$nu0_true[idx],
+    nu0_results$nu0_hat[idx],
+    pch = variant_pch[variant],
+    col = variant_cols[variant]
+  )
+
+  sid <- nu0_summary$variant == variant
+  lines(
+    nu0_summary$nu0_true[sid],
+    nu0_summary$nu0_hat[sid],
+    type = "b",
+    pch = variant_pch[variant],
+    col = variant_cols[variant],
+    lwd = 2
+  )
+}
+
+legend(
+  "topleft",
+  legend = variants,
+  col = variant_cols[variants],
+  pch = variant_pch[variants],
+  lwd = 2,
+  bty = "n"
+)
+grid()
+```
+
+# PIP Plots
+
+Here are representative replicates for \(\nu_0=200\) and
+\(\nu_0=10\). For each case, the two plots show the PIPs from the
+local-\(q_j(\omega)\) and shared-\(q(\omega)\) collapsed-\(R\) fits on
+the same simulated data set.
+
+```{r pip-example-fit}
+fit_pip_example <- function(nu0_true, sim_seed) {
+  set.seed(sim_seed)
+  R_true <- sample_inverse_wishart(
+    df = nu0_true + J + 1,
+    scale = nu0_true * Rbar
+  )
+  x <- as.numeric(MASS::mvrnorm(
+    1,
+    mu = beta * R_true[, gamma],
+    Sigma = Rbar / N
+  ))
+
+  beta_true <- rep(0, J)
+  beta_true[gamma] <- beta
+
+  fit_local <- fit_ser_collapse_r(
+    x = x,
+    Rbar = Rbar,
+    N = N,
+    sigma0 = sigma0,
+    nu0_grid = fit_nu0_grid,
+    variant = "local",
+    max_iter = max_iter,
+    tol = tol,
+    verbose = FALSE
+  )
+
+  fit_shared <- fit_ser_collapse_r(
+    x = x,
+    Rbar = Rbar,
+    N = N,
+    sigma0 = sigma0,
+    nu0_grid = fit_nu0_grid,
+    variant = "shared",
+    max_iter = max_iter,
+    tol = tol,
+    verbose = FALSE
+  )
+
+  list(
+    beta_true = beta_true,
+    local = fit_local,
+    shared = fit_shared
+  )
+}
+
+pip_nu0_200 <- fit_pip_example(nu0_true = 200, sim_seed = seed + 4)
+pip_nu0_10 <- fit_pip_example(nu0_true = 10, sim_seed = seed + 40)
+
+rbind(
+  data.frame(
+    true_nu0 = 200,
+    variant = c("local", "shared"),
+    nu0_hat = c(pip_nu0_200$local$nu0, pip_nu0_200$shared$nu0),
+    gamma_hat = c(pip_nu0_200$local$gamma_hat, pip_nu0_200$shared$gamma_hat),
+    top_pi = c(max(pip_nu0_200$local$pi), max(pip_nu0_200$shared$pi))
+  ),
+  data.frame(
+    true_nu0 = 10,
+    variant = c("local", "shared"),
+    nu0_hat = c(pip_nu0_10$local$nu0, pip_nu0_10$shared$nu0),
+    gamma_hat = c(pip_nu0_10$local$gamma_hat, pip_nu0_10$shared$gamma_hat),
+    top_pi = c(max(pip_nu0_10$local$pi), max(pip_nu0_10$shared$pi))
+  )
+)
+```
+
+```{r plot-pip-local-nu0-200}
+plot_pip(
+  as_susie_single_effect(pip_nu0_200$local),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_200$beta_true,
+  main = "Collapsed-R local q_j(omega) PIP, true nu0 = 200"
+)
+```
+
+```{r plot-pip-shared-nu0-200}
+plot_pip(
+  as_susie_single_effect(pip_nu0_200$shared),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_200$beta_true,
+  main = "Collapsed-R shared q(omega) PIP, true nu0 = 200"
+)
+```
+
+```{r plot-pip-local-nu0-10}
+plot_pip(
+  as_susie_single_effect(pip_nu0_10$local),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_10$beta_true,
+  main = "Collapsed-R local q_j(omega) PIP, true nu0 = 10"
+)
+```
+
+```{r plot-pip-shared-nu0-10}
+plot_pip(
+  as_susie_single_effect(pip_nu0_10$shared),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_10$beta_true,
+  main = "Collapsed-R shared q(omega) PIP, true nu0 = 10"
+)
+```

@@ -17,14 +17,20 @@ progression of the method:
  
 2. [SER-relax Demonstration](SER-relax-demonstrate.html) - Making two more simple and benign approximations, we have a SER algorithm that is much faster and can still recover the true $\nu_0$ and is interpretable.
 
-3. [SuSiE-relax Demonstration](susie-relax-demonstrate.html) - SuSiE extension of the SER model above.
+3. [SER-collapse-R Demonstration](SER-collapse-R-demonstrate.html) - Direct collapsed-$R$ single-effect fitting, comparing local $q_j(\omega)$, shared $q(\omega)$, and plug-in $\omega=\nu_0+3$ variants.
 
-4. [SuSiE-relax-prime Demonstration](susie-relax-prime-demonstrate.html) - The same SuSiE demonstration using the prime latent contribution model.
+4. [SuSiE-collapse-R Shared-Omega Analysis](SuSiE-collapse-R-shared-omega-demonstrate.html) - The SuSiE-relax demonstration repeated with the collapsed-$R$ shared-$q(\omega)$ fitter.
 
-6. [Choosing lambda (low-mismatch case)](choose-lambda-low-mismatch.html) - How the ridge parameter $\lambda$ in $\bar R = (1-\lambda) R_0 + \lambda I$ affects the fine-mapping result, using the final ELBO to select $\lambda$.
+5. [SuSiE-relax Demonstration](susie-relax-demonstrate.html) - SuSiE extension of the SER model above.
 
-7. [Choosing lambda (high-mismatch case)](choose-lambda-high-mismatch.html) - The same $\lambda$ investigation in the high-mismatch regime, where the reference panel is small and susieR on $R_0$ overfits.
+6. [SuSiE-relax-prime Demonstration](susie-relax-prime-demonstrate.html) - The same SuSiE demonstration using the prime latent contribution model.
 
-8. [Choosing lambda (different-ancestry case)](choose-lambda-diff-ancestry.html) - The same $\lambda$ investigation when the GWAS and reference panels are simulated from different ancestries.
+7. [Choosing lambda (low-mismatch case)](choose-lambda-low-mismatch.html) - How the ridge parameter $\lambda$ in $\bar R = (1-\lambda) R_0 + \lambda I$ affects the fine-mapping result, using the final ELBO to select $\lambda$.
 
-9. [Scale of q as lambda varies](q-vs-lambda.html) - How $q(\lambda)=x^\top \bar R(\lambda)^{-1}x$ changes with $\lambda$ in low-mismatch, small-reference high-mismatch, and different-ancestry settings.
+8. [Choosing lambda (high-mismatch case)](choose-lambda-high-mismatch.html) - The same $\lambda$ investigation in the high-mismatch regime, where the reference panel is small and susieR on $R_0$ overfits.
+
+9. [Choosing lambda (different-ancestry case)](choose-lambda-diff-ancestry.html) - The same $\lambda$ investigation when the GWAS and reference panels are simulated from different ancestries.
+
+10. [PIP Comparison: SuSiE-relax vs Collapsed-R](compare-pip-relax-vs-collapse-diff-ancestry.html) - Diagnostics for whether collapsed-$R$ spreads PIP mass too diffusely in the different-ancestry setting.
+
+11. [Scale of q as lambda varies](q-vs-lambda.html) - How $q(\lambda)=x^\top \bar R(\lambda)^{-1}x$ changes with $\lambda$ in low-mismatch, small-reference high-mismatch, and different-ancestry settings.

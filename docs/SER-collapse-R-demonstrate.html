@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Dat Do" />
+
+<meta name="date" content="2026-07-01" />
+
+<title>SER-collapse-R Demonstration</title>
+
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">susie-relax</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/dodat-stats/susie-relax">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">SER-collapse-R Demonstration</h1>
+<h4 class="author">Dat Do</h4>
+<h4 class="date">2026-07-01</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2026-07-01
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>susie-relax/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.2). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
+changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R
+Markdown file created these results, you’ll want to first commit it to
+the Git repo. If you’re still working on the analysis, you can ignore
+this warning. When you’re finished, you can run
+<code>wflow_publish</code> to commit the R Markdown file and build the
+HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20260621code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20260621)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20260621code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20260621)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree6e0cefb05af3ed3145ef00580fb86e75268ea712targetblank6e0cefba">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/dodat-stats/susie-relax/tree/6e0cefb05af3ed3145ef00580fb86e75268ea712" target="_blank">6e0cefb</a>
+</a>
+</p>
+</div>
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomdodatstatssusierelaxtree6e0cefb05af3ed3145ef00580fb86e75268ea712targetblank6e0cefba"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version
+<a href="https://github.com/dodat-stats/susie-relax/tree/6e0cefb05af3ed3145ef00580fb86e75268ea712" target="_blank">6e0cefb</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/ser-relax-vs-model-b-pip.html
+    Ignored:    code/.Rhistory
+
+Untracked files:
+    Untracked:  analysis/SER-collapse-R-demonstrate.Rmd
+    Untracked:  analysis/SuSiE-collapse-R-shared-omega-demonstrate.Rmd
+    Untracked:  code/SER-collapse-R.R
+    Untracked:  code/SuSiE-collapse-R-shared-omega.R
+    Untracked:  collapse-R-approach.aux
+    Untracked:  collapse-R-approach.fdb_latexmk
+    Untracked:  collapse-R-approach.fls
+    Untracked:  collapse-R-approach.log
+    Untracked:  collapse-R-approach.pdf
+    Untracked:  tex/collapse-R-approach.aux
+    Untracked:  tex/collapse-R-approach.log
+    Untracked:  tex/collapse-R-approach.pdf
+    Untracked:  tex/collapse-R-approach.synctex.gz
+    Untracked:  tex/collapse-R-approach.tex
+
+Unstaged changes:
+    Modified:   analysis/index.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with
+<code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<pre class="r"><code>knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6.5,
+  fig.height = 4.5
+)
+
+source(&quot;code/SER-collapse-R.R&quot;)
+source(&quot;code/sim_2pop.R&quot;)
+source(&quot;code/plot.R&quot;)
+
+plot_pip &lt;- function(fit, R_for_cs, beta_true, main) {
+  susie_plot_alpha(
+    fit,
+    R = R_for_cs,
+    b = beta_true,
+    main = main,
+    coverage = 0.95,
+    min_abs_corr = 0.5
+  )
+  grid()
+}
+
+as_susie_single_effect &lt;- function(fit) {
+  list(
+    alpha = matrix(fit$pi, nrow = 1),
+    pip = as.numeric(fit$pi)
+  )
+}</code></pre>
+<div id="overview" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Overview</h1>
+<p>This page tests the collapsed-<span class="math inline">\(R\)</span>
+single-effect approach derived in
+<code>tex/collapse-R-approach.tex</code>. The model integrates out the
+latent LD matrix <span class="math inline">\(R\)</span> under <span
+class="math display">\[
+R \sim IW_J(\nu_0\bar R,\nu_0+J+1)
+\]</span> and then fits a single-effect model <span
+class="math display">\[
+b=\beta e_\gamma,
+\qquad
+\beta\sim N(0,\sigma_0^2).
+\]</span></p>
+<p>For a candidate causal SNP <span class="math inline">\(j\)</span>,
+define <span class="math display">\[
+a_j(\nu_0)=\nu_0\bar R_{jj}+Nx_j^2.
+\]</span> The collapsed likelihood contains the one-dimensional
+expectation <span class="math display">\[
+E_{\omega\sim\chi^2_{\nu_0+3}}
+\left[
+\exp\left\{
+-\frac{N a_j(\nu_0)\beta^2}{2\omega}
+\right\}
+\right].
+\]</span></p>
+<p>The code implements three approximations to this term:</p>
+<ul>
+<li><code>local</code>: use one local variational distribution <span
+class="math inline">\(q_j(\omega)\)</span> for each candidate SNP.</li>
+<li><code>shared</code>: use one global variational distribution <span
+class="math inline">\(q(\omega)\)</span> shared across all candidate
+SNPs.</li>
+<li><code>plugin</code>: replace <span
+class="math inline">\(\omega\)</span> by its prior mean <span
+class="math inline">\(\nu_0+3\)</span>.</li>
+</ul>
+<p>For each candidate value of <span
+class="math inline">\(\nu_0\)</span>, the algorithm optimizes the
+corresponding coordinate updates and then chooses the <span
+class="math inline">\(\nu_0\)</span> value with the largest optimized
+lower bound or plug-in objective.</p>
+</div>
+<div id="simulation-design" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Simulation Design</h1>
+<p>This mirrors <code>analysis/SER-relax-demonstrate.Rmd</code>, except
+that the fitting function is <code>fit_ser_collapse_r()</code>.</p>
+<ol style="list-style-type: decimal">
+<li>Generate a realistic reference LD matrix <span
+class="math inline">\(R_0\)</span> using <code>sim_2pop()</code>.</li>
+<li>Set <span class="math display">\[
+\bar R = 0.99R_0+0.01I.
+\]</span></li>
+<li>For each true <span class="math inline">\(\nu_0\)</span>, generate
+<span class="math display">\[
+R^{\mathrm{true}}\sim IW_J(\nu_0\bar R,\nu_0+J+1),
+\qquad
+x\sim N_J(\beta R^{\mathrm{true}}_{\cdot j},\bar R/N).
+\]</span></li>
+<li>Fit the collapsed-<span class="math inline">\(R\)</span>
+single-effect model under the three variants.</li>
+</ol>
+<p>The summary statistic is simulated with one true causal SNP, located
+at the middle SNP in the region.</p>
+<pre class="r"><code>nu0_grid &lt;- c(50, 200, 1000)
+variants &lt;- c(&quot;local&quot;, &quot;shared&quot;, &quot;plugin&quot;)
+
+N &lt;- 20000L
+N01 &lt;- 1L
+N0 &lt;- 2000L
+J &lt;- 500L
+
+n_rep &lt;- 3
+sigma0 &lt;- 0.2
+beta &lt;- 0.2
+gamma &lt;- ceiling(J / 2)
+max_iter &lt;- 300
+tol &lt;- 1e-5
+seed &lt;- 100
+
+fit_nu0_grid &lt;- sort(unique(c(
+  exp(seq(log(5), log(5000), length.out = 41)),
+  nu0_grid,
+  10
+)))</code></pre>
+<pre class="r"><code>run_ser_collapse_r_recovery_demo &lt;- function(
+    nu0_grid,
+    variant,
+    n_rep,
+    N,
+    J,
+    sigma0,
+    beta,
+    gamma,
+    fit_nu0_grid,
+    max_iter,
+    tol,
+    seed,
+    Rbar,
+    verbose = FALSE) {
+  out &lt;- vector(&quot;list&quot;, length(nu0_grid) * n_rep)
+  i &lt;- 0
+
+  for (nu0_true in nu0_grid) {
+    for (rep_id in seq_len(n_rep)) {
+      i &lt;- i + 1
+      sim_seed &lt;- seed + i
+      set.seed(sim_seed)
+
+      iw_time &lt;- system.time({
+        R_true &lt;- sample_inverse_wishart(
+          df = nu0_true + J + 1,
+          scale = nu0_true * Rbar
+        )
+      })
+      R_true = cov2cor(R_true)
+      mean_x &lt;- beta * R_true[, gamma]
+
+      x_time &lt;- system.time({
+        x &lt;- as.numeric(MASS::mvrnorm(1, mu = mean_x, Sigma = Rbar / N))
+      })
+
+      fit_time &lt;- system.time({
+        fit &lt;- fit_ser_collapse_r(
+          x = x,
+          Rbar = Rbar,
+          N = N,
+          sigma0 = sigma0,
+          nu0_grid = fit_nu0_grid,
+          variant = variant,
+          max_iter = max_iter,
+          tol = tol,
+          verbose = verbose
+        )
+      })
+
+      out[[i]] &lt;- data.frame(
+        nu0_true = nu0_true,
+        nu0_hat = fit$nu0,
+        rep = rep_id,
+        gamma_true = gamma,
+        gamma_hat = unname(fit$gamma_hat),
+        top_pi = unname(max(fit$pi)),
+        beta = beta,
+        variant = variant,
+        converged_iter = length(fit$elbo),
+        iw_seconds = unname(iw_time[&quot;elapsed&quot;]),
+        x_seconds = unname(x_time[&quot;elapsed&quot;]),
+        fit_seconds = unname(fit_time[&quot;elapsed&quot;])
+      )
+    }
+  }
+
+  results &lt;- do.call(rbind, out)
+  list(
+    results = results,
+    fit_nu0_grid = fit_nu0_grid
+  )
+}</code></pre>
+</div>
+<div id="generate-reference-ld" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Generate Reference
+LD</h1>
+<pre class="r"><code>rbar_time &lt;- system.time({
+  coalescent &lt;- sim_2pop(
+    chrom = &quot;chr22&quot;,
+    start = 20e6,
+    end = 21e6,
+    T_split = 20,
+    n_gwas = N01,
+    n_ref = N0,
+    J = J,
+    h2 = 0.01,
+    seed = 1
+  )
+
+  R0 &lt;- cov2cor(coalescent$R0)
+  Rbar &lt;- 0.99 * R0 + 0.01 * diag(1, J)
+  Rbar &lt;- cov2cor(Rbar)
+})
+
+range(eigen(Rbar, symmetric = TRUE, only.values = TRUE)$values)</code></pre>
+<pre><code>[1]  0.01000 30.77302</code></pre>
+<pre class="r"><code>rbar_time</code></pre>
+<pre><code>   user  system elapsed 
+  1.842   0.371   2.606 </code></pre>
+</div>
+<div id="run-recovery-grid" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Run Recovery Grid</h1>
+<p>The same <span class="math inline">\(R^{\mathrm{true}}\)</span> and
+<span class="math inline">\(x\)</span> draws are used for all three
+variants because the same <code>Rbar</code> and simulation seeds are
+reused.</p>
+<pre class="r"><code>variant_runs &lt;- vector(&quot;list&quot;, length(variants))
+names(variant_runs) &lt;- variants
+
+for (variant in variants) {
+  variant_runs[[variant]] &lt;- run_ser_collapse_r_recovery_demo(
+    nu0_grid = nu0_grid,
+    variant = variant,
+    n_rep = n_rep,
+    N = N,
+    J = J,
+    sigma0 = sigma0,
+    beta = beta,
+    gamma = gamma,
+    fit_nu0_grid = fit_nu0_grid,
+    max_iter = max_iter,
+    tol = tol,
+    seed = seed,
+    Rbar = Rbar,
+    verbose = FALSE
+  )
+}
+
+nu0_results &lt;- do.call(rbind, lapply(variant_runs, `[[`, &quot;results&quot;))
+row.names(nu0_results) &lt;- NULL
+
+nu0_results</code></pre>
+<pre><code>   nu0_true    nu0_hat rep gamma_true gamma_hat      top_pi beta variant
+1        50   39.71641   1        250       250 0.884176474  0.2   local
+2        50   33.41720   2        250       250 0.851742020  0.2   local
+3        50   33.41720   3        250       250 0.963967368  0.2   local
+4       200  158.11388   1        250       250 0.999781427  0.2   local
+5       200  200.00000   2        250       250 0.999999222  0.2   local
+6       200  200.00000   3        250       250 0.999999988  0.2   local
+7      1000  889.13971   1        250       250 1.000000000  0.2   local
+8      1000 1056.74452   2        250       250 1.000000000  0.2   local
+9      1000  889.13971   3        250       250 1.000000000  0.2   local
+10       50   39.71641   1        250       250 0.868403577  0.2  shared
+11       50   33.41720   2        250       250 0.831157272  0.2  shared
+12       50   33.41720   3        250       250 0.959597326  0.2  shared
+13      200  158.11388   1        250       250 0.999811577  0.2  shared
+14      200  200.00000   2        250       250 0.999999551  0.2  shared
+15      200  200.00000   3        250       250 0.999999996  0.2  shared
+16     1000  889.13971   1        250       250 1.000000000  0.2  shared
+17     1000 1056.74452   2        250       250 1.000000000  0.2  shared
+18     1000  889.13971   3        250       250 1.000000000  0.2  shared
+19       50    5.00000   1        250       409 0.003241839  0.2  plugin
+20       50    5.00000   2        250        79 0.003124856  0.2  plugin
+21       50    5.00000   3        250        62 0.003291060  0.2  plugin
+22      200    5.00000   1        250       294 0.003860961  0.2  plugin
+23      200    5.00000   2        250        94 0.004388472  0.2  plugin
+24      200    5.00000   3        250       319 0.004038303  0.2  plugin
+25     1000 2978.31072   1        250       250 1.000000000  0.2  plugin
+26     1000 5000.00000   2        250       250 1.000000000  0.2  plugin
+27     1000 4206.97571   3        250       250 1.000000000  0.2  plugin
+   converged_iter iw_seconds x_seconds fit_seconds
+1              65      0.010     0.020       0.853
+2              71      0.010     0.015       0.797
+3              73      0.009     0.014       0.827
+4              29      0.009     0.015       0.792
+5              28      0.009     0.014       0.859
+6              28      0.010     0.015       0.852
+7              10      0.010     0.015       0.810
+8               9      0.009     0.015       0.811
+9               9      0.009     0.014       0.795
+10             66      0.009     0.015       0.135
+11             72      0.009     0.014       0.131
+12             74      0.010     0.015       0.130
+13             29      0.010     0.014       0.126
+14             28      0.009     0.015       0.141
+15             28      0.009     0.015       0.181
+16             10      0.010     0.015       0.125
+17              9      0.009     0.014       0.122
+18              9      0.010     0.015       0.129
+19              2      0.010     0.015       0.011
+20              2      0.009     0.014       0.012
+21              2      0.009     0.015       0.011
+22              2      0.009     0.015       0.011
+23              2      0.009     0.015       0.012
+24              2      0.009     0.014       0.012
+25              2      0.009     0.014       0.012
+26              2      0.009     0.014       0.013
+27              2      0.009     0.014       0.012</code></pre>
+</div>
+<div id="summaries" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Summaries</h1>
+<pre class="r"><code>nu0_summary &lt;- aggregate(
+  cbind(nu0_hat, top_pi, converged_iter, iw_seconds, x_seconds, fit_seconds) ~
+    variant + nu0_true,
+  data = nu0_results,
+  FUN = mean
+)
+
+nu0_summary</code></pre>
+<pre><code>  variant nu0_true    nu0_hat      top_pi converged_iter  iw_seconds  x_seconds
+1   local       50   35.51693 0.899961954      69.666667 0.009666667 0.01633333
+2  plugin       50    5.00000 0.003219252       2.000000 0.009333333 0.01466667
+3  shared       50   35.51693 0.886386058      70.666667 0.009333333 0.01466667
+4   local      200  186.03796 0.999926879      28.333333 0.009333333 0.01466667
+5  plugin      200    5.00000 0.004095912       2.000000 0.009000000 0.01466667
+6  shared      200  186.03796 0.999937041      28.333333 0.009333333 0.01466667
+7   local     1000  945.00798 1.000000000       9.333333 0.009333333 0.01466667
+8  plugin     1000 4061.76214 1.000000000       2.000000 0.009000000 0.01400000
+9  shared     1000  945.00798 1.000000000       9.333333 0.009666667 0.01466667
+  fit_seconds
+1  0.82566667
+2  0.01133333
+3  0.13200000
+4  0.83433333
+5  0.01166667
+6  0.14933333
+7  0.80533333
+8  0.01233333
+9  0.12533333</code></pre>
+<pre class="r"><code>aggregate(
+  cbind(iw_seconds, x_seconds, fit_seconds) ~ variant,
+  data = nu0_results,
+  FUN = sum
+)</code></pre>
+<pre><code>  variant iw_seconds x_seconds fit_seconds
+1   local      0.085     0.137       7.396
+2  plugin      0.082     0.130       0.106
+3  shared      0.085     0.132       1.220</code></pre>
+</div>
+<div id="plots" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Plots</h1>
+<pre class="r"><code>variant_cols &lt;- c(local = &quot;steelblue&quot;, shared = &quot;darkorange&quot;, plugin = &quot;firebrick&quot;)
+variant_pch &lt;- c(local = 19, shared = 17, plugin = 15)
+
+plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  type = &quot;n&quot;,
+  xlab = expression(&quot;true &quot; * nu[0]),
+  ylab = expression(&quot;estimated &quot; * nu[0]),
+  main = expression(&quot;SER-collapse-R &quot; * nu[0] * &quot; recovery&quot;)
+)
+abline(0, 1, lty = 2, col = &quot;gray40&quot;)
+
+for (variant in variants) {
+  idx &lt;- nu0_results$variant == variant
+  points(
+    nu0_results$nu0_true[idx],
+    nu0_results$nu0_hat[idx],
+    pch = variant_pch[variant],
+    col = variant_cols[variant]
+  )
+
+  sid &lt;- nu0_summary$variant == variant
+  lines(
+    nu0_summary$nu0_true[sid],
+    nu0_summary$nu0_hat[sid],
+    type = &quot;b&quot;,
+    pch = variant_pch[variant],
+    col = variant_cols[variant],
+    lwd = 2
+  )
+}
+
+legend(
+  &quot;topleft&quot;,
+  legend = variants,
+  col = variant_cols[variants],
+  pch = variant_pch[variants],
+  lwd = 2,
+  bty = &quot;n&quot;
+)
+grid()</code></pre>
+<p><img src="figure/SER-collapse-R-demonstrate.Rmd/plot-raw-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(
+  nu0_results$nu0_true,
+  nu0_results$nu0_hat,
+  log = &quot;xy&quot;,
+  type = &quot;n&quot;,
+  xlab = expression(&quot;true &quot; * nu[0] * &quot; (log scale)&quot;),
+  ylab = expression(&quot;estimated &quot; * nu[0] * &quot; (log scale)&quot;),
+  main = expression(&quot;SER-collapse-R &quot; * nu[0] * &quot; recovery, log-log&quot;)
+)
+abline(0, 1, lty = 2, col = &quot;gray40&quot;)
+
+for (variant in variants) {
+  idx &lt;- nu0_results$variant == variant
+  points(
+    nu0_results$nu0_true[idx],
+    nu0_results$nu0_hat[idx],
+    pch = variant_pch[variant],
+    col = variant_cols[variant]
+  )
+
+  sid &lt;- nu0_summary$variant == variant
+  lines(
+    nu0_summary$nu0_true[sid],
+    nu0_summary$nu0_hat[sid],
+    type = &quot;b&quot;,
+    pch = variant_pch[variant],
+    col = variant_cols[variant],
+    lwd = 2
+  )
+}
+
+legend(
+  &quot;topleft&quot;,
+  legend = variants,
+  col = variant_cols[variants],
+  pch = variant_pch[variants],
+  lwd = 2,
+  bty = &quot;n&quot;
+)
+grid()</code></pre>
+<p><img src="figure/SER-collapse-R-demonstrate.Rmd/plot-loglog-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<div id="pip-plots" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> PIP Plots</h1>
+<p>Here are representative replicates for <span
+class="math inline">\(\nu_0=200\)</span> and <span
+class="math inline">\(\nu_0=10\)</span>. For each case, the two plots
+show the PIPs from the local-<span
+class="math inline">\(q_j(\omega)\)</span> and shared-<span
+class="math inline">\(q(\omega)\)</span> collapsed-<span
+class="math inline">\(R\)</span> fits on the same simulated data
+set.</p>
+<pre class="r"><code>fit_pip_example &lt;- function(nu0_true, sim_seed) {
+  set.seed(sim_seed)
+  R_true &lt;- sample_inverse_wishart(
+    df = nu0_true + J + 1,
+    scale = nu0_true * Rbar
+  )
+  x &lt;- as.numeric(MASS::mvrnorm(
+    1,
+    mu = beta * R_true[, gamma],
+    Sigma = Rbar / N
+  ))
+
+  beta_true &lt;- rep(0, J)
+  beta_true[gamma] &lt;- beta
+
+  fit_local &lt;- fit_ser_collapse_r(
+    x = x,
+    Rbar = Rbar,
+    N = N,
+    sigma0 = sigma0,
+    nu0_grid = fit_nu0_grid,
+    variant = &quot;local&quot;,
+    max_iter = max_iter,
+    tol = tol,
+    verbose = FALSE
+  )
+
+  fit_shared &lt;- fit_ser_collapse_r(
+    x = x,
+    Rbar = Rbar,
+    N = N,
+    sigma0 = sigma0,
+    nu0_grid = fit_nu0_grid,
+    variant = &quot;shared&quot;,
+    max_iter = max_iter,
+    tol = tol,
+    verbose = FALSE
+  )
+
+  list(
+    beta_true = beta_true,
+    local = fit_local,
+    shared = fit_shared
+  )
+}
+
+pip_nu0_200 &lt;- fit_pip_example(nu0_true = 200, sim_seed = seed + 4)
+pip_nu0_10 &lt;- fit_pip_example(nu0_true = 10, sim_seed = seed + 40)
+
+rbind(
+  data.frame(
+    true_nu0 = 200,
+    variant = c(&quot;local&quot;, &quot;shared&quot;),
+    nu0_hat = c(pip_nu0_200$local$nu0, pip_nu0_200$shared$nu0),
+    gamma_hat = c(pip_nu0_200$local$gamma_hat, pip_nu0_200$shared$gamma_hat),
+    top_pi = c(max(pip_nu0_200$local$pi), max(pip_nu0_200$shared$pi))
+  ),
+  data.frame(
+    true_nu0 = 10,
+    variant = c(&quot;local&quot;, &quot;shared&quot;),
+    nu0_hat = c(pip_nu0_10$local$nu0, pip_nu0_10$shared$nu0),
+    gamma_hat = c(pip_nu0_10$local$gamma_hat, pip_nu0_10$shared$gamma_hat),
+    top_pi = c(max(pip_nu0_10$local$pi), max(pip_nu0_10$shared$pi))
+  )
+)</code></pre>
+<pre><code>  true_nu0 variant   nu0_hat gamma_hat    top_pi
+1      200   local 187.91870       250 0.9999999
+2      200  shared 187.91870       250 0.9999999
+3       10   local  11.85687       250 0.3258821
+4       10  shared  14.09191       250 0.3126632</code></pre>
+<pre class="r"><code>plot_pip(
+  as_susie_single_effect(pip_nu0_200$local),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_200$beta_true,
+  main = &quot;Collapsed-R local q_j(omega) PIP, true nu0 = 200&quot;
+)</code></pre>
+<p><img src="figure/SER-collapse-R-demonstrate.Rmd/plot-pip-local-nu0-200-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot_pip(
+  as_susie_single_effect(pip_nu0_200$shared),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_200$beta_true,
+  main = &quot;Collapsed-R shared q(omega) PIP, true nu0 = 200&quot;
+)</code></pre>
+<p><img src="figure/SER-collapse-R-demonstrate.Rmd/plot-pip-shared-nu0-200-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot_pip(
+  as_susie_single_effect(pip_nu0_10$local),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_10$beta_true,
+  main = &quot;Collapsed-R local q_j(omega) PIP, true nu0 = 10&quot;
+)</code></pre>
+<p><img src="figure/SER-collapse-R-demonstrate.Rmd/plot-pip-local-nu0-10-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot_pip(
+  as_susie_single_effect(pip_nu0_10$shared),
+  R_for_cs = Rbar,
+  beta_true = pip_nu0_10$beta_true,
+  main = &quot;Collapsed-R shared q(omega) PIP, true nu0 = 10&quot;
+)</code></pre>
+<p><img src="figure/SER-collapse-R-demonstrate.Rmd/plot-pip-shared-nu0-10-1.png" alt="" width="624" style="display: block; margin: auto;" /></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS Tahoe 26.5.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+ [1] Matrix_1.7-4      jsonlite_2.0.0    compiler_4.5.2    promises_1.5.0   
+ [5] Rcpp_1.1.1        stringr_1.6.0     git2r_0.36.2      later_1.4.8      
+ [9] jquerylib_0.1.4   png_0.1-9         yaml_2.3.12       fastmap_1.2.0    
+[13] reticulate_1.46.0 lattice_0.22-7    R6_2.6.1          workflowr_1.7.2  
+[17] knitr_1.51        MASS_7.3-65       tibble_3.3.1      rprojroot_2.1.1  
+[21] bslib_0.10.0      pillar_1.11.1     rlang_1.2.0       cachem_1.1.0     
+[25] stringi_1.8.7     httpuv_1.6.17     xfun_0.56         fs_2.1.0         
+[29] sass_0.4.10       otel_0.2.0        cli_3.6.6         withr_3.0.2      
+[33] magrittr_2.0.4    digest_0.6.39     grid_4.5.2        rstudioapi_0.18.0
+[37] lifecycle_1.0.5   vctrs_0.7.1       evaluate_1.0.5    glue_1.8.0       
+[41] rmarkdown_2.30    tools_4.5.2       pkgconfig_2.0.3   htmltools_0.5.9  </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

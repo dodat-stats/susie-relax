@@ -1,5 +1,5 @@
 ---
-title: "SuSiE-relax Demonstration"
+title: "SuSiE-collapse-R Shared-Omega Analysis"
 author: "Dat Do"
 date: "`r Sys.Date()`"
 output:
@@ -23,88 +23,26 @@ knitr::opts_chunk$set(
 
 library(susieR)
 
-source("code/SuSiE-relax.R")
+source("code/SuSiE-collapse-R-shared-omega.R")
 source("code/sim_2pop.R")
 source("code/plot.R")
 ```
 
-# From SER-relax to SuSiE-relax
+# Goal
 
-SER-relax models one active effect while allowing the active LD column to relax around the reference LD matrix. SuSiE-relax extends this idea to \(L\) possible single effects:
-\[
-x \mid \{\beta_\ell,\gamma_\ell,z_{\ell,\gamma_\ell}\}_{\ell=1}^L
-\sim
-N_J\left(
-\sum_{\ell=1}^L
-\beta_\ell u_{\gamma_\ell}(z_{\ell,\gamma_\ell}),
-\frac{\bar R}{N}
-\right).
-\]
-For each effect,
-\[
-\gamma_\ell \sim \operatorname{Unif}\{1,\ldots,J\},
-\qquad
-\beta_\ell \sim N(0,\sigma_\ell^2),
-\]
-and, conditional on \(\gamma_\ell=j\),
-\[
-z_{\ell j}\mid \nu_0
-\sim
-N_{J-1}\left(\mu_j,\frac{S_j}{\nu_0+3}\right).
-\]
-Here
-\[
-\mu_j=\bar R_{-j,j},
-\qquad
-S_j=\bar R_{-j,-j}-\bar R_{-j,j}\bar R_{j,-j}.
-\]
+This page repeats the main analysis in
+`analysis/susie-relax-demonstrate.Rmd`, replacing `fit_susie_relax()`
+with the collapsed-\(R\) SuSiE fit using one shared \(q(\omega)\):
+`fit_susie_collapse_r_shared()`.
 
-The variational approximation factorizes over effects:
-\[
-q =
-\prod_{\ell=1}^L
-q_\ell(\gamma_\ell)
-\prod_{j=1}^J
-q_{\ell j}(\beta_\ell)q_{\ell j}(z_{\ell j}).
-\]
-The inference algorithm is IBSS-like. When updating effect \(\ell\), we form the residual
-\[
-r_\ell = x-\sum_{k\ne\ell}\bar\theta_k,
-\]
-where
-\[
-\bar\theta_\ell =
-\sum_{j=1}^J
-\pi_{\ell j}E\{\beta_\ell u_j(z_{\ell j})\}.
-\]
-Then we apply the SER-relax update to this residual. After each full sweep over effects, the shared \(\nu_0\) is updated by the closed-form empirical-Bayes update
-\[
-\hat\tau^2 =
-\frac{
-\sum_{\ell=1}^L\sum_{j=1}^J\pi_{\ell j}Q_{\ell j}
-}{L(J-1)},
-\qquad
-\hat\nu_0 = \frac{1}{\hat\tau^2}-3,
-\]
-with lower and upper bounds in implementation.
-We also estimate each effect-specific prior variance by
-\[
-\hat\sigma_\ell^2 =
-\sum_{j=1}^J
-\pi_{\ell j}
-E_q(\beta_\ell^2\mid\gamma_\ell=j)
-=
-\sum_{j=1}^J
-\pi_{\ell j}
-\left(v_{\beta,\ell j}+m_{\beta,\ell j}^2\right),
-\]
-again with implementation bounds to avoid degenerate values.
+The comparison is between:
 
-The main empirical behavior we want to demonstrate is:
+- ordinary `susieR` using the out-of-sample LD matrix \(R_0\);
+- SuSiE-collapse-\(R\) using the stabilized reference matrix
+  \(\bar R=(1-\lambda)R_0+\lambda I\).
 
-- When the reference LD mismatch is low, ordinary SuSiE and SuSiE-relax both recover the two true signals.
-
-- When the reference LD mismatch is high, ordinary SuSiE with out-of-sample LD can overfit and select all \(L=5\) effects, while SuSiE-relax responds by learning a small \(\nu_0\), using stronger LD relaxation, and selecting only one effect.
+Unlike `fit_susie_relax()`, the collapsed-\(R\) implementation estimates
+\(\nu_0\) by profiling over a grid of candidate values.
 
 ```{r helper-functions}
 standardize_sim <- function(res) {
@@ -153,18 +91,6 @@ make_cs_from_alpha <- function(alpha, R, coverage = 0.95,
   list(cs = cs, purity = purity)
 }
 
-count_selected_cs <- function(alpha, R, coverage = 0.95,
-                              min_abs_corr = 0.5,
-                              min_top_alpha = 1e-4) {
-  length(make_cs_from_alpha(
-    alpha = alpha,
-    R = R,
-    coverage = coverage,
-    min_abs_corr = min_abs_corr,
-    min_top_alpha = min_top_alpha
-  )$cs)
-}
-
 summarize_fit <- function(label, alpha, pip, R_for_cs, beta_true,
                           nu0 = NA_real_, sigma2 = NA_real_) {
   alpha <- as.matrix(alpha)
@@ -195,40 +121,38 @@ plot_pip <- function(fit, R_for_cs, beta_true, main) {
   grid()
 }
 
-plot_convergence <- function(fit, main_prefix) {
+plot_collapse_convergence <- function(fit, main_prefix) {
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par), add = TRUE)
 
   par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
-  elbo_iter <- which(!is.na(fit$elbo))
-  plot(elbo_iter, fit$elbo[elbo_iter], type = "b", lwd = 2, pch = 16,
-       xlab = "Iteration", ylab = "ELBO",
-       main = paste(main_prefix, "ELBO"))
-  grid()
-  plot(seq_along(fit$nu0_trace), fit$nu0_trace, type = "l", lwd = 2,
-       xlab = "Iteration", ylab = expression(hat(nu)[0]),
-       main = paste(main_prefix, expression(nu[0])))
-  grid()
-}
-
-plot_tau2_convergence <- function(fit, main_prefix) {
-  tau2_trace <- 1 / (fit$nu0_trace + 3)
   plot(
-    seq_along(tau2_trace), tau2_trace,
-    type = "l",
-    lwd = 2,
-    xlab = "Iteration",
-    ylab = expression(1 / (hat(nu)[0] + 3)),
-    main = paste(main_prefix, expression(1 / (nu[0] + 3)))
+    seq_along(fit$elbo), fit$elbo,
+    type = "b",
+    pch = 16,
+    xlab = "iteration",
+    ylab = "lower bound",
+    main = paste(main_prefix, "best-grid fit")
   )
+  grid()
+  plot(
+    fit$nu0_grid, fit$grid_lower_bound,
+    type = "b",
+    pch = 16,
+    xlab = expression(nu[0]),
+    ylab = "optimized lower bound",
+    main = paste(main_prefix, expression(nu[0] * " profile"))
+  )
+  abline(v = fit$nu0, col = 2, lty = 2)
   grid()
 }
 
 run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
                      lambda = 0.01, L = 5,
-                     relax_max_iter = 3000,
-                     relax_nu0_init = 2000,
-                     relax_nu0_bounds = c(10, 10000)) {
+                     nu0_grid = c(10, 25, 50, 100, 200, 500, 1000, 2000, 5000),
+                     collapse_max_iter = 200,
+                     collapse_sigma2 = 0.3^2,
+                     estimate_sigma2 = TRUE) {
   res <- sim_2pop(
     chrom = "chr22",
     start = 20e6,
@@ -256,26 +180,18 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
     L = L
   )
 
-  relax_fit_time <- system.time({
-    fit_relax <- fit_susie_relax(
+  collapse_fit_time <- system.time({
+    fit_collapse <- fit_susie_collapse_r_shared(
       x = v,
       Rbar = Rbar,
       N = N,
       L = L,
-      sigma2 = rep(0.3^2, L),
-      nu0_init = relax_nu0_init,
-      estimate_nu0 = TRUE,
-      estimate_sigma2 = TRUE,
-      warmup_iter = 5,
-      max_iter = relax_max_iter,
-      tol = 1e-7,
-      verbose = FALSE,
-      nu0_bounds = relax_nu0_bounds,
-      sigma2_bounds = c(1e-12, 1),
-      elbo_update_interval = 10,
-      nu0_update_interval = 1,
-      sigma2_update_interval = 1,
-      nu0_tol = 1e-4
+      sigma2 = rep(collapse_sigma2, L),
+      nu0_grid = nu0_grid,
+      estimate_sigma2 = estimate_sigma2,
+      max_iter = collapse_max_iter,
+      tol = 1e-6,
+      verbose = FALSE
     )
   })
 
@@ -288,13 +204,13 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
       beta_true = beta_true
     ),
     summarize_fit(
-      label = "SuSiE-relax",
-      alpha = fit_relax$alpha,
-      pip = fit_relax$pip,
+      label = "SuSiE-collapse-R shared q(omega)",
+      alpha = fit_collapse$alpha,
+      pip = fit_collapse$pip,
       R_for_cs = Rbar,
       beta_true = beta_true,
-      nu0 = fit_relax$nu0,
-      sigma2 = fit_relax$sigma2
+      nu0 = fit_collapse$nu0,
+      sigma2 = fit_collapse$sigma2
     )
   )
 
@@ -312,8 +228,8 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
     beta_true = beta_true,
     causal = which(beta_true != 0),
     fit_susie_out = fit_susie_out,
-    fit_relax = fit_relax,
-    relax_fit_time = relax_fit_time,
+    fit_collapse = fit_collapse,
+    collapse_fit_time = collapse_fit_time,
     summary = summary
   )
 }
@@ -321,7 +237,9 @@ run_case <- function(case_label, N0, seed, N = 20000L, J = 1000L,
 
 # Low-mismatch Case
 
-Here the reference panel size is \(N_0=1000\), so the out-of-sample LD is close enough to the GWAS LD. We expect both ordinary SuSiE and SuSiE-relax to select two effects.
+Here the reference panel is large. As in the original SuSiE-relax
+analysis, ordinary SuSiE and the relaxed method should both have an
+easier problem.
 
 ```{r low-mismatch-fit}
 low_case <- run_case(
@@ -332,12 +250,11 @@ low_case <- run_case(
   J = 1000L,
   lambda = 0.01,
   L = 5,
-  relax_max_iter = 2000,
-  relax_nu0_init = 2000,
-  relax_nu0_bounds = c(10, 10000)
+  collapse_max_iter = 200,
+  collapse_sigma2 = 0.3^2
 )
 
-low_case$relax_fit_time
+low_case$collapse_fit_time
 low_case$causal
 low_case$summary
 ```
@@ -352,45 +269,36 @@ plot_pip(
   main = "Low mismatch: susieR with R0"
 )
 plot_pip(
-  low_case$fit_relax,
+  low_case$fit_collapse,
   low_case$Rbar,
   low_case$beta_true,
-  main = "Low mismatch: SuSiE-relax"
+  main = "Low mismatch: SuSiE-collapse-R"
 )
 par(old_par)
 
-plot_convergence(low_case$fit_relax, "Low mismatch SuSiE-relax")
-```
-
-It might make more sense to look at \(1/(\nu_0+3)\) instead of \(\nu_0\), because this is the relaxed-column variance scale used by the model. Large changes in \(\nu_0\) at high values may correspond to very small changes in the actual relaxation variance.
-
-```{r low-mismatch-tau2-convergence}
-plot_tau2_convergence(low_case$fit_relax, "Low mismatch SuSiE-relax")
+plot_collapse_convergence(low_case$fit_collapse, "Low mismatch")
 ```
 
 # High-mismatch Case
 
-Here the reference panel size is \(N_0=100\). The out-of-sample LD is much noisier. We fit ordinary SuSiE with upper bound \(L=5\) using the out-of-sample LD \(R_0\), and fit SuSiE-relax with the stabilized matrix
-\[
-\bar R = 0.99R_0 + 0.01I.
-\]
-The expected behavior is that ordinary SuSiE overfits and selects all five effects, while SuSiE-relax learns a small \(\nu_0\), relaxes the LD column, and selects only one effect.
+Here the reference panel is small. This repeats the high-mismatch setup
+from the original page, but fits the collapsed-\(R\) shared-\(\omega\)
+model.
 
 ```{r high-mismatch-fit}
 high_case <- run_case(
   case_label = "high mismatch",
   N0 = 100L,
-  seed = 8,
+  seed = 9,
   N = 20000L,
   J = 1000L,
   lambda = 0.01,
   L = 5,
-  relax_max_iter = 3000,
-  relax_nu0_init = 2000,
-  relax_nu0_bounds = c(10, 10000)
+  collapse_max_iter = 200,
+  collapse_sigma2 = 0.3^2
 )
 
-high_case$relax_fit_time
+high_case$collapse_fit_time
 high_case$causal
 high_case$summary
 ```
@@ -405,25 +313,25 @@ plot_pip(
   main = "High mismatch: susieR with R0"
 )
 plot_pip(
-  high_case$fit_relax,
+  high_case$fit_collapse,
   high_case$Rbar,
   high_case$beta_true,
-  main = "High mismatch: SuSiE-relax"
+  main = "High mismatch: SuSiE-collapse-R"
 )
 par(old_par)
 
-plot_convergence(high_case$fit_relax, "High mismatch SuSiE-relax")
+plot_collapse_convergence(high_case$fit_collapse, "High mismatch")
 ```
 
 ```{r high-mismatch-effect-details}
 data.frame(
-  effect = seq_len(nrow(high_case$fit_relax$alpha)),
-  top = apply(high_case$fit_relax$alpha, 1, which.max),
-  top_alpha = apply(high_case$fit_relax$alpha, 1, max)
+  effect = seq_len(nrow(high_case$fit_collapse$alpha)),
+  top = apply(high_case$fit_collapse$alpha, 1, which.max),
+  top_alpha = apply(high_case$fit_collapse$alpha, 1, max)
 )
 ```
 
-# High-mismatch Case (due to difference ancestry)
+# High-mismatch Case Due To Different Ancestry
 
 ```{r ancestry-mismatch-simulation-function}
 sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
@@ -530,8 +438,8 @@ sim_asn_eur <- function(chrom, start, end, n_gwas, n_ref, J, h2, seed) {
 }
 ```
 
-```{r ancestry-mismatch-simulate}
-seed <- 3
+```{r ancestry-mismatch-fit}
+seed <- 4
 chrom <- "chr22"
 start <- 20e6
 end <- 21e6
@@ -559,16 +467,11 @@ d <- 1 / sqrt(diag(R))
 v <- d * v
 R <- cov2cor(R)
 R0 <- cov2cor(R0)
-
 x <- v
-plot(x, pch = 16)
-points(causal_SNPs_loc, x[causal_SNPs_loc], pch = 16, col = "red")
-```
 
-```{r ancestry-mismatch-fit-relax}
-lambda <- 0.1
 L <- 5
-Rbar <- make_rbar(R0, lambda = lambda)
+lambda_grid <- c(1e-4, 1e-3, 1e-2, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5)
+nu0_grid <- c(10, 25, 50, 100, 200, 500, 1000, 2000, 5000)
 
 fit_susie_out_asn_eur <- susie_suff_stat(
   XtX = N * R0,
@@ -578,31 +481,47 @@ fit_susie_out_asn_eur <- susie_suff_stat(
   L = L
 )
 
-relax_fit_time_asn_eur <- system.time({
-  fit_relax_asn_eur <- fit_susie_relax(
-    x = x,
-    Rbar = Rbar,
-    N = N,
-    L = L,
-    sigma2 = rep(0.3^2, L),
-    nu0_init = 2000,
-    estimate_nu0 = TRUE,
-    estimate_sigma2 = TRUE,
-    warmup_iter = 5,
-    max_iter = 3000,
-    tol = 1e-7,
-    verbose = FALSE,
-    nu0_bounds = c(10, 10000),
-    sigma2_bounds = c(1e-12, 1),
-    elbo_update_interval = 5,
-    nu0_update_interval = 1,
-    sigma2_update_interval = 1,
-    nu0_tol = 1e-4
-  )
+collapse_fit_time_asn_eur <- system.time({
+  collapse_lambda_fits <- lapply(lambda_grid, function(lambda) {
+    fit_susie_collapse_r_shared(
+      x = x,
+      Rbar = make_rbar(R0, lambda = lambda),
+      N = N,
+      L = L,
+      sigma2 = rep(0.3^2, L),
+      nu0_grid = nu0_grid,
+      estimate_sigma2 = TRUE,
+      max_iter = 200,
+      tol = 1e-6,
+      verbose = FALSE
+    )
+  })
 })
+names(collapse_lambda_fits) <- sprintf("lambda=%g", lambda_grid)
 
-relax_fit_time_asn_eur
+lambda_summary <- do.call(rbind, lapply(seq_along(lambda_grid), function(i) {
+  fit <- collapse_lambda_fits[[i]]
+  Rbar_i <- make_rbar(R0, lambda = lambda_grid[i])
+  data.frame(
+    lambda = lambda_grid[i],
+    final_elbo = fit$lower_bound,
+    nu0 = fit$nu0,
+    selected_L = length(make_cs_from_alpha(fit$alpha, R = Rbar_i)$cs),
+    causal_pip = paste(sprintf("%.3f", fit$pip[beta_true != 0]), collapse = ", "),
+    top = paste(apply(fit$alpha, 1, which.max), collapse = ", "),
+    top_alpha = paste(sprintf("%.3f", apply(fit$alpha, 1, max)), collapse = ", ")
+  )
+}))
+
+best_idx <- which.max(lambda_summary$final_elbo)
+best_lambda <- lambda_summary$lambda[best_idx]
+Rbar <- make_rbar(R0, lambda = best_lambda)
+fit_collapse_asn_eur <- collapse_lambda_fits[[best_idx]]
+
+collapse_fit_time_asn_eur
 causal_SNPs_loc
+lambda_summary
+best_lambda
 rbind(
   summarize_fit(
     label = "susieR with R0",
@@ -612,18 +531,39 @@ rbind(
     beta_true = beta_true
   ),
   summarize_fit(
-    label = "SuSiE-relax",
-    alpha = fit_relax_asn_eur$alpha,
-    pip = fit_relax_asn_eur$pip,
+    label = sprintf("SuSiE-collapse-R shared q(omega), lambda = %g", best_lambda),
+    alpha = fit_collapse_asn_eur$alpha,
+    pip = fit_collapse_asn_eur$pip,
     R_for_cs = Rbar,
     beta_true = beta_true,
-    nu0 = fit_relax_asn_eur$nu0,
-    sigma2 = fit_relax_asn_eur$sigma2
+    nu0 = fit_collapse_asn_eur$nu0,
+    sigma2 = fit_collapse_asn_eur$sigma2
   )
 )
 ```
 
-```{r ancestry-mismatch-relax-plots}
+```{r ancestry-mismatch-lambda-profile}
+plot(
+  lambda_summary$lambda,
+  lambda_summary$final_elbo,
+  type = "b",
+  pch = 16,
+  log = "x",
+  xlab = expression(lambda),
+  ylab = "optimized lower bound",
+  main = "Ancestry mismatch: lower bound vs lambda"
+)
+points(
+  best_lambda,
+  lambda_summary$final_elbo[best_idx],
+  col = 2,
+  pch = 19,
+  cex = 1.4
+)
+grid()
+```
+
+```{r ancestry-mismatch-plots}
 old_par <- par(no.readonly = TRUE)
 par(mfrow = c(1, 2))
 plot_pip(
@@ -633,23 +573,23 @@ plot_pip(
   main = "Ancestry mismatch: susieR with R0"
 )
 plot_pip(
-  fit_relax_asn_eur,
+  fit_collapse_asn_eur,
   Rbar,
   beta_true,
-  main = "Ancestry mismatch: SuSiE-relax"
+  main = sprintf("Ancestry mismatch: SuSiE-collapse-R, lambda = %g", best_lambda)
 )
 par(old_par)
 
-plot_convergence(
-  fit_relax_asn_eur,
-  "Ancestry mismatch SuSiE-relax"
+plot_collapse_convergence(
+  fit_collapse_asn_eur,
+  "Ancestry mismatch"
 )
 ```
 
-```{r ancestry-mismatch-relax-effect-details}
+```{r ancestry-mismatch-effect-details}
 data.frame(
-  effect = seq_len(nrow(fit_relax_asn_eur$alpha)),
-  top = apply(fit_relax_asn_eur$alpha, 1, which.max),
-  top_alpha = apply(fit_relax_asn_eur$alpha, 1, max)
+  effect = seq_len(nrow(fit_collapse_asn_eur$alpha)),
+  top = apply(fit_collapse_asn_eur$alpha, 1, which.max),
+  top_alpha = apply(fit_collapse_asn_eur$alpha, 1, max)
 )
 ```

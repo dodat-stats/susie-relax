@@ -1,0 +1,1856 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsfonts, bm, mathtools}
+\usepackage{enumitem}
+
+\newcommand{\Rbar}{\bar R}
+\newcommand{\nuo}{\nu_0}
+\newcommand{\sigb}{\sigma_0^2}
+\newcommand{\E}{\mathbb E}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\Normal}{\mathcal N}
+\newcommand{\IW}{\operatorname{IW}}
+\newcommand{\GIG}{\operatorname{GIG}}
+\newcommand{\chisq}{\chi^2}
+
+\title{Collapsed Likelihood and VEB Algorithm for RSS Fine-Mapping with LD Uncertainty}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Original model}
+
+Let \(v \in \mathbb R^p\) denote the vector of summary statistics,
+for example
+\[
+v = \frac{1}{N}X^\top y,
+\]
+and let \(\Rbar\) be an out-of-sample reference LD matrix.
+
+We consider the model
+\begin{align}
+R &\sim \IW_p(\nuo \Rbar,\nuo+p+1), \label{eq:prior_R}\\
+v \mid R,b &\sim \Normal_p(Rb,R/N). \label{eq:rss_model}
+\end{align}
+
+The inverse-Wishart parameterization is chosen so that
+\[
+\E(R)=\Rbar.
+\]
+Indeed, if
+\[
+R \sim \IW_p(S,m),
+\]
+then
+\[
+\E(R)=\frac{S}{m-p-1},
+\]
+and here
+\[
+S=\nuo\Rbar,
+\qquad
+m=\nuo+p+1.
+\]
+
+The likelihood is
+\[
+p(v\mid R,b)
+=
+\left(\frac{N}{2\pi}\right)^{p/2}
+|R|^{-1/2}
+\exp\left\{
+-\frac N2(v-Rb)^\top R^{-1}(v-Rb)
+\right\}.
+\]
+
+The quadratic term expands as
+\begin{align}
+(v-Rb)^\top R^{-1}(v-Rb)
+&=
+v^\top R^{-1}v
+-2b^\top v
++b^\top Rb.
+\end{align}
+
+Therefore,
+\begin{align}
+p(v\mid R,b)
+&=
+p(v\mid R,b=0)
+\exp\left\{
+Nb^\top v-\frac N2 b^\top Rb
+\right\}. \label{eq:change_measure_identity}
+\end{align}
+
+\section{Collapsed likelihood}
+
+The marginal likelihood is
+\[
+p(v\mid b,\nuo)
+=
+\int p(v\mid R,b)p(R\mid \nuo)\,dR.
+\]
+
+Using \eqref{eq:change_measure_identity},
+\begin{align}
+p(v\mid b,\nuo)
+&=
+\exp(Nb^\top v)
+\int
+p(v\mid R,b=0)
+\exp\left\{
+-\frac N2 b^\top Rb
+\right\}
+p(R\mid \nuo)\,dR.
+\end{align}
+
+Define the null marginal likelihood
+\[
+p_0(v\mid \nuo)
+=
+\int p(v\mid R,b=0)p(R\mid \nuo)\,dR.
+\]
+
+Then
+\begin{align}
+p(v\mid b,\nuo)
+&=
+p_0(v\mid \nuo)
+\exp(Nb^\top v)
+\E_{R\mid v,b=0,\nuo}
+\left[
+\exp\left\{
+-\frac N2 b^\top Rb
+\right\}
+\right]. \label{eq:collapsed_R_expectation}
+\end{align}
+
+Under the null model,
+\[
+v\mid R,b=0 \sim \Normal_p(0,R/N),
+\]
+and by inverse-Wishart conjugacy,
+\[
+R\mid v,b=0,\nuo
+\sim
+\IW_p\left(
+\nuo\Rbar+Nvv^\top,
+\nuo+p+2
+\right).
+\]
+
+Let
+\[
+B_\nu=\nuo\Rbar+Nvv^\top.
+\]
+If
+\[
+R\sim \IW_p(B_\nu,\nuo+p+2),
+\]
+then for fixed \(b\),
+\[
+b^\top Rb
+\overset d=
+\frac{b^\top B_\nu b}{\omega},
+\qquad
+\omega\sim \chisq_{\nuo+3}.
+\]
+
+Hence the exact collapsed likelihood is
+\begin{align}
+p(v\mid b,\nuo)
+&=
+p_0(v\mid \nuo)
+\exp(Nb^\top v)
+\E_{\omega\sim \chisq_{\nuo+3}}
+\left[
+\exp\left\{
+-\frac{N}{2\omega}
+b^\top(\nuo\Rbar+Nvv^\top)b
+\right\}
+\right].
+\label{eq:collapsed_likelihood}
+\end{align}
+
+Define
+\[
+Q_{\nuo}(b)
+=
+b^\top(\nuo\Rbar+Nvv^\top)b.
+\]
+Then
+\[
+p(v\mid b,\nuo)
+=
+p_0(v\mid \nuo)
+\exp(Nb^\top v)
+\E_{\omega\sim \chisq_{\nuo+3}}
+\left[
+\exp\left\{
+-\frac{NQ_{\nuo}(b)}{2\omega}
+\right\}
+\right].
+\]
+
+The null marginal likelihood is a multivariate \(t\) density:
+\[
+p_0(v\mid \nuo)
+=
+t_{\nuo+2}
+\left(
+v;
+0,
+\frac{\nuo}{N(\nuo+2)}\Rbar
+\right).
+\]
+
+Equivalently, if
+\[
+r_0 = v^\top \Rbar^{-1}v,
+\qquad
+\Sigma_\nu=\frac{\nuo}{N(\nuo+2)}\Rbar,
+\]
+then
+\begin{align}
+\log p_0(v\mid \nuo)
+&=
+\log\Gamma\left(\frac{\nuo+p+2}{2}\right)
+-
+\log\Gamma\left(\frac{\nuo+2}{2}\right)
+-
+\frac p2\log\{(\nuo+2)\pi\}
+-
+\frac12\log|\Sigma_\nu|
+\nonumber\\
+&\quad
+-
+\frac{\nuo+p+2}{2}
+\log\left(
+1+\frac N{\nuo}r_0
+\right).
+\label{eq:log_p0}
+\end{align}
+
+\section{Variational lower bound}
+
+For any variational density \(q(\omega)\),
+\begin{align}
+\log
+\E_{\omega\sim \chisq_{\nuo+3}}
+\left[
+\exp\left\{
+-\frac{NQ_{\nuo}(b)}{2\omega}
+\right\}
+\right]
+&\geq
+-\frac N2
+\E_q(\omega^{-1})
+Q_{\nuo}(b)
+-
+\KL\{q(\omega)\|\chisq_{\nuo+3}\}.
+\end{align}
+
+Therefore,
+\begin{align}
+\log p(v\mid b,\nuo)
+&\geq
+\log p_0(v\mid \nuo)
++
+Nb^\top v
+-
+\frac N2
+\E_q(\omega^{-1})
+Q_{\nuo}(b)
+-
+\KL\{q(\omega)\|\chisq_{\nuo+3}\}.
+\label{eq:basic_elbo}
+\end{align}
+
+This bound becomes tight for the optimal density
+\[
+q^\star(\omega)
+\propto
+\chisq_{\nuo+3}(\omega)
+\exp\left\{
+-\frac{NQ_{\nuo}(b)}{2\omega}
+\right\}.
+\]
+
+Since
+\[
+\chisq_d(\omega)
+\propto
+\omega^{d/2-1}\exp(-\omega/2),
+\]
+we have
+\[
+q^\star(\omega)
+=
+\GIG\left(
+\lambda=\frac{\nuo+3}{2},
+\chi=NQ_{\nuo}(b),
+\psi=1
+\right),
+\]
+where the GIG density is
+\[
+\GIG(\lambda,\chi,\psi)
+\propto
+\omega^{\lambda-1}
+\exp\left\{
+-\frac12
+\left(
+\frac{\chi}{\omega}+\psi\omega
+\right)
+\right\}.
+\]
+
+\section{Single-effect model}
+
+Now consider \(L=1\). Let
+\[
+\gamma\in\{1,\dots,p\},
+\qquad
+b=\beta e_\gamma.
+\]
+
+Assume
+\[
+P(\gamma=j)=\pi_j,
+\qquad
+\sum_{j=1}^p \pi_j=1,
+\]
+and
+\[
+\beta\mid \gamma=j,\sigb \sim \Normal(0,\sigb).
+\]
+
+For \(\gamma=j\),
+\[
+b=\beta e_j,
+\]
+so
+\[
+b^\top v=\beta v_j.
+\]
+
+Also,
+\begin{align}
+Q_{\nuo}(\beta e_j)
+&=
+\beta^2 e_j^\top(\nuo\Rbar+Nvv^\top)e_j \\
+&=
+\beta^2
+\left(
+\nuo \Rbar_{jj}+Nv_j^2
+\right).
+\end{align}
+
+Define
+\[
+a_j(\nuo)=\nuo\Rbar_{jj}+Nv_j^2.
+\]
+If \(\Rbar\) is a correlation matrix, then typically \(\Rbar_{jj}=1\), giving
+\[
+a_j(\nuo)=\nuo+Nv_j^2.
+\]
+
+The exact collapsed likelihood conditional on \((\gamma=j,\beta)\) is
+\begin{align}
+p(v\mid \gamma=j,\beta,\nuo)
+&=
+p_0(v\mid\nuo)
+\exp(N\beta v_j)
+\E_{\omega\sim\chisq_{\nuo+3}}
+\left[
+\exp\left\{
+-\frac{N a_j(\nuo)\beta^2}{2\omega}
+\right\}
+\right].
+\end{align}
+
+The augmented joint density is
+\begin{align}
+p(v,\gamma=j,\beta,\omega\mid \nuo,\sigb)
+&=
+p_0(v\mid\nuo)
+\pi_j
+\Normal(\beta;0,\sigb)
+\chisq_{\nuo+3}(\omega)
+\nonumber\\
+&\quad\times
+\exp\left\{
+N\beta v_j
+-
+\frac{N a_j(\nuo)\beta^2}{2\omega}
+\right\}.
+\label{eq:augmented_joint_L1}
+\end{align}
+
+\section{Mean-field variational family}
+
+Use the variational family
+\[
+q(\gamma=j,\beta,\omega)
+=
+\alpha_j q_j(\beta)q_j(\omega),
+\]
+where
+\[
+\alpha_j\geq 0,
+\qquad
+\sum_{j=1}^p \alpha_j=1.
+\]
+
+This should be read as
+\[
+q(\gamma=j)=\alpha_j,
+\qquad
+q(\beta,\omega\mid \gamma=j)=q_j(\beta)q_j(\omega).
+\]
+
+The factorization allows the variational distributions of \(\beta\) and \(\omega\) to depend on the candidate causal SNP \(j\). This is important because each \(j\) has a different \(v_j\) and \(a_j(\nuo)\).
+
+Take
+\[
+q_j(\beta)=\Normal(\mu_j,s_j^2),
+\]
+and
+\[
+q_j(\omega)
+=
+\GIG(\lambda_j,\chi_j,\psi_j).
+\]
+
+In the coordinate-optimal update below,
+\[
+\lambda_j=\frac{\nuo+3}{2},
+\qquad
+\psi_j=1.
+\]
+
+Define
+\[
+m_{2j}
+=
+\E_{q_j}(\beta^2)
+=
+\mu_j^2+s_j^2,
+\]
+and
+\[
+\eta_j
+=
+\E_{q_j}(\omega^{-1}).
+\]
+
+The ELBO is
+\begin{align}
+\mathcal L(\nuo,\sigb,q)
+&=
+\log p_0(v\mid\nuo)
++
+\sum_{j=1}^p
+\alpha_j
+\left[
+\log \pi_j
+-\log \alpha_j
++
+\mathcal F_j
+\right],
+\label{eq:global_elbo}
+\end{align}
+where
+\begin{align}
+\mathcal F_j
+&=
+\E_{q_j(\beta)}
+\left[
+\log \Normal(\beta;0,\sigb)
+-
+\log q_j(\beta)
+\right]
++
+Nv_j\E_{q_j}(\beta)
+\nonumber\\
+&\quad
+-
+\frac N2
+a_j(\nuo)
+\E_{q_j}(\beta^2)
+\E_{q_j}(\omega^{-1})
+-
+\KL\{q_j(\omega)\|\chisq_{\nuo+3}\}.
+\label{eq:Fj_general}
+\end{align}
+
+Since \(q_j(\beta)=\Normal(\mu_j,s_j^2)\),
+\begin{align}
+\E_{q_j(\beta)}
+\left[
+\log \Normal(\beta;0,\sigb)
+-
+\log q_j(\beta)
+\right]
+&=
+\frac12
+\left[
+\log\left(\frac{s_j^2}{\sigb}\right)
++
+1
+-
+\frac{m_{2j}}{\sigb}
+\right].
+\end{align}
+
+Therefore,
+\begin{align}
+\mathcal F_j
+&=
+\frac12
+\left[
+\log\left(\frac{s_j^2}{\sigb}\right)
++
+1
+-
+\frac{m_{2j}}{\sigb}
+\right]
++
+Nv_j\mu_j
+-
+\frac N2 a_j(\nuo)m_{2j}\eta_j
+-
+\KL\{q_j(\omega)\|\chisq_{\nuo+3}\}.
+\label{eq:Fj_normal}
+\end{align}
+
+\section{Coordinate updates for fixed \(\nuo\) and \(\sigb\)}
+
+For fixed \(\nuo\), \(\sigb\), and \(q_j(\omega)\), the optimal \(q_j(\beta)\) satisfies
+\[
+q_j(\beta)
+\propto
+\Normal(\beta;0,\sigb)
+\exp\left\{
+Nv_j\beta
+-
+\frac N2 a_j(\nuo)\eta_j\beta^2
+\right\}.
+\]
+
+Thus
+\[
+q_j(\beta)=\Normal(\mu_j,s_j^2),
+\]
+where
+\begin{align}
+s_j^2
+&=
+\left[
+\frac{1}{\sigb}
++
+N a_j(\nuo)\eta_j
+\right]^{-1},
+\label{eq:s_update}
+\\
+\mu_j
+&=
+s_j^2 Nv_j.
+\label{eq:mu_update}
+\end{align}
+
+Then
+\[
+m_{2j}=\mu_j^2+s_j^2.
+\]
+
+For fixed \(q_j(\beta)\), the optimal \(q_j(\omega)\) is
+\begin{align}
+q_j(\omega)
+&\propto
+\chisq_{\nuo+3}(\omega)
+\exp\left\{
+-\frac{N a_j(\nuo)m_{2j}}{2\omega}
+\right\}.
+\end{align}
+
+Therefore,
+\[
+q_j(\omega)
+=
+\GIG\left(
+\lambda_j,
+\chi_j,
+\psi_j
+\right),
+\]
+with
+\begin{align}
+\lambda_j
+&=
+\frac{\nuo+3}{2},
+\\
+\chi_j
+&=
+N a_j(\nuo)m_{2j},
+\\
+\psi_j
+&=
+1.
+\end{align}
+
+For this GIG distribution,
+\[
+\eta_j
+=
+\E_{q_j}(\omega^{-1})
+=
+\left(\frac{\psi_j}{\chi_j}\right)^{1/2}
+\frac{
+K_{\lambda_j-1}(\sqrt{\chi_j\psi_j})
+}{
+K_{\lambda_j}(\sqrt{\chi_j\psi_j})
+}.
+\]
+
+Since \(\psi_j=1\),
+\[
+\eta_j
+=
+\frac{1}{\sqrt{\chi_j}}
+\frac{
+K_{(\nuo+1)/2}(\sqrt{\chi_j})
+}{
+K_{(\nuo+3)/2}(\sqrt{\chi_j})
+}.
+\]
+
+If \(\chi_j=0\), use the limit
+\[
+\eta_j=\frac{1}{\nuo+1}.
+\]
+
+For fixed local factors, the optimal posterior inclusion weights are
+\[
+\alpha_j
+=
+\frac{
+\pi_j\exp(\mathcal F_j)
+}{
+\sum_{k=1}^p \pi_k\exp(\mathcal F_k)
+}.
+\]
+
+The variational posterior for \(b\) is therefore
+\[
+q(b)
+=
+\sum_{j=1}^p
+\alpha_j
+\int
+\delta_{\beta e_j}(b)
+q_j(\beta)
+\,d\beta.
+\]
+
+Consequently,
+\[
+\E_q(b_j)=\alpha_j\mu_j,
+\]
+and
+\[
+\E_q(b_j^2)=\alpha_j m_{2j}.
+\]
+
+\section{KL term for \(q_j(\omega)\)}
+
+Let
+\[
+d=\nuo+3,
+\qquad
+\lambda=\frac d2=\frac{\nuo+3}{2}.
+\]
+
+The chi-square density is
+\[
+\chisq_d(\omega)
+=
+\frac{1}{2^\lambda\Gamma(\lambda)}
+\omega^{\lambda-1}
+\exp(-\omega/2).
+\]
+
+The coordinate-optimal variational density is
+\[
+q_j(\omega)
+=
+\GIG(\lambda,\chi_j,1).
+\]
+
+Its density is
+\[
+q_j(\omega)
+=
+\frac{
+\chi_j^{-\lambda/2}
+}{
+2K_\lambda(\sqrt{\chi_j})
+}
+\omega^{\lambda-1}
+\exp\left\{
+-\frac12
+\left(
+\frac{\chi_j}{\omega}+\omega
+\right)
+\right\}.
+\]
+
+Therefore,
+\begin{align}
+\KL\{q_j(\omega)\|\chisq_d\}
+&=
+\log\Gamma(\lambda)
++
+(\lambda-1)\log 2
+-
+\frac{\lambda}{2}\log\chi_j
+-
+\log K_\lambda(\sqrt{\chi_j})
+-
+\frac{\chi_j}{2}\eta_j.
+\label{eq:KL_omega}
+\end{align}
+
+When \(\chi_j\to 0\), this KL goes to zero, as expected.
+
+\section{Empirical-Bayes updates for \(\nuo\) and \(\sigb\)}
+
+We treat \(\nuo\) and \(\sigb\) as empirical-Bayes hyperparameters.
+
+The variational empirical-Bayes objective is
+\[
+\widehat\ell_{\mathrm{VEB}}(\nuo,\sigb)
+=
+\max_q \mathcal L(\nuo,\sigb,q).
+\]
+
+For fixed \(\nuo\), the update for \(\sigb\) has a closed form. Since
+\[
+\sum_{j=1}^p \alpha_j=1,
+\]
+the part of the ELBO depending on \(\sigb\) is
+\[
+-\frac12
+\sum_{j=1}^p
+\alpha_j
+\left[
+\log \sigb+\frac{m_{2j}}{\sigb}
+\right].
+\]
+
+Maximizing with respect to \(\sigb\) gives
+\[
+\boxed{
+\sigb
+\leftarrow
+\sum_{j=1}^p
+\alpha_j m_{2j}.
+}
+\label{eq:sigma_update}
+\]
+
+There is generally no closed-form update for \(\nuo\), because \(\nuo\) appears in
+\[
+\log p_0(v\mid\nuo),
+\]
+\[
+a_j(\nuo)=\nuo\Rbar_{jj}+Nv_j^2,
+\]
+\[
+\lambda_j=\frac{\nuo+3}{2},
+\]
+and
+\[
+\KL\{q_j(\omega)\|\chisq_{\nuo+3}\}.
+\]
+
+Thus update \(\nuo\) numerically:
+\[
+\boxed{
+\nuo
+\leftarrow
+\arg\max_{\nu>0}
+\mathcal L(\nu,\sigb,q).
+}
+\]
+
+In practice, it is often more stable to optimize over
+\[
+\rho=\log\nuo,
+\]
+so that
+\[
+\nuo=\exp(\rho).
+\]
+
+Alternatively, use a one-dimensional grid:
+\[
+\nuo\in\{\nu^{(1)},\dots,\nu^{(G)}\},
+\]
+and choose the grid point with the largest optimized ELBO.
+
+\section{VEB algorithm for \(L=1\)}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item \textbf{Input:}
+summary statistic \(v\), sample size \(N\), reference LD matrix \(\Rbar\), prior weights \(\pi_j\), initial values \(\nuo^{(0)}\) and \({\sigb}^{(0)}\).
+
+\item \textbf{Initialize:}
+for each \(j\), initialize
+\[
+\alpha_j^{(0)}=\pi_j,
+\qquad
+\eta_j^{(0)}=\frac{1}{\nuo^{(0)}+1}.
+\]
+
+\item \textbf{Repeat until convergence:}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item For each SNP \(j=1,\dots,p\), compute
+\[
+a_j(\nuo)=\nuo\Rbar_{jj}+Nv_j^2.
+\]
+
+\item Update \(q_j(\beta)\):
+\[
+s_j^2
+=
+\left[
+\frac{1}{\sigb}
++
+N a_j(\nuo)\eta_j
+\right]^{-1},
+\]
+\[
+\mu_j=s_j^2Nv_j,
+\]
+\[
+m_{2j}=\mu_j^2+s_j^2.
+\]
+
+\item Update \(q_j(\omega)\):
+\[
+\lambda_j=\frac{\nuo+3}{2},
+\qquad
+\chi_j=N a_j(\nuo)m_{2j},
+\qquad
+\psi_j=1.
+\]
+Set
+\[
+q_j(\omega)=\GIG(\lambda_j,\chi_j,1).
+\]
+
+\item Update
+\[
+\eta_j
+=
+\E_{q_j}(\omega^{-1})
+=
+\frac{1}{\sqrt{\chi_j}}
+\frac{
+K_{(\nuo+1)/2}(\sqrt{\chi_j})
+}{
+K_{(\nuo+3)/2}(\sqrt{\chi_j})
+}.
+\]
+If \(\chi_j\) is numerically close to zero, use
+\[
+\eta_j=\frac{1}{\nuo+1}.
+\]
+
+\item Compute the local objective
+\[
+\mathcal F_j
+=
+\frac12
+\left[
+\log\left(\frac{s_j^2}{\sigb}\right)
++
+1
+-
+\frac{m_{2j}}{\sigb}
+\right]
++
+Nv_j\mu_j
+-
+\frac N2a_j(\nuo)m_{2j}\eta_j
+-
+\KL\{q_j(\omega)\|\chisq_{\nuo+3}\}.
+\]
+
+\item Update posterior inclusion probabilities:
+\[
+\alpha_j
+=
+\frac{
+\pi_j\exp(\mathcal F_j)
+}{
+\sum_{k=1}^p
+\pi_k\exp(\mathcal F_k)
+}.
+\]
+
+\item Update the prior variance:
+\[
+\sigb
+\leftarrow
+\sum_{j=1}^p
+\alpha_j m_{2j}.
+\]
+
+\item Update the LD-mismatch parameter:
+\[
+\nuo
+\leftarrow
+\arg\max_{\nu>0}
+\mathcal L(\nu,\sigb,q).
+\]
+This step is one-dimensional and can be done by grid search or numerical optimization over \(\log\nu\).
+
+\end{enumerate}
+
+\item \textbf{Output:}
+\[
+\widehat\nuo,
+\qquad
+\widehat{\sigb},
+\qquad
+\alpha_j,
+\qquad
+q_j(\beta)=\Normal(\mu_j,s_j^2),
+\qquad
+q_j(\omega)=\GIG(\lambda_j,\chi_j,1).
+\]
+
+The posterior mean of the effect vector is
+\[
+\E_q(b_j)=\alpha_j\mu_j.
+\]
+
+The posterior second moment is
+\[
+\E_q(b_j^2)=\alpha_j(\mu_j^2+s_j^2).
+\]
+
+\end{enumerate}
+
+\section{Variant with a shared \(q(\omega)\)}
+
+A simpler approximation uses a single variational distribution for \(\omega\),
+shared across all candidate causal SNPs:
+\[
+q(\gamma=j,\beta,\omega)
+=
+\alpha_j q_j(\beta)q(\omega).
+\]
+Write
+\[
+q(\omega)=\GIG(\lambda,\chi,\psi),
+\qquad
+\eta=\E_q(\omega^{-1}).
+\]
+
+The ELBO becomes
+\begin{align}
+\mathcal L_{\mathrm{shared}}(\nuo,\sigb,q)
+&=
+\log p_0(v\mid\nuo)
+-
+\KL\{q(\omega)\|\chisq_{\nuo+3}\}
+\nonumber\\
+&\quad+
+\sum_{j=1}^p
+\alpha_j
+\left[
+\log \pi_j
+-
+\log \alpha_j
++
+\mathcal G_j
+\right],
+\end{align}
+where
+\begin{align}
+\mathcal G_j
+&=
+\frac12
+\left[
+\log\left(\frac{s_j^2}{\sigb}\right)
++
+1
+-
+\frac{m_{2j}}{\sigb}
+\right]
++
+Nv_j\mu_j
+-
+\frac N2 a_j(\nuo)m_{2j}\eta.
+\end{align}
+The only difference from \eqref{eq:Fj_normal} is that the same \(\eta\) is used for every \(j\), and the KL penalty for \(\omega\) is global rather than local.
+
+For fixed \(q(\omega)\), the update for \(q_j(\beta)\) is
+\begin{align}
+s_j^2
+&=
+\left[
+\frac{1}{\sigb}
++
+N a_j(\nuo)\eta
+\right]^{-1},
+\\
+\mu_j
+&=
+s_j^2Nv_j,
+\\
+m_{2j}
+&=
+\mu_j^2+s_j^2.
+\end{align}
+
+For fixed \(\{\alpha_j,q_j(\beta)\}_{j=1}^p\), the coordinate-optimal shared \(q(\omega)\) is
+\[
+q(\omega)
+\propto
+\chisq_{\nuo+3}(\omega)
+\exp\left\{
+-
+\frac{N}{2\omega}
+\sum_{j=1}^p
+\alpha_j a_j(\nuo)m_{2j}
+\right\}.
+\]
+Thus
+\[
+q(\omega)
+=
+\GIG(\lambda,\chi,1),
+\]
+with
+\begin{align}
+\lambda
+&=
+\frac{\nuo+3}{2},
+\\
+\chi
+&=
+N
+\sum_{j=1}^p
+\alpha_j a_j(\nuo)m_{2j}.
+\end{align}
+The shared inverse moment is
+\[
+\eta
+=
+\frac{1}{\sqrt{\chi}}
+\frac{
+K_{(\nuo+1)/2}(\sqrt{\chi})
+}{
+K_{(\nuo+3)/2}(\sqrt{\chi})
+}.
+\]
+If \(\chi\) is numerically close to zero, use
+\[
+\eta=\frac{1}{\nuo+1}.
+\]
+
+The posterior inclusion probabilities are updated using
+\[
+\alpha_j
+=
+\frac{
+\pi_j\exp(\mathcal G_j)
+}{
+\sum_{k=1}^p
+\pi_k\exp(\mathcal G_k)
+}.
+\]
+
+\subsection*{Shared-\(\omega\) VEB algorithm for \(L=1\)}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item \textbf{Input:}
+summary statistic \(v\), sample size \(N\), reference LD matrix \(\Rbar\), prior weights \(\pi_j\), initial values \(\nuo^{(0)}\) and \({\sigb}^{(0)}\).
+
+\item \textbf{Initialize:}
+\[
+\alpha_j^{(0)}=\pi_j,
+\qquad
+\eta^{(0)}=\frac{1}{\nuo^{(0)}+1}.
+\]
+
+\item \textbf{Repeat until convergence:}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item For each SNP \(j=1,\dots,p\), compute
+\[
+a_j(\nuo)=\nuo\Rbar_{jj}+Nv_j^2.
+\]
+
+\item Update \(q_j(\beta)\) using the shared \(\eta\):
+\[
+s_j^2
+=
+\left[
+\frac{1}{\sigb}
++
+N a_j(\nuo)\eta
+\right]^{-1},
+\qquad
+\mu_j=s_j^2Nv_j,
+\qquad
+m_{2j}=\mu_j^2+s_j^2.
+\]
+
+\item Update the posterior inclusion probabilities:
+\[
+\mathcal G_j
+=
+\frac12
+\left[
+\log\left(\frac{s_j^2}{\sigb}\right)
++
+1
+-
+\frac{m_{2j}}{\sigb}
+\right]
++
+Nv_j\mu_j
+-
+\frac N2a_j(\nuo)m_{2j}\eta,
+\]
+\[
+\alpha_j
+=
+\frac{
+\pi_j\exp(\mathcal G_j)
+}{
+\sum_{k=1}^p
+\pi_k\exp(\mathcal G_k)
+}.
+\]
+
+\item Update the shared \(q(\omega)\):
+\[
+\lambda=\frac{\nuo+3}{2},
+\qquad
+\chi
+=
+N
+\sum_{j=1}^p
+\alpha_j a_j(\nuo)m_{2j},
+\qquad
+q(\omega)=\GIG(\lambda,\chi,1).
+\]
+
+\item Update the shared inverse moment:
+\[
+\eta
+=
+\frac{1}{\sqrt{\chi}}
+\frac{
+K_{(\nuo+1)/2}(\sqrt{\chi})
+}{
+K_{(\nuo+3)/2}(\sqrt{\chi})
+}.
+\]
+If \(\chi\) is numerically close to zero, use
+\[
+\eta=\frac{1}{\nuo+1}.
+\]
+
+\item Update the prior variance:
+\[
+\sigb
+\leftarrow
+\sum_{j=1}^p
+\alpha_j m_{2j}.
+\]
+
+\item Update the LD-mismatch parameter:
+\[
+\nuo
+\leftarrow
+\arg\max_{\nu>0}
+\mathcal L_{\mathrm{shared}}(\nu,\sigb,q).
+\]
+
+\end{enumerate}
+
+\item \textbf{Output:}
+\[
+\widehat\nuo,
+\qquad
+\widehat{\sigb},
+\qquad
+\alpha_j,
+\qquad
+q_j(\beta)=\Normal(\mu_j,s_j^2),
+\qquad
+q(\omega)=\GIG(\lambda,\chi,1).
+\]
+
+\end{enumerate}
+
+\section{Variant replacing \(\omega\) by \(\nuo+3\)}
+
+An even simpler approximation replaces the random variable
+\[
+\omega\sim\chisq_{\nuo+3}
+\]
+by its mean,
+\[
+\E(\omega)=\nuo+3.
+\]
+Equivalently, replace every occurrence of \(\omega^{-1}\) in the quadratic penalty by
+\[
+\frac{1}{\nuo+3}.
+\]
+
+For \(\gamma=j\), this gives the plug-in approximation
+\[
+p(v\mid \gamma=j,\beta,\nuo)
+\approx
+p_0(v\mid\nuo)
+\exp\left\{
+N\beta v_j
+-
+\frac{N a_j(\nuo)\beta^2}{2(\nuo+3)}
+\right\}.
+\]
+There is no variational distribution for \(\omega\) and no KL penalty for \(\omega\).
+
+Use the variational family
+\[
+q(\gamma=j,\beta)
+=
+\alpha_j q_j(\beta),
+\qquad
+q_j(\beta)=\Normal(\mu_j,s_j^2).
+\]
+The plug-in objective is
+\begin{align}
+\mathcal L_{\mathrm{plug}}(\nuo,\sigb,q)
+&=
+\log p_0(v\mid\nuo)
++
+\sum_{j=1}^p
+\alpha_j
+\left[
+\log \pi_j
+-
+\log \alpha_j
++
+\mathcal H_j
+\right],
+\end{align}
+where
+\begin{align}
+\mathcal H_j
+&=
+\frac12
+\left[
+\log\left(\frac{s_j^2}{\sigb}\right)
++
+1
+-
+\frac{m_{2j}}{\sigb}
+\right]
++
+Nv_j\mu_j
+-
+\frac{N a_j(\nuo)m_{2j}}{2(\nuo+3)}.
+\end{align}
+
+For fixed \(\nuo\) and \(\sigb\), the coordinate update for \(q_j(\beta)\) is
+\begin{align}
+s_j^2
+&=
+\left[
+\frac{1}{\sigb}
++
+\frac{N a_j(\nuo)}{\nuo+3}
+\right]^{-1},
+\\
+\mu_j
+&=
+s_j^2Nv_j,
+\\
+m_{2j}
+&=
+\mu_j^2+s_j^2.
+\end{align}
+The posterior inclusion probabilities are
+\[
+\alpha_j
+=
+\frac{
+\pi_j\exp(\mathcal H_j)
+}{
+\sum_{k=1}^p
+\pi_k\exp(\mathcal H_k)
+}.
+\]
+
+\subsection*{Plug-in-\(\omega\) VEB algorithm for \(L=1\)}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item \textbf{Input:}
+summary statistic \(v\), sample size \(N\), reference LD matrix \(\Rbar\), prior weights \(\pi_j\), initial values \(\nuo^{(0)}\) and \({\sigb}^{(0)}\).
+
+\item \textbf{Initialize:}
+\[
+\alpha_j^{(0)}=\pi_j.
+\]
+
+\item \textbf{Repeat until convergence:}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item For each SNP \(j=1,\dots,p\), compute
+\[
+a_j(\nuo)=\nuo\Rbar_{jj}+Nv_j^2.
+\]
+
+\item Update \(q_j(\beta)\):
+\[
+s_j^2
+=
+\left[
+\frac{1}{\sigb}
++
+\frac{N a_j(\nuo)}{\nuo+3}
+\right]^{-1},
+\qquad
+\mu_j=s_j^2Nv_j,
+\qquad
+m_{2j}=\mu_j^2+s_j^2.
+\]
+
+\item Compute the plug-in local objective:
+\[
+\mathcal H_j
+=
+\frac12
+\left[
+\log\left(\frac{s_j^2}{\sigb}\right)
++
+1
+-
+\frac{m_{2j}}{\sigb}
+\right]
++
+Nv_j\mu_j
+-
+\frac{N a_j(\nuo)m_{2j}}{2(\nuo+3)}.
+\]
+
+\item Update posterior inclusion probabilities:
+\[
+\alpha_j
+=
+\frac{
+\pi_j\exp(\mathcal H_j)
+}{
+\sum_{k=1}^p
+\pi_k\exp(\mathcal H_k)
+}.
+\]
+
+\item Update the prior variance:
+\[
+\sigb
+\leftarrow
+\sum_{j=1}^p
+\alpha_j m_{2j}.
+\]
+
+\item Update the LD-mismatch parameter:
+\[
+\nuo
+\leftarrow
+\arg\max_{\nu>0}
+\mathcal L_{\mathrm{plug}}(\nu,\sigb,q).
+\]
+
+\end{enumerate}
+
+\item \textbf{Output:}
+\[
+\widehat\nuo,
+\qquad
+\widehat{\sigb},
+\qquad
+\alpha_j,
+\qquad
+q_j(\beta)=\Normal(\mu_j,s_j^2).
+\]
+
+\end{enumerate}
+
+\section{SuSiE version with a shared \(q(\omega)\)}
+
+Now consider a multi-effect model with
+\[
+b=\sum_{\ell=1}^L b_\ell,
+\qquad
+b_\ell=\beta_\ell e_{\gamma_\ell}.
+\]
+For effect \(\ell\), let
+\[
+P(\gamma_\ell=j)=\pi_{\ell j},
+\qquad
+\beta_\ell\mid\gamma_\ell=j,\sigma_\ell^2
+\sim
+\Normal(0,\sigma_\ell^2).
+\]
+
+Write
+\[
+A_\nu=\nuo\Rbar+Nvv^\top,
+\qquad
+Q_\nu(b)=b^\top A_\nu b.
+\]
+The collapsed lower bound with a single shared \(q(\omega)\) is
+\begin{align}
+\log p(v\mid b,\nuo)
+&\geq
+\log p_0(v\mid\nuo)
++
+Nb^\top v
+-
+\frac N2\eta b^\top A_\nu b
+-
+\KL\{q(\omega)\|\chisq_{\nuo+3}\},
+\end{align}
+where
+\[
+\eta=\E_q(\omega^{-1}).
+\]
+
+Use the mean-field family
+\[
+q(b,\omega)
+=
+q(\omega)
+\prod_{\ell=1}^L
+q_\ell(\gamma_\ell,\beta_\ell),
+\]
+with
+\[
+q_\ell(\gamma_\ell=j,\beta_\ell)
+=
+\alpha_{\ell j}q_{\ell j}(\beta_\ell),
+\qquad
+q_{\ell j}(\beta_\ell)
+=
+\Normal(\mu_{\ell j},s_{\ell j}^2).
+\]
+Define
+\[
+m_{\ell j}=\alpha_{\ell j}\mu_{\ell j},
+\qquad
+m_\ell=(m_{\ell 1},\dots,m_{\ell p})^\top,
+\qquad
+m=\sum_{\ell=1}^L m_\ell,
+\]
+and
+\[
+m_{2,\ell j}
+=
+\E_{q_{\ell j}}(\beta_\ell^2)
+=
+\mu_{\ell j}^2+s_{\ell j}^2.
+\]
+
+The shared-\(\omega\) SuSiE ELBO can be written as
+\begin{align}
+\mathcal L_{\mathrm{SuSiE}}(\nuo,\{\sigma_\ell^2\},q)
+&=
+\log p_0(v\mid\nuo)
+-
+\KL\{q(\omega)\|\chisq_{\nuo+3}\}
+\nonumber\\
+&\quad
++
+N v^\top m
+-
+\frac N2\eta S_Q
+\nonumber\\
+&\quad
++
+\sum_{\ell=1}^L
+\sum_{j=1}^p
+\alpha_{\ell j}
+\left[
+\log\pi_{\ell j}
+-
+\log\alpha_{\ell j}
+\right.
+\nonumber\\
+&\qquad\qquad\qquad\left.
++
+\frac12
+\left\{
+\log\left(\frac{s_{\ell j}^2}{\sigma_\ell^2}\right)
++
+1
+-
+\frac{m_{2,\ell j}}{\sigma_\ell^2}
+\right\}
+\right],
+\label{eq:susie_shared_elbo}
+\end{align}
+where
+\[
+S_Q
+=
+\E_q\{b^\top A_\nu b\}.
+\]
+An efficient expression for this expectation is
+\[
+S_Q
+=
+m^\top A_\nu m
++
+\sum_{\ell=1}^L
+\left[
+\sum_{j=1}^p
+\alpha_{\ell j}m_{2,\ell j}(A_\nu)_{jj}
+-
+m_\ell^\top A_\nu m_\ell
+\right].
+\]
+The second term adds back the within-effect posterior variance and
+removes the squared posterior mean already counted in \(m^\top A_\nu m\).
+
+\subsection*{Coordinate update for one effect}
+
+When updating effect \(\ell\), hold the other effects and \(q(\omega)\)
+fixed. Let
+\[
+m_{-\ell}
+=
+\sum_{k\neq\ell}m_k
+=
+m-m_\ell,
+\qquad
+c_\ell=A_\nu m_{-\ell}.
+\]
+For candidate SNP \(j\), the terms involving \(\beta_\ell\) are
+\[
+N\beta_\ell v_j
+-
+N\eta\beta_\ell (c_\ell)_j
+-
+\frac N2\eta (A_\nu)_{jj}\beta_\ell^2
++
+\log\Normal(\beta_\ell;0,\sigma_\ell^2).
+\]
+Thus
+\[
+q_{\ell j}(\beta_\ell)
+=
+\Normal(\mu_{\ell j},s_{\ell j}^2),
+\]
+where
+\begin{align}
+s_{\ell j}^2
+&=
+\left[
+\frac{1}{\sigma_\ell^2}
++
+N\eta (A_\nu)_{jj}
+\right]^{-1},
+\\
+\mu_{\ell j}
+&=
+s_{\ell j}^2
+N
+\left[
+v_j-\eta(c_\ell)_j
+\right],
+\\
+m_{2,\ell j}
+&=
+\mu_{\ell j}^2+s_{\ell j}^2.
+\end{align}
+
+The coordinate score for \(\gamma_\ell=j\) is
+\begin{align}
+\mathcal D_{\ell j}
+&=
+\frac12
+\left[
+\log\left(\frac{s_{\ell j}^2}{\sigma_\ell^2}\right)
++
+1
+-
+\frac{m_{2,\ell j}}{\sigma_\ell^2}
+\right]
+\nonumber\\
+&\quad
++
+N\mu_{\ell j}
+\left[
+v_j-\eta(c_\ell)_j
+\right]
+-
+\frac N2\eta (A_\nu)_{jj}m_{2,\ell j}.
+\end{align}
+Therefore,
+\[
+\alpha_{\ell j}
+=
+\frac{
+\pi_{\ell j}\exp(\mathcal D_{\ell j})
+}{
+\sum_{k=1}^p
+\pi_{\ell k}\exp(\mathcal D_{\ell k})
+}.
+\]
+
+\subsection*{Shared \(q(\omega)\) update}
+
+For fixed effect factors, the optimal shared \(q(\omega)\) is
+\[
+q(\omega)
+\propto
+\chisq_{\nuo+3}(\omega)
+\exp\left\{
+-
+\frac{N S_Q}{2\omega}
+\right\}.
+\]
+Thus
+\[
+q(\omega)=\GIG(\lambda,\chi,1),
+\]
+with
+\begin{align}
+\lambda
+&=
+\frac{\nuo+3}{2},
+\\
+\chi
+&=
+N S_Q.
+\end{align}
+The shared inverse moment is
+\[
+\eta
+=
+\frac{1}{\sqrt{\chi}}
+\frac{
+K_{(\nuo+1)/2}(\sqrt{\chi})
+}{
+K_{(\nuo+3)/2}(\sqrt{\chi})
+}.
+\]
+If \(\chi\) is numerically close to zero, use
+\[
+\eta=\frac{1}{\nuo+1}.
+\]
+
+\subsection*{Empirical-Bayes updates}
+
+For fixed \(\nuo\), a natural update for the effect-specific prior
+variance is
+\[
+\sigma_\ell^2
+\leftarrow
+\sum_{j=1}^p
+\alpha_{\ell j}m_{2,\ell j}.
+\]
+There is generally no closed-form update for \(\nuo\) in this
+shared-\(\omega\) collapsed objective. A practical update is
+\[
+\nuo
+\leftarrow
+\arg\max_{\nu>0}
+\mathcal L_{\mathrm{SuSiE}}(\nu,\{\sigma_\ell^2\},q),
+\]
+or a grid search over candidate values of \(\nu\). When \(\nuo\) changes,
+\(A_\nu\), \(\lambda\), \(\chi\), \(\eta\), and the null term
+\(\log p_0(v\mid\nu)\) should be recomputed.
+
+\subsection*{Shared-\(\omega\) collapsed SuSiE algorithm}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item \textbf{Input:}
+summary statistic \(v\), sample size \(N\), reference LD matrix \(\Rbar\),
+number of effects \(L\), prior weights \(\pi_{\ell j}\), initial values
+\(\nuo^{(0)}\) and \((\sigma_\ell^2)^{(0)}\).
+
+\item \textbf{Initialize:}
+for each effect \(\ell\), initialize
+\[
+\alpha_{\ell j}^{(0)}=\pi_{\ell j},
+\qquad
+\mu_{\ell j}^{(0)}=0,
+\qquad
+s_{\ell j}^{2(0)}=(\sigma_\ell^2)^{(0)}.
+\]
+Set
+\[
+\eta^{(0)}=\frac{1}{\nuo^{(0)}+1}.
+\]
+
+\item \textbf{Repeat until convergence:}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item Form
+\[
+A_\nu=\nuo\Rbar+Nvv^\top.
+\]
+
+\item For each effect \(\ell=1,\dots,L\), perform an IBSS update:
+
+\begin{enumerate}[leftmargin=2em]
+
+\item Compute
+\[
+m_\ell=(\alpha_{\ell 1}\mu_{\ell 1},\dots,\alpha_{\ell p}\mu_{\ell p})^\top,
+\qquad
+m_{-\ell}=\sum_{k\neq\ell}m_k,
+\qquad
+c_\ell=A_\nu m_{-\ell}.
+\]
+
+\item For each SNP \(j=1,\dots,p\), update
+\[
+s_{\ell j}^2
+=
+\left[
+\frac{1}{\sigma_\ell^2}
++
+N\eta (A_\nu)_{jj}
+\right]^{-1},
+\]
+\[
+\mu_{\ell j}
+=
+s_{\ell j}^2
+N
+\left[
+v_j-\eta(c_\ell)_j
+\right],
+\]
+\[
+m_{2,\ell j}
+=
+\mu_{\ell j}^2+s_{\ell j}^2.
+\]
+
+\item Compute \(\mathcal D_{\ell j}\) and update
+\[
+\alpha_{\ell j}
+=
+\frac{
+\pi_{\ell j}\exp(\mathcal D_{\ell j})
+}{
+\sum_{k=1}^p
+\pi_{\ell k}\exp(\mathcal D_{\ell k})
+}.
+\]
+
+\end{enumerate}
+
+\item Recompute
+\[
+m=\sum_{\ell=1}^L m_\ell
+\]
+and
+\[
+S_Q
+=
+m^\top A_\nu m
++
+\sum_{\ell=1}^L
+\left[
+\sum_{j=1}^p
+\alpha_{\ell j}m_{2,\ell j}(A_\nu)_{jj}
+-
+m_\ell^\top A_\nu m_\ell
+\right].
+\]
+
+\item Update the shared \(q(\omega)\):
+\[
+\lambda=\frac{\nuo+3}{2},
+\qquad
+\chi=N S_Q,
+\qquad
+q(\omega)=\GIG(\lambda,\chi,1).
+\]
+Then update
+\[
+\eta=\E_q(\omega^{-1}).
+\]
+
+\item Optionally update
+\[
+\sigma_\ell^2
+\leftarrow
+\sum_{j=1}^p
+\alpha_{\ell j}m_{2,\ell j},
+\qquad
+\ell=1,\dots,L.
+\]
+
+\item Optionally update \(\nuo\) by grid search or one-dimensional
+optimization of \(\mathcal L_{\mathrm{SuSiE}}\).
+
+\end{enumerate}
+
+\item \textbf{Output:}
+\[
+\widehat\nuo,
+\qquad
+\widehat\sigma_1^2,\dots,\widehat\sigma_L^2,
+\qquad
+\alpha_{\ell j},
+\qquad
+q_{\ell j}(\beta_\ell)=\Normal(\mu_{\ell j},s_{\ell j}^2),
+\qquad
+q(\omega)=\GIG(\lambda,\chi,1).
+\]
+
+The posterior inclusion probability for SNP \(j\) is
+\[
+\mathrm{PIP}_j
+=
+1-
+\prod_{\ell=1}^L
+(1-\alpha_{\ell j}).
+\]
+
+\end{enumerate}
+
+\section{Comments}
+
+For \(L=1\), exact one-dimensional integration over \(\beta\) is also feasible. The VEB approximation is still useful because it provides a computational template that generalizes naturally to multi-effect SuSiE-style models.
+
+The empirical-Bayes estimate \(\widehat\nuo\) should be interpreted as a working LD-mismatch parameter. Smaller values of \(\nuo\) allow more uncertainty around the reference LD matrix \(\Rbar\), whereas larger values concentrate \(R\) more tightly around \(\Rbar\).
+
+\end{document}
